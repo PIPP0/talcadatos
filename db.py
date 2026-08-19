@@ -344,7 +344,7 @@ def seed_if_empty():
 
         cur.execute(
             "INSERT INTO admin_usuario (usuario, password, rol) VALUES (?, ?, ?)",
-            ("admin", hash_password("talca2026"), "super_admin"),
+            ("admin", hash_password(os.environ.get("ADMIN_PASSWORD", "talca2026")), "super_admin"),
         )
 
         conn.commit()

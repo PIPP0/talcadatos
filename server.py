@@ -1068,7 +1068,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8002
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 8002))
     db.seed_if_empty()
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"Talcadatos corriendo en http://localhost:{port}")

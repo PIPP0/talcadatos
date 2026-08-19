@@ -27,7 +27,24 @@ También puedes usar el botón de vista previa de Claude Code (`talcadatos` en
 
 ## Admin
 
-http://localhost:8002/admin — usuario `admin`, contraseña `talca2026`.
+http://localhost:8002/admin — usuario `admin`, contraseña `talca2026`
+(o la que definas en la variable de entorno `ADMIN_PASSWORD`).
+
+## Desplegar en Render (gratis, con tu cuenta de GitHub)
+
+Este repo incluye `render.yaml`, así que el despliegue es automático:
+
+1. Entra a [render.com](https://render.com) y elige **"Sign in with GitHub"** (misma cuenta, sin password nuevo).
+2. **New → Blueprint** y selecciona este repositorio (`talcadatos`).
+3. Render detecta `render.yaml` solo y genera una contraseña de admin aleatoria
+   (variable `ADMIN_PASSWORD`) — la ves en el dashboard del servicio, pestaña *Environment*.
+4. En unos minutos queda con un link público tipo `https://talcadatos.onrender.com`.
+
+Nota: el plan free de Render "duerme" el servicio tras un rato sin visitas (la
+primera carga después de eso tarda ~30s en despertar) y el disco es efímero,
+así que la base de datos se reinicia con los datos de ejemplo si el servicio
+se reinicia. Para persistencia real, ver la sección de arquitectura recomendada
+del PRD (Postgres vía Supabase).
 
 ## Estructura
 
