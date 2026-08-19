@@ -4,6 +4,13 @@ Sitio de avisos de pymes y emprendedores de Talca, construido en base al PRD.
 MVP funcional: sitio público con buscador "IA" y filtros, avisos destacados,
 detalle con WhatsApp directo, y panel de administración completo.
 
+**Vista en vivo (estática, solo lectura):** https://pipp0.github.io/talcadatos/
+Es una versión sin servidor pensada solo para *ver* el sitio — navegación y
+botones de WhatsApp funcionan, pero el buscador, los filtros, el formulario
+de publicar y el panel de admin están desactivados (lo dice un aviso en la
+página). Para la versión completa y funcional, corre el servidor localmente
+(ver más abajo) o despliega en Render.
+
 ## Por qué Python y no Next.js
 
 El PRD (sección 12) recomienda Next.js + Postgres + pgvector para producción.
