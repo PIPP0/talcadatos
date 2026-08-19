@@ -1,11 +1,14 @@
 """
 Genera una version estatica del sitio publico en docs/, para publicarla con
 GitHub Pages. GitHub Pages solo sirve archivos estaticos -- no hay Python
-corriendo -- asi que aca quedan deshabilitados: el buscador "IA" (llama a
-/api/buscar), el registro de eventos, el formulario de publicar, y todo el
-panel de administracion. La navegacion, las fichas de cada aviso y los
-botones de WhatsApp (son links wa.me directos, no necesitan servidor) SI
-funcionan igual que en la version con servidor.
+corriendo -- pero el buscador y los filtros SI funcionan: se reimplemento el
+mismo algoritmo de search.py en JS puro (pages_assets/search-client.js) que
+corre en el navegador contra avisos.json/sinonimos.json. Lo que sigue sin
+funcionar es lo que necesita escritura compartida real (que todos los
+visitantes vean el mismo estado): el formulario de publicar y el panel de
+administracion. La navegacion, las fichas de cada aviso y los botones de
+WhatsApp (son links wa.me directos) funcionan igual que en la version con
+servidor.
 
 Uso:
     python3 export_static.py
@@ -13,6 +16,7 @@ Uso:
 import os
 import io
 import re
+import json
 import shutil
 import tempfile
 
@@ -23,15 +27,16 @@ import ogimage
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCS_DIR = os.path.join(BASE_DIR, "docs")
 PAGES_HOST = "pipp0.github.io"
-PAGES_BASE = f"https://{PAGES_HOST}/talcadatos"
+PAGES_PREFIX = "/talcadatos"
+PAGES_BASE = f"https://{PAGES_HOST}{PAGES_PREFIX}"
 
 NOTICE = (
     '<div class="flash static-notice">'
-    "🔧 Vista de demostración estática (GitHub Pages) — el buscador, los filtros, "
-    'el formulario de publicar y el panel de administración no están activos aquí '
-    "porque no hay servidor corriendo. La navegación y los botones de WhatsApp sí "
-    'funcionan. <a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo '
-    "correrlo con servidor completo →</a></div>"
+    "🔧 Vista de demostración estática (GitHub Pages) — el buscador y los filtros "
+    "funcionan (corren en tu navegador). Lo único inactivo aquí es publicar un aviso "
+    "nuevo y el panel de administración, porque necesitan un servidor real. "
+    '<a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo '
+    "completo →</a></div>"
 )
 
 
@@ -62,7 +67,7 @@ def _postprocess(html):
     """Reescribe la salida del sitio dinamico para que sirva como estatico:
     agrega el prefijo /talcadatos (Pages sirve el repo bajo un subpath),
     convierte rutas de aviso a carpetas con index.html, e inserta el aviso."""
-    prefix = "/talcadatos"
+    prefix = PAGES_PREFIX
     html = html.replace("http://" + PAGES_HOST + "/", PAGES_BASE + "/")
     html = re.sub(r'(href|src|action)="/(?!talcadatos)', rf'\1="{prefix}/', html)
     html = re.sub(r'href="' + re.escape(prefix) + r'/avisos/(\d+)"',
@@ -124,27 +129,37 @@ def main():
         _write(os.path.join(DOCS_DIR, "og", f"{aviso_id}.png"), data)
     _write(os.path.join(DOCS_DIR, "og", "default.png"), ogimage.generar_default())
 
-    # Estaticos: CSS igual, JS con el buscador reemplazado por un aviso inerte
+    # Estaticos: CSS igual; app.js se reemplaza por completo con la version
+    # que trae el buscador/filtros funcionando en el navegador (sin backend).
     shutil.copytree(os.path.join(BASE_DIR, "static"), os.path.join(DOCS_DIR, "static"))
-    static_js = os.path.join(DOCS_DIR, "static", "app.js")
-    with open(static_js, "r", encoding="utf-8") as f:
-        js = f.read()
-    js = js.replace(
-        "(function initSearch() {",
-        "(function initSearch() {\n"
-        "  // Deshabilitado en la version estatica de GitHub Pages: no hay /api/buscar.\n"
-        "  var __disabled = true;\n"
-        "  if (__disabled) {\n"
-        "    var form0 = document.getElementById('search-form');\n"
-        "    if (form0) form0.addEventListener('submit', function (e) {\n"
-        "      e.preventDefault();\n"
-        "      alert('El buscador necesita el servidor corriendo. Revisa el README del repo para probarlo completo.');\n"
-        "    });\n"
-        "    return;\n"
-        "  }\n",
-    )
-    with open(static_js, "w", encoding="utf-8") as f:
+    search_client = os.path.join(BASE_DIR, "pages_assets", "search-client.js")
+    with open(search_client, "r", encoding="utf-8") as f:
+        js = f.read().replace("__PAGES_PREFIX__", PAGES_PREFIX)
+    with open(os.path.join(DOCS_DIR, "static", "app.js"), "w", encoding="utf-8") as f:
         f.write(js)
+
+    # Datos que consume ese JS: avisos activos + diccionario de sinonimos por rubro.
+    conn = db.get_conn()
+    avisos_json = [{
+        "id": a["id"], "titulo": a["titulo"], "descripcion": a["descripcion"],
+        "categoria_nombre": a["categoria_nombre"], "categoria_slug": a["categoria_slug"],
+        "icono": a["icono"], "comuna": a["comuna"], "color": a["color"],
+        "whatsapp": a["whatsapp"], "negocio_nombre": a["negocio_nombre"],
+        "verificado": bool(a["verificado"]), "plan_nombre": a["plan_nombre"],
+        "plan_prioridad": a["plan_prioridad"], "publicado_en": a["publicado_en"],
+        "contactos_total": a["contactos_total"], "vistas_total": a["vistas_total"],
+    } for a in conn.execute(server.AVISO_SELECT + " WHERE aviso.estado='activo'").fetchall()]
+    sinonimos_json = {}
+    for row in conn.execute(
+        "SELECT categoria.slug AS slug, sinonimo.palabra FROM sinonimo "
+        "JOIN categoria ON categoria.id = sinonimo.categoria_id"
+    ).fetchall():
+        sinonimos_json.setdefault(row["slug"], []).append(row["palabra"])
+    conn.close()
+    _write(os.path.join(DOCS_DIR, "static", "avisos.json"),
+           json.dumps(avisos_json, ensure_ascii=False).encode("utf-8"))
+    _write(os.path.join(DOCS_DIR, "static", "sinonimos.json"),
+           json.dumps(sinonimos_json, ensure_ascii=False).encode("utf-8"))
 
     # robots.txt / sitemap.xml estaticos
     urls = [f"{PAGES_BASE}/", f"{PAGES_BASE}/avisos/"] + [f"{PAGES_BASE}/avisos/{i}/" for i in aviso_ids]

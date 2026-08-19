@@ -5,12 +5,12 @@
  * en el navegador contra avisos.json/sinonimos.json en vez de contra
  * PostgreSQL/SQLite, porque GitHub Pages no puede correr el backend Python.
  *
- * /talcadatos lo reemplaza export_static.py por el subpath real del
+ * __PAGES_PREFIX__ lo reemplaza export_static.py por el subpath real del
  * sitio publicado (ej. "/talcadatos").
  */
 (function () {
   "use strict";
-  var PREFIX = "/talcadatos";
+  var PREFIX = "__PAGES_PREFIX__";
   var DATA_BASE = PREFIX + "/static";
   var dataPromise = null;
 

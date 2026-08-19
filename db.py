@@ -124,16 +124,16 @@ CATEGORIAS = [
 
 # Color de acento por categoria (fondo de la tarjeta y de la imagen OG).
 COLOR_POR_CATEGORIA = {
-    "vidrieria": "#6B4818",
-    "gasfiteria": "#2F6B5E",
-    "electricidad": "#9C4A32",
-    "aluminios": "#6B4818",
-    "clases": "#2F6B5E",
-    "tecnologia": "#8C5F22",
-    "panaderia": "#6B4818",
-    "belleza": "#9C4A32",
-    "jardineria": "#2F6B5E",
-    "contabilidad": "#8C5F22",
+    "vidrieria": "#BBD1EF",
+    "gasfiteria": "#AEDFC4",
+    "electricidad": "#F2DA9E",
+    "aluminios": "#C9CDD9",
+    "clases": "#D8C3EA",
+    "tecnologia": "#C4C6EF",
+    "panaderia": "#F0CBA0",
+    "belleza": "#F2C9D4",
+    "jardineria": "#C7DFAE",
+    "contabilidad": "#AAD9DE",
 }
 
 SINONIMOS = {
@@ -179,43 +179,43 @@ NEGOCIOS = [
 ]
 
 AVISOS = [
-    # negocio_idx, titulo, categoria_slug, comuna, descripcion, horario, color, estado
+    # negocio_idx, titulo, categoria_slug, comuna, descripcion, horario, estado
     (0, "Instalación y reparación de termopaneles", "vidrieria", "Talca",
      "Fabricamos e instalamos termopaneles y ventanas de PVC y aluminio a medida. "
-     "Retiro de vidrios rotos y presupuesto sin costo.", "Lun a Vie 9:00-18:30", "#8C5F22", "activo"),
+     "Retiro de vidrios rotos y presupuesto sin costo.", "Lun a Vie 9:00-18:30", "activo"),
     (1, "Ventanas corredizas y estructuras de aluminio", "aluminios", "Talca",
      "Diseñamos e instalamos ventanas corredizas, puertas y cierres perimetrales en aluminio. "
-     "Trabajamos con planos y también a pedido.", "Lun a Sáb 9:00-19:00", "#6B4818", "activo"),
+     "Trabajamos con planos y también a pedido.", "Lun a Sáb 9:00-19:00", "activo"),
     (2, "Gásfiter a domicilio, respuesta rápida", "gasfiteria", "Talca",
      "Reparación de fugas, destape de cañerías, instalación de artefactos sanitarios. "
-     "Atención de urgencia el mismo día.", "Todos los días 8:00-21:00", "#2F6B5E", "activo"),
+     "Atención de urgencia el mismo día.", "Todos los días 8:00-21:00", "activo"),
     (3, "Electricista certificado SEC", "electricidad", "Talca",
      "Instalaciones eléctricas domiciliarias y comerciales, certificación SEC, "
-     "tableros y cambio de medidores.", "Lun a Vie 9:00-18:00", "#9C4A32", "activo"),
+     "tableros y cambio de medidores.", "Lun a Vie 9:00-18:00", "activo"),
     (4, "Clases particulares de inglés, todos los niveles", "clases", "Talca",
      "Profesora con certificación internacional. Clases online o presenciales, "
-     "preparación PSU/PAES y conversación.", "Tardes de lunes a viernes", "#2F6B5E", "activo"),
+     "preparación PSU/PAES y conversación.", "Tardes de lunes a viernes", "activo"),
     (5, "Reparación de notebooks y computadores", "tecnologia", "Talca",
      "Formateo, cambio de piezas, eliminación de virus y mantención. "
-     "Diagnóstico gratis, entrega en 24-48 horas.", "Lun a Sáb 10:00-19:00", "#8C5F22", "activo"),
+     "Diagnóstico gratis, entrega en 24-48 horas.", "Lun a Sáb 10:00-19:00", "activo"),
     (6, "Pan amasado y tortas por encargo", "panaderia", "Talca",
      "Pan amasado todos los días, tortas y pasteles para cumpleaños y eventos. "
-     "Pedidos con 48 horas de anticipación.", "Todos los días 7:30-20:00", "#6B4818", "activo"),
+     "Pedidos con 48 horas de anticipación.", "Todos los días 7:30-20:00", "activo"),
     (7, "Corte, color y peinados a domicilio", "belleza", "Talca",
      "Peluquería a domicilio para toda la familia. Cortes, color, peinados de evento "
-     "y manicure.", "Lun a Sáb 9:00-20:00", "#9C4A32", "activo"),
+     "y manicure.", "Lun a Sáb 9:00-20:00", "activo"),
     (8, "Mantención de jardines y poda de árboles", "jardineria", "Talca",
      "Corte de pasto, poda, diseño de jardines y mantención mensual para casas y "
-     "condominios.", "Lun a Vie 8:00-17:00", "#2F6B5E", "activo"),
+     "condominios.", "Lun a Vie 8:00-17:00", "activo"),
     (9, "Contabilidad para pymes y emprendedores", "contabilidad", "Talca",
      "Inicio de actividades, boletas electrónicas, declaración de renta e IVA mensual "
-     "para pymes de la región.", "Lun a Vie 9:00-18:00", "#8C5F22", "activo"),
+     "para pymes de la región.", "Lun a Vie 9:00-18:00", "activo"),
     (10, "Venta y reparación de vidrios y espejos", "vidrieria", "Maule",
      "Cortamos vidrios a medida, espejos y reparación de vidrios rotos en el hogar.",
-     "Lun a Vie 9:00-18:00", "#6B4818", "activo"),
+     "Lun a Vie 9:00-18:00", "activo"),
     (11, "Soporte técnico y redes para pymes", "tecnologia", "Talca",
      "Soporte técnico remoto y presencial, instalación de redes e impresoras "
-     "para pequeñas empresas.", "Lun a Vie 9:00-18:00", "#9C4A32", "pendiente"),
+     "para pequeñas empresas.", "Lun a Vie 9:00-18:00", "pendiente"),
 ]
 
 
@@ -332,12 +332,12 @@ def seed_if_empty():
             )
             neg_ids.append(cur.lastrowid)
 
-        for neg_idx, titulo, cat_slug, comuna, desc, horario, color, estado in AVISOS:
+        for neg_idx, titulo, cat_slug, comuna, desc, horario, estado in AVISOS:
             cur.execute(
                 "INSERT INTO aviso (negocio_id, titulo, descripcion, categoria_id, comuna, "
                 "horario, color, estado, publicado_en, creado_en) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (neg_ids[neg_idx], titulo, desc, cat_ids[cat_slug], comuna, horario, color,
-                 estado, now() if estado == "activo" else None, now()),
+                (neg_ids[neg_idx], titulo, desc, cat_ids[cat_slug], comuna, horario,
+                 COLOR_POR_CATEGORIA[cat_slug], estado, now() if estado == "activo" else None, now()),
             )
 
         _sembrar_eventos(cur, random.Random(42))

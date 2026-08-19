@@ -250,15 +250,17 @@ def listado(handler, query):
 
     body = f"""
 <div class="listado-head">
-  <h1>{t.esc(titulo_pagina)}</h1>
-  <form class="filters" method="get" action="/avisos">
+  <h1 id="listado-titulo">{t.esc(titulo_pagina)}</h1>
+  <form class="filters" id="listado-filtros" method="get" action="/avisos">
     {f'<input type="hidden" name="q" value="{t.esc(q)}">' if q else ""}
     <select name="categoria" onchange="this.form.submit()">{cat_options}</select>
     <select name="comuna" onchange="this.form.submit()">{comuna_options}</select>
     <select name="orden" onchange="this.form.submit()">{orden_options}</select>
   </form>
 </div>
+<div id="listado-resultados">
 {t.cards_grid(avisos, termino_busqueda=q or None)}
+</div>
 """
     render(handler, t.layout(titulo_pagina, body, active="avisos"))
 
