@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pipp0.github.io/talcadatos/sitemap.xml
