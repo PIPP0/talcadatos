@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Publicar mi negocio · Talcadatos</title>
+<title>Ayuda · Talcadatos</title>
 <meta name="description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
 
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Talcadatos">
-<meta property="og:title" content="Publicar mi negocio · Talcadatos">
+<meta property="og:title" content="Ayuda · Talcadatos">
 <meta property="og:description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
 <meta property="og:image" content="/og/default.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -20,7 +20,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/talcadatos/static/styles.css">
 </head>
-<body data-active="publicar">
+<body data-active="ayuda">
 
 <header class="topbar">
   <div class="wrap topbar-inner">
@@ -38,35 +38,35 @@
 <div class="flash static-notice">🔧 Vista de demostración estática (GitHub Pages) — el buscador, los filtros y los favoritos funcionan (corren en tu navegador). Publicar un aviso, reportar y el panel de administración quedan inactivos aquí porque necesitan un servidor real. <a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo completo →</a></div>
 
 
-<div class="panel">
-  <h1>Publica tu negocio en Talcadatos</h1>
-  <p class="lede">Es gratis. Completa el formulario y tu aviso queda listo para revisión — normalmente
-  se aprueba el mismo día.</p>
-  
-  <form method="post" action="/talcadatos/publicar" class="form">
-    <label>Nombre del negocio
-      <input name="nombre_negocio" required maxlength="120" value="">
-    </label>
-    <label>WhatsApp de contacto
-      <input name="whatsapp" required placeholder="+56 9 1234 5678" value="">
-    </label>
-    <label>Categoría
-      <select name="categoria_id" required><option value="4">🏗️ Aluminios y estructuras</option><option value="5">📚 Clases particulares</option><option value="10">📊 Contabilidad y trámites</option><option value="3">💡 Electricidad</option><option value="2">🔧 Gásfitería y plomería</option><option value="9">🌿 Jardinería</option><option value="7">🥖 Panadería y pastelería</option><option value="8">💇 Peluquería y belleza</option><option value="6">💻 Tecnología y notebooks</option><option value="1">🪟 Vidriería y ventanas</option></select>
-    </label>
-    <label>Título del aviso
-      <input name="titulo" required maxlength="120" placeholder="Ej: Instalación de ventanas y termopaneles" value="">
-    </label>
-    <label>Descripción
-      <textarea name="descripcion" required rows="4" placeholder="Cuéntale a tus futuros clientes qué haces, cómo trabajas y qué te diferencia."></textarea>
-    </label>
-    <label>Comuna
-      <input name="comuna" required value="Talca">
-    </label>
-    <label>Horario de atención (opcional)
-      <input name="horario" placeholder="Lun a Vie 9:00-18:00" value="">
-    </label>
-    <button class="btn btn-primary btn-lg" type="submit">Enviar aviso</button>
-  </form>
+<div class="panel panel-narrow">
+  <h1>Preguntas frecuentes</h1>
+  <div class="faq">
+<details class="faq-item">
+  <summary>¿Cómo publico mi negocio?</summary>
+  <p>Ve a &quot;Publicar mi negocio&quot;, completa el formulario y tu aviso queda en revisión. Normalmente se aprueba el mismo día.</p>
+</details>
+<details class="faq-item">
+  <summary>¿Cuánto cuesta publicar?</summary>
+  <p>Publicar es gratis. Si quieres aparecer primero en los listados y en el buscador, puedes pasar a un plan Destacado o Premium.</p>
+</details>
+<details class="faq-item">
+  <summary>¿Cómo me contactan los clientes?</summary>
+  <p>Directo por WhatsApp: cada aviso tiene un botón que abre una conversación contigo con un mensaje ya escrito. No hay intermediarios ni comisión por contacto.</p>
+</details>
+<details class="faq-item">
+  <summary>¿Por qué mi aviso no aparece todavía?</summary>
+  <p>Los avisos nuevos pasan por una revisión rápida antes de publicarse. Si pasaron más de 24 horas y no aparece, contáctanos.</p>
+</details>
+<details class="faq-item">
+  <summary>¿Puedo tener más de un aviso?</summary>
+  <p>Sí, en los planes Destacado y Premium. El plan Gratis incluye un aviso.</p>
+</details>
+<details class="faq-item">
+  <summary>¿Qué hago si un aviso me parece falso o desactualizado?</summary>
+  <p>Ábrelo y usa el botón &quot;Reportar aviso&quot; — nuestro equipo lo revisa.</p>
+</details></div>
+  <p class="lede">¿Tu pregunta no está aquí? Escríbenos por WhatsApp desde cualquier aviso, o publica tu negocio
+  y te contactamos nosotros.</p>
 </div>
 
 </main>

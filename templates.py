@@ -75,6 +75,8 @@ PUBLIC_NAV = """
     <a href="/" class="brand">📌 Talcadatos</a>
     <nav class="topnav">
       <a href="/avisos">Explorar</a>
+      <a href="/favoritos">☆ Favoritos</a>
+      <a href="/ayuda">Ayuda</a>
       <a href="/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
@@ -88,8 +90,15 @@ ADMIN_NAV = """
     <nav class="topnav">
       <a href="/admin">Dashboard</a>
       <a href="/admin/moderacion">Moderación</a>
+      <a href="/admin/reportes">Reportes</a>
       <a href="/admin/avisos">Avisos</a>
-      <a href="/admin/anunciantes">Anunciantes y planes</a>
+      <a href="/admin/anunciantes">Anunciantes</a>
+      <a href="/admin/pagos">Pagos</a>
+      <a href="/admin/sinonimos">Sinónimos</a>
+      <a href="/admin/alertas">Alertas</a>
+      <a href="/admin/analitica">Analítica</a>
+      <a href="/admin/auditoria">Auditoría</a>
+      <a href="/admin/usuarios">Usuarios</a>
       <a href="/" class="btn btn-ghost">Ver sitio</a>
       <a href="/admin/logout" class="btn btn-ghost">Salir</a>
     </nav>
@@ -124,12 +133,20 @@ def aviso_card(aviso, termino_busqueda=None):
     verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
     wa = whatsapp_url(aviso["whatsapp"], aviso["negocio_nombre"], aviso["titulo"])
+    fav_attrs = (
+        f'data-fav-id="{aviso["id"]}" data-titulo="{esc(aviso["titulo"])}" '
+        f'data-negocio="{esc(aviso["negocio_nombre"])}" data-comuna="{esc(aviso["comuna"])}" '
+        f'data-categoria="{esc(aviso["categoria_nombre"])}" data-icono="{aviso["icono"]}" '
+        f'data-color="{esc(aviso["color"])}" data-whatsapp="{esc(aviso["whatsapp"])}" '
+        f'data-verificado="{"1" if aviso["verificado"] else ""}" data-plan="{esc(aviso["plan_nombre"])}"'
+    )
     return f"""
 <article class="card" style="--card-accent:{esc(aviso['color'])}"{click_attr} data-aviso-id="{aviso['id']}">
   <a class="card-photo" href="/avisos/{aviso['id']}">
     <span class="card-icon">{aviso['icono']}</span>
     {badge_html}
   </a>
+  <button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
     <a class="card-title" href="/avisos/{aviso['id']}">{esc(aviso['titulo'])}</a>
     <div class="card-meta">

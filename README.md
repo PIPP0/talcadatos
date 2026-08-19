@@ -84,6 +84,40 @@ del PRD (Postgres vía Supabase).
   los datos ingresados preservados), páginas 404/500 propias en vez de que el servidor truene.
 - **Seguridad**: la contraseña de admin se guarda con hash (SHA-256 + salt) en vez de texto plano.
 
+## Funcionalidades del PRD §17 (extras de valor) ya implementadas
+
+- **Reportar aviso** — botón en el detalle, alimenta una cola de moderación separada
+  (`/admin/reportes`).
+- **Sinónimos editables** — `/admin/sinonimos`: agregar o quitar palabras por categoría sin
+  tocar código, para mejorar el buscador con el tiempo.
+- **Roles de admin** — `super_admin` (todo) y `moderador` (solo aprobar/rechazar avisos y ver
+  reportes, como pide el PRD §7.5). Gestión de usuarios en `/admin/usuarios`.
+- **Auditoría** — `/admin/auditoria` registra quién aprobó, rechazó, editó, cambió un plan o
+  verificó un negocio, y cuándo.
+- **Historial de pagos** — `/admin/pagos`, se registra cada vez que se activa un plan pagado.
+- **Exportación CSV** — avisos, anunciantes y pagos, cada uno con su botón "Exportar CSV".
+- **Alertas de demanda** — cuando una búsqueda no encuentra nada, se puede dejar un WhatsApp
+  para avisar apenas exista un negocio de ese rubro; los leads quedan en `/admin/alertas`.
+- **Favoritos** — botón ☆ en cada aviso, guardado en `localStorage` (sin cuenta ni backend);
+  página `/favoritos`. Funciona igual en la versión de servidor y en la estática de GitHub Pages.
+- **Mapa y código QR** — cada aviso tiene un link a Google Maps y un QR descargable/imprimible
+  que apunta a su ficha.
+- **Ayuda / FAQ** — página `/ayuda` con un acordeón nativo (`<details>`, sin JS).
+- **Panel de autoservicio del anunciante** — al publicar, el negocio recibe un link
+  `/mi-negocio/<token>` de solo lectura con sus propias estadísticas (vistas, contactos,
+  conversión), sin necesitar usuario/contraseña.
+
+## Qué queda fuera (y por qué)
+
+- **Pasarela de pago real (Webpay/MercadoPago)**: requiere una cuenta de comercio y credenciales
+  que no existen en este entorno. El PRD ya contempla activación manual como parte del MVP
+  (Fase 1) y automatizarla como Fase 3 — la tabla `pago` y el flujo de planes ya están listos
+  para conectarse a una pasarela real sin rediseñar nada.
+- **Embeddings de IA reales**: necesitan una API key (OpenAI u otro proveedor). `search.py` ya
+  está aislado para ese swap, ver más abajo.
+- **Rate limiting real, hash de contraseña con más iteraciones (bcrypt/argon2)**: quedan
+  pendientes para un despliegue de producción real; ver siguiente sección.
+
 ## Qué falta para producción
 
 Ver PRD §15 (roadmap). Lo más relevante para pasar de este prototipo a producción:

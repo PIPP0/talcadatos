@@ -32,9 +32,9 @@ PAGES_BASE = f"https://{PAGES_HOST}{PAGES_PREFIX}"
 
 NOTICE = (
     '<div class="flash static-notice">'
-    "🔧 Vista de demostración estática (GitHub Pages) — el buscador y los filtros "
-    "funcionan (corren en tu navegador). Lo único inactivo aquí es publicar un aviso "
-    "nuevo y el panel de administración, porque necesitan un servidor real. "
+    "🔧 Vista de demostración estática (GitHub Pages) — el buscador, los filtros y los "
+    "favoritos funcionan (corren en tu navegador). Publicar un aviso, reportar y el panel "
+    "de administración quedan inactivos aquí porque necesitan un servidor real. "
     '<a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo '
     "completo →</a></div>"
 )
@@ -116,6 +116,15 @@ def main():
     server.publicar_form(h)
     _write(os.path.join(DOCS_DIR, "publicar", "index.html"), _postprocess(h.html()).encode("utf-8"))
 
+    # Ayuda (FAQ, no necesita servidor) y Favoritos (se llena con JS/localStorage)
+    h = FakeHandler()
+    server.ayuda(h)
+    _write(os.path.join(DOCS_DIR, "ayuda", "index.html"), _postprocess(h.html()).encode("utf-8"))
+
+    h = FakeHandler()
+    server.favoritos(h)
+    _write(os.path.join(DOCS_DIR, "favoritos", "index.html"), _postprocess(h.html()).encode("utf-8"))
+
     # Detalle de cada aviso activo
     for aviso_id in aviso_ids:
         h = FakeHandler()
@@ -162,7 +171,8 @@ def main():
            json.dumps(sinonimos_json, ensure_ascii=False).encode("utf-8"))
 
     # robots.txt / sitemap.xml estaticos
-    urls = [f"{PAGES_BASE}/", f"{PAGES_BASE}/avisos/"] + [f"{PAGES_BASE}/avisos/{i}/" for i in aviso_ids]
+    urls = ([f"{PAGES_BASE}/", f"{PAGES_BASE}/avisos/", f"{PAGES_BASE}/ayuda/"]
+            + [f"{PAGES_BASE}/avisos/{i}/" for i in aviso_ids])
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
     _write(os.path.join(DOCS_DIR, "sitemap.xml"), sitemap.encode("utf-8"))

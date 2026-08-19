@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS negocio (
     verificado INTEGER NOT NULL DEFAULT 0,
     plan_id INTEGER REFERENCES plan(id),
     plan_vencimiento TEXT,
+    token_acceso TEXT UNIQUE,
     creado_en TEXT NOT NULL
 );
 
@@ -81,6 +82,38 @@ CREATE TABLE IF NOT EXISTS admin_usuario (
     usuario TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     rol TEXT NOT NULL DEFAULT 'super_admin'
+);
+
+CREATE TABLE IF NOT EXISTS reporte (
+    id INTEGER PRIMARY KEY,
+    aviso_id INTEGER NOT NULL REFERENCES aviso(id),
+    motivo TEXT NOT NULL,
+    estado TEXT NOT NULL DEFAULT 'pendiente',
+    creado_en TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS auditoria (
+    id INTEGER PRIMARY KEY,
+    usuario TEXT NOT NULL,
+    accion TEXT NOT NULL,
+    detalle TEXT,
+    creado_en TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pago (
+    id INTEGER PRIMARY KEY,
+    negocio_id INTEGER NOT NULL REFERENCES negocio(id),
+    plan_id INTEGER NOT NULL REFERENCES plan(id),
+    precio_clp INTEGER NOT NULL,
+    creado_en TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS alerta (
+    id INTEGER PRIMARY KEY,
+    termino TEXT NOT NULL,
+    whatsapp TEXT NOT NULL,
+    atendida INTEGER NOT NULL DEFAULT 0,
+    creado_en TEXT NOT NULL
 );
 """
 
@@ -325,10 +358,10 @@ def seed_if_empty():
         neg_ids = []
         for nombre, whatsapp, plan_idx, verificado in NEGOCIOS:
             cur.execute(
-                "INSERT INTO negocio (nombre, whatsapp, verificado, plan_id, plan_vencimiento, creado_en) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO negocio (nombre, whatsapp, verificado, plan_id, plan_vencimiento, "
+                "token_acceso, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (nombre, whatsapp, verificado, plan_ids[plan_idx],
-                 "2026-12-31" if plan_idx > 0 else None, now()),
+                 "2026-12-31" if plan_idx > 0 else None, secrets.token_urlsafe(12), now()),
             )
             neg_ids.append(cur.lastrowid)
 

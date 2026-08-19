@@ -27,19 +27,27 @@
     <a href="/talcadatos/" class="brand">📌 Talcadatos</a>
     <nav class="topnav">
       <a href="/talcadatos/avisos">Explorar</a>
+      <a href="/talcadatos/favoritos">☆ Favoritos</a>
+      <a href="/talcadatos/ayuda">Ayuda</a>
       <a href="/talcadatos/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
-<div class="flash static-notice">🔧 Vista de demostración estática (GitHub Pages) — el buscador y los filtros funcionan (corren en tu navegador). Lo único inactivo aquí es publicar un aviso nuevo y el panel de administración, porque necesitan un servidor real. <a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo completo →</a></div>
+<div class="flash static-notice">🔧 Vista de demostración estática (GitHub Pages) — el buscador, los filtros y los favoritos funcionan (corren en tu navegador). Publicar un aviso, reportar y el panel de administración quedan inactivos aquí porque necesitan un servidor real. <a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo completo →</a></div>
 
 
 <div class="detalle">
   <div class="detalle-photo" style="--card-accent:#BBD1EF">
     <span class="card-icon big">🪟</span>
     <span class="badge badge-brick">Premium</span>
+    <button class="fav-btn" type="button" data-fav-id="1" data-titulo="Instalación y reparación de termopaneles"
+       data-negocio="Vidriería Maule" data-comuna="Talca"
+       data-categoria="Vidriería y ventanas" data-icono="🪟"
+       data-color="#BBD1EF" data-verificado="1"
+       data-plan="Premium"
+       title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   </div>
   <div class="detalle-body">
     <div class="mono detalle-cat">🪟 Vidriería y ventanas · Talca</div>
@@ -47,12 +55,25 @@
     <div class="detalle-negocio">Vidriería Maule <span class="check">✔ Negocio verificado</span></div>
     <p class="detalle-desc">Fabricamos e instalamos termopaneles y ventanas de PVC y aluminio a medida. Retiro de vidrios rotos y presupuesto sin costo.</p>
     <p class="detalle-horario"><strong>Horario:</strong> Lun a Vie 9:00-18:30</p>
+    
     <a class="btn btn-whatsapp btn-lg" href="https://wa.me/56912345001?text=Hola%20Vidrier%C3%ADa%20Maule%2C%20vi%20tu%20aviso%20%22Instalaci%C3%B3n%20y%20reparaci%C3%B3n%20de%20termopaneles%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
        data-aviso-id="1" data-wa-click="1">
        💬 Escribir por WhatsApp
     </a>
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='¡Link copiado!'">Compartir aviso</button>
+      <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=Vidrier%C3%ADa%20Maule%20Talca%20Chile" target="_blank" rel="noopener">📍 Ver en el mapa</a>
+      <details class="report-details">
+        <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
+        <form method="post" action="/talcadatos/avisos/1/reportar" class="form report-form">
+          <textarea name="motivo" rows="2" required placeholder="¿Qué está mal con este aviso? Ej: negocio cerrado, información falsa..."></textarea>
+          <button class="btn btn-bad btn-sm" type="submit">Enviar reporte</button>
+        </form>
+      </details>
+    </div>
+    <div class="qr-block">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=http%3A//pipp0.github.io/avisos/1" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
+      <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
   </div>
 </div>
@@ -62,6 +83,7 @@
     <span class="card-icon">🪟</span>
     
   </a>
+  <button class="fav-btn" type="button" data-fav-id="11" data-titulo="Venta y reparación de vidrios y espejos" data-negocio="Vidrios y Cristales Central" data-comuna="Maule" data-categoria="Vidriería y ventanas" data-icono="🪟" data-color="#BBD1EF" data-whatsapp="+56912345011" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
     <a class="card-title" href="/talcadatos/avisos/11/">Venta y reparación de vidrios y espejos</a>
     <div class="card-meta">

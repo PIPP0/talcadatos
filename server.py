@@ -12,6 +12,8 @@ Uso:
 """
 import sys
 import os
+import io
+import csv
 import json
 import secrets
 import datetime
@@ -29,7 +31,7 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 OG_CACHE_DIR = os.path.join(BASE_DIR, "og_cache")
 os.makedirs(OG_CACHE_DIR, exist_ok=True)
 
-SESSIONS = set()
+SESSIONS = {}  # token -> {"usuario": str, "rol": "super_admin" | "moderador"}
 
 
 # ---------------------------------------------------------------- helpers
@@ -38,10 +40,26 @@ def qs(query_string):
     return {k: v[0] for k, v in parse_qs(query_string).items()}
 
 
-def is_admin(handler):
+def current_admin(handler):
     cookie = SimpleCookie(handler.headers.get("Cookie", ""))
     token = cookie["talca_admin"].value if "talca_admin" in cookie else None
-    return token in SESSIONS
+    return SESSIONS.get(token)
+
+
+def is_admin(handler):
+    return current_admin(handler) is not None
+
+
+def auditar(handler, accion, detalle=""):
+    admin = current_admin(handler)
+    usuario = admin["usuario"] if admin else "?"
+    conn = db.get_conn()
+    conn.execute(
+        "INSERT INTO auditoria (usuario, accion, detalle, creado_en) VALUES (?,?,?,?)",
+        (usuario, accion, detalle, db.now()),
+    )
+    conn.commit()
+    conn.close()
 
 
 def get_flash(handler):
@@ -93,6 +111,24 @@ def render_png(handler, data, status=200):
     handler.wfile.write(data)
 
 
+def render_csv(handler, filename, header, rows):
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(header)
+    writer.writerows(rows)
+    data = buf.getvalue().encode("utf-8-sig")
+    handler.send_response(200)
+    handler.send_header("Content-Type", "text/csv; charset=utf-8")
+    handler.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+    handler.send_header("Content-Length", str(len(data)))
+    handler.end_headers()
+    handler.wfile.write(data)
+
+
+def money(n):
+    return f"{n:,}".replace(",", ".")
+
+
 def redirect(handler, location, set_cookie=None, clear_cookie=False, flash=None):
     handler.send_response(302)
     handler.send_header("Location", location)
@@ -122,6 +158,22 @@ def _origin(handler):
 def require_admin(handler):
     if not is_admin(handler):
         redirect(handler, "/admin/login")
+        return False
+    return True
+
+
+def require_role(handler, roles):
+    admin = current_admin(handler)
+    if not admin:
+        redirect(handler, "/admin/login")
+        return False
+    if admin["rol"] not in roles:
+        render(handler, t.layout(
+            "Sin permiso", "<div class='panel'><h1>No tienes permiso para ver esto</h1>"
+            "<p>Tu rol es <code>" + t.esc(admin["rol"]) + "</code>. Esta sección es solo para: "
+            + ", ".join(f"<code>{t.esc(r)}</code>" for r in roles) + ".</p>"
+            "<a class='btn' href='/admin'>Volver al dashboard</a></div>",
+            active="admin", admin=True), status=403)
         return False
     return True
 
@@ -248,6 +300,19 @@ def listado(handler, query):
         opt(v, orden, label) for v, label in
         [("relevancia", "Relevancia"), ("recientes", "Más recientes"), ("populares", "Más contactados")])
 
+    if q and not avisos:
+        resultados_html = f"""
+<div class="empty-state alerta-box">
+  <p>Todavía nadie ofrece "{t.esc(q)}" en Talcadatos.</p>
+  <p class="small">Déjanos tu WhatsApp y te avisamos apenas se publique un negocio de ese rubro.</p>
+  <form id="alerta-form" class="form form-inline" data-termino="{t.esc(q)}">
+    <input name="whatsapp" required placeholder="+56 9 1234 5678">
+    <button class="btn btn-primary btn-sm" type="submit">Avísenme</button>
+  </form>
+</div>"""
+    else:
+        resultados_html = t.cards_grid(avisos, termino_busqueda=q or None)
+
     body = f"""
 <div class="listado-head">
   <h1 id="listado-titulo">{t.esc(titulo_pagina)}</h1>
@@ -259,13 +324,14 @@ def listado(handler, query):
   </form>
 </div>
 <div id="listado-resultados">
-{t.cards_grid(avisos, termino_busqueda=q or None)}
+{resultados_html}
 </div>
 """
     render(handler, t.layout(titulo_pagina, body, active="avisos"))
 
 
-def detalle(handler, aviso_id):
+def detalle(handler, aviso_id, query=""):
+    reportado = qs(query).get("reportado") == "1"
     conn = db.get_conn()
     aviso = conn.execute(AVISO_SELECT + " WHERE aviso.id = ?", (aviso_id,)).fetchone()
     if not aviso or aviso["estado"] != "activo":
@@ -291,6 +357,11 @@ def detalle(handler, aviso_id):
     verificado_html = '<span class="check">✔ Negocio verificado</span>' if aviso["verificado"] else ""
 
     canonical = f"{_origin(handler)}/avisos/{aviso_id}"
+    mapa_url = ("https://www.google.com/maps/search/?api=1&query=" +
+                quote(f"{aviso['negocio_nombre']} {aviso['comuna']} Chile"))
+    qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + quote(canonical)
+    reportado_html = ('<p class="flash" style="margin-top:16px">Gracias, tu reporte quedó registrado para revisión.'
+                       '</p>') if reportado else ""
     json_ld = json.dumps({
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
@@ -307,6 +378,12 @@ def detalle(handler, aviso_id):
   <div class="detalle-photo" style="--card-accent:{t.esc(aviso['color'])}">
     <span class="card-icon big">{aviso['icono']}</span>
     {destacado_html}
+    <button class="fav-btn" type="button" data-fav-id="{aviso['id']}" data-titulo="{t.esc(aviso['titulo'])}"
+       data-negocio="{t.esc(aviso['negocio_nombre'])}" data-comuna="{t.esc(aviso['comuna'])}"
+       data-categoria="{t.esc(aviso['categoria_nombre'])}" data-icono="{aviso['icono']}"
+       data-color="{t.esc(aviso['color'])}" data-verificado="{'1' if aviso['verificado'] else ''}"
+       data-plan="{t.esc(aviso['plan_nombre'])}"
+       title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   </div>
   <div class="detalle-body">
     <div class="mono detalle-cat">{aviso['icono']} {t.esc(aviso['categoria_nombre'])} · {t.esc(aviso['comuna'])}</div>
@@ -314,12 +391,25 @@ def detalle(handler, aviso_id):
     <div class="detalle-negocio">{t.esc(aviso['negocio_nombre'])} {verificado_html}</div>
     <p class="detalle-desc">{t.esc(aviso['descripcion'])}</p>
     {f'<p class="detalle-horario"><strong>Horario:</strong> {t.esc(aviso["horario"])}</p>' if aviso["horario"] else ""}
+    {reportado_html}
     <a class="btn btn-whatsapp btn-lg" href="{wa}" target="_blank" rel="noopener"
        data-aviso-id="{aviso['id']}" data-wa-click="1">
        💬 Escribir por WhatsApp
     </a>
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='¡Link copiado!'">Compartir aviso</button>
+      <a class="btn btn-ghost" href="{mapa_url}" target="_blank" rel="noopener">📍 Ver en el mapa</a>
+      <details class="report-details">
+        <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
+        <form method="post" action="/avisos/{aviso_id}/reportar" class="form report-form">
+          <textarea name="motivo" rows="2" required placeholder="¿Qué está mal con este aviso? Ej: negocio cerrado, información falsa..."></textarea>
+          <button class="btn btn-bad btn-sm" type="submit">Enviar reporte</button>
+        </form>
+      </details>
+    </div>
+    <div class="qr-block">
+      <img src="{qr_url}" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
+      <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
   </div>
 </div>
@@ -375,17 +465,24 @@ def _publicar_body(categorias, form=None, errores=None):
 """
 
 
-def publicar_form(handler, ok=False, form=None, errores=None):
+def publicar_form(handler, ok=False, token=None, form=None, errores=None):
     conn = db.get_conn()
     categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
     conn.close()
 
     if ok:
-        body = """
+        mi_negocio_url = f"{_origin(handler)}/mi-negocio/{token}"
+        panel_link = (
+            f'<p class="panel-token"><strong>Guarda este link</strong> — es tu acceso para ver las '
+            f'estadísticas de tu aviso más adelante:<br><a href="{t.esc(mi_negocio_url)}">'
+            f'{t.esc(mi_negocio_url)}</a></p>' if token else ""
+        )
+        body = f"""
 <div class="panel panel-ok">
   <h1>¡Listo! Tu aviso fue enviado 🎉</h1>
   <p>Quedó en revisión. Nuestro equipo lo aprueba normalmente el mismo día y aparecerá en Talcadatos
   apenas se publique.</p>
+  {panel_link}
   <a class="btn btn-primary" href="/">Volver al inicio</a>
 </div>"""
         return render(handler, t.layout("Aviso enviado", body, active="publicar"))
@@ -423,11 +520,13 @@ def publicar_submit(handler, form):
     slug = next(c["slug"] for c in categorias if str(c["id"]) == form["categoria_id"])
     color = db.COLOR_POR_CATEGORIA.get(slug, "#8C5F22")
     gratis_id = conn.execute("SELECT id FROM plan WHERE nombre='Gratis'").fetchone()["id"]
+    token_acceso = secrets.token_urlsafe(12)
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO negocio (nombre, whatsapp, verificado, plan_id, plan_vencimiento, creado_en) "
-        "VALUES (?, ?, 0, ?, NULL, ?)",
-        (form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(), gratis_id, db.now()),
+        "INSERT INTO negocio (nombre, whatsapp, verificado, plan_id, plan_vencimiento, token_acceso, creado_en) "
+        "VALUES (?, ?, 0, ?, NULL, ?, ?)",
+        (form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(), gratis_id,
+         token_acceso, db.now()),
     )
     negocio_id = cur.lastrowid
     cur.execute(
@@ -439,7 +538,7 @@ def publicar_submit(handler, form):
     )
     conn.commit()
     conn.close()
-    redirect(handler, "/publicar?ok=1")
+    redirect(handler, f"/publicar?ok=1&token={token_acceso}")
 
 
 def api_buscar(handler, body):
@@ -513,14 +612,14 @@ def admin_login_submit(handler, form):
     if not row or not db.verify_password(form.get("password", ""), row["password"]):
         return admin_login_form(handler, error=True)
     token = secrets.token_urlsafe(24)
-    SESSIONS.add(token)
+    SESSIONS[token] = {"usuario": row["usuario"], "rol": row["rol"]}
     redirect(handler, "/admin", set_cookie=token)
 
 
 def admin_logout(handler):
     cookie = SimpleCookie(handler.headers.get("Cookie", ""))
     if "talca_admin" in cookie:
-        SESSIONS.discard(cookie["talca_admin"].value)
+        SESSIONS.pop(cookie["talca_admin"].value, None)
     redirect(handler, "/admin/login", clear_cookie=True)
 
 
@@ -648,6 +747,7 @@ def admin_moderar(handler, aviso_id, accion):
     conn.commit()
     conn.close()
     mensaje = "Aviso aprobado y publicado." if nuevo_estado == "activo" else "Aviso rechazado."
+    auditar(handler, "aprobar" if nuevo_estado == "activo" else "rechazar", f"aviso {aviso_id}")
     redirect(handler, "/admin/moderacion", flash=mensaje)
 
 
@@ -688,12 +788,15 @@ def admin_avisos_lista(handler, query):
     body = f"""
 <div class="listado-head">
   <h1>Avisos</h1>
-  <form method="get" class="filters">
-    <select name="estado" onchange="this.form.submit()">
-      {opt('', 'Todos los estados')}{opt('activo', 'Activo')}{opt('pendiente', 'Pendiente')}
-      {opt('pausado', 'Pausado')}{opt('rechazado', 'Rechazado')}
-    </select>
-  </form>
+  <div class="listado-head-actions">
+    <form method="get" class="filters">
+      <select name="estado" onchange="this.form.submit()">
+        {opt('', 'Todos los estados')}{opt('activo', 'Activo')}{opt('pendiente', 'Pendiente')}
+        {opt('pausado', 'Pausado')}{opt('rechazado', 'Rechazado')}
+      </select>
+    </form>
+    <a class="btn btn-ghost" href="/admin/avisos.csv">Exportar CSV</a>
+  </div>
 </div>
 <div class="tbl-wrap"><table>
   <tr><th>Título</th><th>Negocio</th><th>Categoría</th><th>Estado</th><th>Vistas</th><th>Contactos</th><th>Acciones</th></tr>
@@ -756,16 +859,19 @@ def admin_aviso_editar_submit(handler, aviso_id, form):
     conn.commit()
     conn.close()
     _og_cache_evict(aviso_id)
+    auditar(handler, "editar_aviso", f"aviso {aviso_id}")
     redirect(handler, "/admin/avisos", flash="Cambios guardados.")
 
 
 def admin_aviso_eliminar(handler, aviso_id):
     conn = db.get_conn()
     conn.execute("DELETE FROM evento WHERE aviso_id=?", (aviso_id,))
+    conn.execute("DELETE FROM reporte WHERE aviso_id=?", (aviso_id,))
     conn.execute("DELETE FROM aviso WHERE id=?", (aviso_id,))
     conn.commit()
     conn.close()
     _og_cache_evict(aviso_id)
+    auditar(handler, "eliminar_aviso", f"aviso {aviso_id}")
     redirect(handler, "/admin/avisos", flash="Aviso eliminado.")
 
 
@@ -797,11 +903,15 @@ def admin_anunciantes(handler):
     <form method="post" action="/admin/anunciantes/{n['id']}/verificar" class="inline-form">
       <button class="btn btn-ghost btn-sm">{'Quitar verificación' if n['verificado'] else 'Verificar'}</button>
     </form>
+    <a class="btn btn-ghost btn-sm" href="/mi-negocio/{n['token_acceso']}" target="_blank" rel="noopener">Ver como anunciante</a>
   </td>
 </tr>""" for n in negocios)
 
     body = f"""
-<h1>Anunciantes y planes</h1>
+<div class="listado-head">
+  <h1>Anunciantes y planes</h1>
+  <a class="btn btn-ghost" href="/admin/anunciantes.csv">Exportar CSV</a>
+</div>
 <p class="lede">Activa manualmente un plan pagado (transferencia confirmada) o marca un negocio como verificado.</p>
 <div class="tbl-wrap"><table>
   <tr><th>Negocio</th><th>Plan actual</th><th>Vence</th><th>Avisos</th><th>Verificado</th><th>Acciones</th></tr>
@@ -821,9 +931,13 @@ def admin_anunciante_plan(handler, negocio_id, form):
     if plan and plan["precio_clp"] > 0:
         vencimiento = (datetime.date.today() + datetime.timedelta(days=plan["duracion_dias"])).isoformat()
     conn.execute("UPDATE negocio SET plan_id=?, plan_vencimiento=? WHERE id=?", (plan_id, vencimiento, negocio_id))
+    if plan and plan["precio_clp"] > 0:
+        conn.execute("INSERT INTO pago (negocio_id, plan_id, precio_clp, creado_en) VALUES (?,?,?,?)",
+                     (negocio_id, plan_id, plan["precio_clp"], db.now()))
     conn.commit()
     nombre_plan = plan["nombre"] if plan else "?"
     conn.close()
+    auditar(handler, "cambiar_plan", f"negocio {negocio_id} -> {nombre_plan}")
     redirect(handler, "/admin/anunciantes", flash=f"Plan actualizado a {nombre_plan}.")
 
 
@@ -835,6 +949,7 @@ def admin_anunciante_verificar(handler, negocio_id):
     conn.commit()
     conn.close()
     mensaje = "Negocio verificado." if nuevo else "Verificación removida."
+    auditar(handler, "verificar_negocio" if nuevo else "quitar_verificacion", f"negocio {negocio_id}")
     redirect(handler, "/admin/anunciantes", flash=mensaje)
 
 
@@ -890,6 +1005,397 @@ def admin_analitica(handler):
 </section>
 """
     render(handler, t.layout("Analítica", body, active="admin", admin=True))
+
+
+def admin_avisos_csv(handler):
+    conn = db.get_conn()
+    avisos = conn.execute(AVISO_SELECT + " ORDER BY aviso.id").fetchall()
+    conn.close()
+    rows = [(a["id"], a["titulo"], a["negocio_nombre"], a["categoria_nombre"], a["comuna"],
+              a["estado"], a["plan_nombre"], a["vistas_total"], a["contactos_total"]) for a in avisos]
+    render_csv(handler, "avisos.csv",
+               ["id", "titulo", "negocio", "categoria", "comuna", "estado", "plan", "vistas", "contactos"], rows)
+
+
+def admin_anunciantes_csv(handler):
+    conn = db.get_conn()
+    negocios = conn.execute(
+        "SELECT negocio.*, plan.nombre AS plan_nombre FROM negocio JOIN plan ON plan.id=negocio.plan_id "
+        "ORDER BY negocio.nombre"
+    ).fetchall()
+    conn.close()
+    rows = [(n["id"], n["nombre"], n["whatsapp"], n["plan_nombre"], n["plan_vencimiento"] or "",
+              "si" if n["verificado"] else "no") for n in negocios]
+    render_csv(handler, "anunciantes.csv", ["id", "nombre", "whatsapp", "plan", "vence", "verificado"], rows)
+
+
+def admin_pagos_csv(handler):
+    conn = db.get_conn()
+    pagos = conn.execute(
+        "SELECT pago.*, negocio.nombre AS negocio_nombre, plan.nombre AS plan_nombre FROM pago "
+        "JOIN negocio ON negocio.id = pago.negocio_id JOIN plan ON plan.id = pago.plan_id "
+        "ORDER BY pago.creado_en DESC"
+    ).fetchall()
+    conn.close()
+    rows = [(p["creado_en"][:10], p["negocio_nombre"], p["plan_nombre"], p["precio_clp"]) for p in pagos]
+    render_csv(handler, "pagos.csv", ["fecha", "negocio", "plan", "precio_clp"], rows)
+
+
+def admin_reportes(handler):
+    conn = db.get_conn()
+    reportes = conn.execute(
+        "SELECT reporte.*, aviso.titulo AS aviso_titulo FROM reporte "
+        "JOIN aviso ON aviso.id = reporte.aviso_id WHERE reporte.estado='pendiente' "
+        "ORDER BY reporte.creado_en DESC"
+    ).fetchall()
+    conn.close()
+    if not reportes:
+        filas = '<p class="empty-state">No hay reportes pendientes. 🎉</p>'
+    else:
+        filas = "".join(f"""
+<div class="mod-row">
+  <div class="mod-info">
+    <h3><a href="/avisos/{r['aviso_id']}">{t.esc(r['aviso_titulo'])}</a></h3>
+    <p class="mod-desc">Motivo: {t.esc(r['motivo'])}</p>
+    <p class="small mono">{r['creado_en'][:16].replace('T', ' ')}</p>
+  </div>
+  <div class="mod-actions">
+    <form method="post" action="/admin/reportes/{r['id']}/descartar"><button class="btn btn-ghost">Descartar</button></form>
+  </div>
+</div>""" for r in reportes)
+    flash = get_flash(handler)
+    body = f"<h1>Reportes</h1><p class='lede'>Avisos que algún visitante marcó como sospechosos o desactualizados.</p>{filas}"
+    render(handler, t.layout("Reportes", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+
+
+def admin_reporte_descartar(handler, reporte_id):
+    conn = db.get_conn()
+    conn.execute("UPDATE reporte SET estado='descartado' WHERE id=?", (reporte_id,))
+    conn.commit()
+    conn.close()
+    auditar(handler, "descartar_reporte", f"reporte {reporte_id}")
+    redirect(handler, "/admin/reportes", flash="Reporte descartado.")
+
+
+def admin_sinonimos(handler):
+    conn = db.get_conn()
+    categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
+    sinonimos = conn.execute(
+        "SELECT sinonimo.*, categoria.nombre AS categoria_nombre FROM sinonimo "
+        "JOIN categoria ON categoria.id = sinonimo.categoria_id ORDER BY categoria.nombre, sinonimo.palabra"
+    ).fetchall()
+    conn.close()
+
+    por_categoria = {}
+    for s in sinonimos:
+        por_categoria.setdefault(s["categoria_id"], []).append(s)
+
+    cat_options = "".join(f'<option value="{c["id"]}">{c["icono"]} {t.esc(c["nombre"])}</option>' for c in categorias)
+
+    bloques = ""
+    for c in categorias:
+        items = por_categoria.get(c["id"], [])
+        if items:
+            chips = "".join(
+                f'<form method="post" action="/admin/sinonimos/{s["id"]}/eliminar" class="chip-form">'
+                f'<span class="chip">{t.esc(s["palabra"])} <button class="chip-x" title="Eliminar">×</button></span>'
+                f'</form>' for s in items
+            )
+        else:
+            chips = '<span class="small">Sin sinónimos todavía.</span>'
+        bloques += f"""
+<div class="panel">
+  <h2>{c['icono']} {t.esc(c['nombre'])}</h2>
+  <div class="chip-row">{chips}</div>
+</div>"""
+
+    flash = get_flash(handler)
+    body = f"""
+<h1>Sinónimos del buscador</h1>
+<p class="lede">Cuando alguien busca una de estas palabras, el buscador también le muestra avisos de la categoría
+asociada (ej: "ventana" muestra vidriería y aluminios). Es la tabla de respaldo del buscador "IA" que describe el PRD.</p>
+<div class="panel">
+  <form method="post" action="/admin/sinonimos/agregar" class="form form-inline">
+    <select name="categoria_id" required>{cat_options}</select>
+    <input name="palabra" required placeholder="Palabra o frase, ej: destape de cañerías">
+    <button class="btn btn-primary" type="submit">Agregar</button>
+  </form>
+</div>
+{bloques}
+"""
+    render(handler, t.layout("Sinónimos", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+
+
+def admin_sinonimo_agregar(handler, form):
+    palabra = form.get("palabra", "").strip()
+    categoria_id = form.get("categoria_id")
+    if palabra and categoria_id:
+        conn = db.get_conn()
+        conn.execute("INSERT INTO sinonimo (categoria_id, palabra) VALUES (?, ?)", (categoria_id, palabra))
+        conn.commit()
+        conn.close()
+        auditar(handler, "agregar_sinonimo", palabra)
+    redirect(handler, "/admin/sinonimos", flash="Sinónimo agregado.")
+
+
+def admin_sinonimo_eliminar(handler, sinonimo_id):
+    conn = db.get_conn()
+    conn.execute("DELETE FROM sinonimo WHERE id=?", (sinonimo_id,))
+    conn.commit()
+    conn.close()
+    auditar(handler, "eliminar_sinonimo", f"id {sinonimo_id}")
+    redirect(handler, "/admin/sinonimos", flash="Sinónimo eliminado.")
+
+
+def admin_auditoria(handler):
+    conn = db.get_conn()
+    registros = conn.execute("SELECT * FROM auditoria ORDER BY creado_en DESC LIMIT 200").fetchall()
+    conn.close()
+    filas = "".join(f"""
+<tr>
+  <td class="mono small">{r['creado_en'][:16].replace('T', ' ')}</td>
+  <td>{t.esc(r['usuario'])}</td>
+  <td class="mono">{t.esc(r['accion'])}</td>
+  <td>{t.esc(r['detalle'] or '')}</td>
+</tr>""" for r in registros)
+    body = f"""
+<h1>Auditoría</h1>
+<p class="lede">Últimas 200 acciones de administradores: quién aprobó, rechazó, editó o cambió un plan, y cuándo.</p>
+<div class="tbl-wrap"><table>
+  <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr>
+  {filas or "<tr><td colspan='4' class='empty-state'>Sin registros todavía.</td></tr>"}
+</table></div>
+"""
+    render(handler, t.layout("Auditoría", body, active="admin", admin=True))
+
+
+def admin_pagos(handler):
+    conn = db.get_conn()
+    pagos = conn.execute(
+        "SELECT pago.*, negocio.nombre AS negocio_nombre, plan.nombre AS plan_nombre FROM pago "
+        "JOIN negocio ON negocio.id = pago.negocio_id JOIN plan ON plan.id = pago.plan_id "
+        "ORDER BY pago.creado_en DESC"
+    ).fetchall()
+    total = sum(p["precio_clp"] for p in pagos)
+    conn.close()
+    filas = "".join(f"""
+<tr>
+  <td class="mono small">{p['creado_en'][:10]}</td>
+  <td>{t.esc(p['negocio_nombre'])}</td>
+  <td>{t.plan_badge(p['plan_nombre'])}</td>
+  <td class="mono">${money(p['precio_clp'])}</td>
+</tr>""" for p in pagos)
+    body = f"""
+<div class="listado-head">
+  <h1>Historial de pagos</h1>
+  <a class="btn btn-ghost" href="/admin/pagos.csv">Exportar CSV</a>
+</div>
+<div class="kpi-grid"><div class="kpi"><div class="n">${money(total)} CLP</div><div class="l">total histórico activado</div></div></div>
+<div class="tbl-wrap"><table>
+  <tr><th>Fecha</th><th>Negocio</th><th>Plan</th><th>Monto</th></tr>
+  {filas or "<tr><td colspan='4' class='empty-state'>Sin pagos registrados todavía.</td></tr>"}
+</table></div>
+"""
+    render(handler, t.layout("Pagos", body, active="admin", admin=True))
+
+
+def admin_alertas(handler):
+    conn = db.get_conn()
+    alertas = conn.execute("SELECT * FROM alerta WHERE atendida=0 ORDER BY creado_en DESC").fetchall()
+    conn.close()
+    filas = "".join(f"""
+<tr>
+  <td>{t.esc(a['termino'])}</td>
+  <td class="mono">{t.esc(a['whatsapp'])}</td>
+  <td class="mono small">{a['creado_en'][:10]}</td>
+  <td><form method="post" action="/admin/alertas/{a['id']}/atendida"><button class="btn btn-ghost btn-sm">Marcar atendida</button></form></td>
+</tr>""" for a in alertas)
+    body = f"""
+<h1>Alertas de demanda</h1>
+<p class="lede">Personas que buscaron algo que nadie ofrece todavía y dejaron su WhatsApp para que las contactemos
+apenas exista un negocio de ese rubro — son prospectos de venta directa (PRD §17).</p>
+<div class="tbl-wrap"><table>
+  <tr><th>Buscaban</th><th>WhatsApp</th><th>Fecha</th><th></th></tr>
+  {filas or "<tr><td colspan='4' class='empty-state'>Sin alertas pendientes.</td></tr>"}
+</table></div>
+"""
+    render(handler, t.layout("Alertas de demanda", body, active="admin", admin=True))
+
+
+def admin_alerta_atendida(handler, alerta_id):
+    conn = db.get_conn()
+    conn.execute("UPDATE alerta SET atendida=1 WHERE id=?", (alerta_id,))
+    conn.commit()
+    conn.close()
+    redirect(handler, "/admin/alertas", flash="Marcada como atendida.")
+
+
+def admin_usuarios(handler):
+    conn = db.get_conn()
+    usuarios = conn.execute("SELECT id, usuario, rol FROM admin_usuario ORDER BY usuario").fetchall()
+    conn.close()
+    filas = "".join(f"""
+<tr>
+  <td>{t.esc(u['usuario'])}</td>
+  <td>{t.badge(u['rol'], 'gold' if u['rol'] == 'super_admin' else 'muted')}</td>
+  <td>
+    <form method="post" action="/admin/usuarios/{u['id']}/eliminar" style="display:inline"
+      onsubmit="return confirm('¿Eliminar este usuario admin?')">
+      <button class="btn btn-bad btn-sm">Eliminar</button>
+    </form>
+  </td>
+</tr>""" for u in usuarios)
+    flash = get_flash(handler)
+    body = f"""
+<h1>Usuarios administradores</h1>
+<p class="lede"><code>super_admin</code> tiene acceso completo. <code>moderador</code> solo puede aprobar/rechazar
+avisos y revisar reportes (PRD §7.5).</p>
+<div class="panel">
+  <form method="post" action="/admin/usuarios/crear" class="form form-inline">
+    <input name="usuario" required placeholder="usuario">
+    <input name="password" type="password" required placeholder="contraseña">
+    <select name="rol"><option value="moderador">moderador</option><option value="super_admin">super_admin</option></select>
+    <button class="btn btn-primary" type="submit">Crear</button>
+  </form>
+</div>
+<div class="tbl-wrap"><table>
+  <tr><th>Usuario</th><th>Rol</th><th></th></tr>
+  {filas}
+</table></div>
+"""
+    render(handler, t.layout("Usuarios administradores", body, active="admin", admin=True, flash=flash),
+           clear_flash=bool(flash))
+
+
+def admin_usuario_crear(handler, form):
+    usuario = form.get("usuario", "").strip()
+    password = form.get("password", "")
+    rol = form.get("rol") if form.get("rol") in ("super_admin", "moderador") else "moderador"
+    if not usuario or not password:
+        return redirect(handler, "/admin/usuarios", flash="Usuario y contraseña son obligatorios.")
+    conn = db.get_conn()
+    existe = conn.execute("SELECT id FROM admin_usuario WHERE usuario=?", (usuario,)).fetchone()
+    if existe:
+        conn.close()
+        return redirect(handler, "/admin/usuarios", flash="Ese usuario ya existe.")
+    conn.execute("INSERT INTO admin_usuario (usuario, password, rol) VALUES (?,?,?)",
+                 (usuario, db.hash_password(password), rol))
+    conn.commit()
+    conn.close()
+    auditar(handler, "crear_usuario_admin", f"{usuario} ({rol})")
+    redirect(handler, "/admin/usuarios", flash=f"Usuario {usuario} creado.")
+
+
+def admin_usuario_eliminar(handler, usuario_id):
+    conn = db.get_conn()
+    row = conn.execute("SELECT usuario FROM admin_usuario WHERE id=?", (usuario_id,)).fetchone()
+    total = conn.execute("SELECT COUNT(*) c FROM admin_usuario").fetchone()["c"]
+    if row and total > 1:
+        conn.execute("DELETE FROM admin_usuario WHERE id=?", (usuario_id,))
+        conn.commit()
+        auditar(handler, "eliminar_usuario_admin", row["usuario"])
+        mensaje = f"Usuario {row['usuario']} eliminado."
+    else:
+        mensaje = "No puedes eliminar el único usuario administrador que queda."
+    conn.close()
+    redirect(handler, "/admin/usuarios", flash=mensaje)
+
+
+FAQ = [
+    ("¿Cómo publico mi negocio?", "Ve a \"Publicar mi negocio\", completa el formulario y tu aviso queda en "
+     "revisión. Normalmente se aprueba el mismo día."),
+    ("¿Cuánto cuesta publicar?", "Publicar es gratis. Si quieres aparecer primero en los listados y en el "
+     "buscador, puedes pasar a un plan Destacado o Premium."),
+    ("¿Cómo me contactan los clientes?", "Directo por WhatsApp: cada aviso tiene un botón que abre una "
+     "conversación contigo con un mensaje ya escrito. No hay intermediarios ni comisión por contacto."),
+    ("¿Por qué mi aviso no aparece todavía?", "Los avisos nuevos pasan por una revisión rápida antes de "
+     "publicarse. Si pasaron más de 24 horas y no aparece, contáctanos."),
+    ("¿Puedo tener más de un aviso?", "Sí, en los planes Destacado y Premium. El plan Gratis incluye un aviso."),
+    ("¿Qué hago si un aviso me parece falso o desactualizado?", "Ábrelo y usa el botón \"Reportar aviso\" — "
+     "nuestro equipo lo revisa."),
+]
+
+
+def ayuda(handler):
+    items = "".join(f"""
+<details class="faq-item">
+  <summary>{t.esc(pregunta)}</summary>
+  <p>{t.esc(respuesta)}</p>
+</details>""" for pregunta, respuesta in FAQ)
+    body = f"""
+<div class="panel panel-narrow">
+  <h1>Preguntas frecuentes</h1>
+  <div class="faq">{items}</div>
+  <p class="lede">¿Tu pregunta no está aquí? Escríbenos por WhatsApp desde cualquier aviso, o publica tu negocio
+  y te contactamos nosotros.</p>
+</div>
+"""
+    render(handler, t.layout("Ayuda", body, active="ayuda"))
+
+
+def favoritos(handler):
+    body = """
+<h1>Tus favoritos</h1>
+<p class="lede">Los avisos que guardaste con el ☆ quedan aquí, solo en este navegador.</p>
+<div id="favoritos-mount"><p class="empty-state">Cargando…</p></div>
+"""
+    render(handler, t.layout("Favoritos", body, active="favoritos"))
+
+
+def mi_negocio(handler, token):
+    conn = db.get_conn()
+    negocio = conn.execute("SELECT * FROM negocio WHERE token_acceso=?", (token,)).fetchone()
+    if not negocio:
+        conn.close()
+        return not_found(handler)
+    avisos = conn.execute(AVISO_SELECT + " WHERE negocio.id=?", (negocio["id"],)).fetchall()
+    conn.close()
+
+    filas = "".join(f"""
+<tr>
+  <td>{t.esc(a['titulo'])}</td>
+  <td>{t.estado_badge(a['estado'])}</td>
+  <td class="mono">{a['vistas_total']}</td>
+  <td class="mono">{a['contactos_total']}</td>
+  <td class="mono">{round(100 * a['contactos_total'] / a['vistas_total'], 1) if a['vistas_total'] else 0}%</td>
+</tr>""" for a in avisos)
+
+    body = f"""
+<h1>Hola, {t.esc(negocio['nombre'])} 👋</h1>
+<p class="lede">Este es tu panel de estadísticas. Guarda este link — es tu acceso personal, no lo compartas.</p>
+<div class="tbl-wrap"><table>
+  <tr><th>Aviso</th><th>Estado</th><th>Vistas</th><th>Contactos</th><th>Conversión</th></tr>
+  {filas or "<tr><td colspan='5' class='empty-state'>Todavía no tienes avisos.</td></tr>"}
+</table></div>
+<p class="hint">¿Quieres más visibilidad? Escríbenos por WhatsApp desde uno de tus propios avisos para subir de plan.</p>
+"""
+    render(handler, t.layout(f"Panel de {negocio['nombre']}", body, active="mi-negocio"))
+
+
+def api_alerta(handler, body):
+    data = json.loads(body or "{}")
+    termino = (data.get("termino") or "").strip()[:120]
+    whatsapp = (data.get("whatsapp") or "").strip()
+    digitos = "".join(c for c in whatsapp if c.isdigit())
+    if not termino or len(digitos) < 8:
+        return render_json(handler, {"ok": False, "error": "Datos incompletos"}, status=400)
+    conn = db.get_conn()
+    conn.execute("INSERT INTO alerta (termino, whatsapp, creado_en) VALUES (?,?,?)", (termino, whatsapp, db.now()))
+    conn.commit()
+    conn.close()
+    render_json(handler, {"ok": True})
+
+
+def aviso_reportar(handler, aviso_id, form):
+    motivo = form.get("motivo", "").strip()[:300] or "Sin motivo especificado"
+    conn = db.get_conn()
+    existe = conn.execute("SELECT id FROM aviso WHERE id=?", (aviso_id,)).fetchone()
+    if existe:
+        conn.execute("INSERT INTO reporte (aviso_id, motivo, creado_en) VALUES (?,?,?)",
+                     (aviso_id, motivo, db.now()))
+        conn.commit()
+    conn.close()
+    redirect(handler, f"/avisos/{aviso_id}?reportado=1")
 
 
 # --------------------------------------------------------------- SEO / OG
@@ -981,9 +1487,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/avisos":
                 return listado(self, query)
             if len(segs) == 2 and segs[0] == "avisos" and segs[1].isdigit():
-                return detalle(self, int(segs[1]))
+                return detalle(self, int(segs[1]), query)
             if path == "/publicar":
-                return publicar_form(self, ok=qs(query).get("ok") == "1")
+                return publicar_form(self, ok=qs(query).get("ok") == "1", token=qs(query).get("token"))
             if path == "/static" or path.startswith("/static/"):
                 return self._static(path)
             if path == "/robots.txt":
@@ -1003,14 +1509,38 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_dashboard(self, query) if require_admin(self) else None
             if path == "/admin/moderacion":
                 return admin_moderacion(self) if require_admin(self) else None
+            if path == "/admin/reportes":
+                return admin_reportes(self) if require_admin(self) else None
             if path == "/admin/avisos":
-                return admin_avisos_lista(self, query) if require_admin(self) else None
+                return admin_avisos_lista(self, query) if require_role(self, {"super_admin"}) else None
             if len(segs) == 3 and segs[0] == "admin" and segs[1] == "avisos" and segs[2].isdigit():
-                return admin_aviso_editar_form(self, int(segs[2])) if require_admin(self) else None
+                return admin_aviso_editar_form(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/avisos.csv":
+                return admin_avisos_csv(self) if require_role(self, {"super_admin"}) else None
             if path == "/admin/anunciantes":
-                return admin_anunciantes(self) if require_admin(self) else None
+                return admin_anunciantes(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/anunciantes.csv":
+                return admin_anunciantes_csv(self) if require_role(self, {"super_admin"}) else None
             if path == "/admin/analitica":
-                return admin_analitica(self) if require_admin(self) else None
+                return admin_analitica(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/sinonimos":
+                return admin_sinonimos(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/auditoria":
+                return admin_auditoria(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/pagos":
+                return admin_pagos(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/pagos.csv":
+                return admin_pagos_csv(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/alertas":
+                return admin_alertas(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/usuarios":
+                return admin_usuarios(self) if require_role(self, {"super_admin"}) else None
+            if path == "/ayuda":
+                return ayuda(self)
+            if path == "/favoritos":
+                return favoritos(self)
+            if len(segs) == 2 and segs[0] == "mi-negocio":
+                return mi_negocio(self, segs[1])
 
             return not_found(self)
         except BrokenPipeError:
@@ -1030,19 +1560,35 @@ class Handler(BaseHTTPRequestHandler):
                 return api_buscar(self, self._body())
             if path == "/api/evento":
                 return api_evento(self, self._body())
+            if path == "/api/alerta":
+                return api_alerta(self, self._body())
+            if len(segs) == 3 and segs[0] == "avisos" and segs[1].isdigit() and segs[2] == "reportar":
+                return aviso_reportar(self, int(segs[1]), self._form())
             if path == "/admin/login":
                 return admin_login_submit(self, self._form())
 
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "moderacion" and segs[3] in ("aprobar", "rechazar"):
                 return admin_moderar(self, int(segs[2]), segs[3]) if require_admin(self) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "reportes" and segs[3] == "descartar":
+                return admin_reporte_descartar(self, int(segs[2])) if require_admin(self) else None
             if len(segs) == 3 and segs[0] == "admin" and segs[1] == "avisos" and segs[2].isdigit():
-                return admin_aviso_editar_submit(self, int(segs[2]), self._form()) if require_admin(self) else None
+                return admin_aviso_editar_submit(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
-                return admin_aviso_eliminar(self, int(segs[2])) if require_admin(self) else None
+                return admin_aviso_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "plan":
-                return admin_anunciante_plan(self, int(segs[2]), self._form()) if require_admin(self) else None
+                return admin_anunciante_plan(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "verificar":
-                return admin_anunciante_verificar(self, int(segs[2])) if require_admin(self) else None
+                return admin_anunciante_verificar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/sinonimos/agregar":
+                return admin_sinonimo_agregar(self, self._form()) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "sinonimos" and segs[3] == "eliminar":
+                return admin_sinonimo_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/usuarios/crear":
+                return admin_usuario_crear(self, self._form()) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "usuarios" and segs[3] == "eliminar":
+                return admin_usuario_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "alertas" and segs[3] == "atendida":
+                return admin_alerta_atendida(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
 
             return not_found(self)
         except BrokenPipeError:

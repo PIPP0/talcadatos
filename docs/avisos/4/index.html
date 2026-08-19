@@ -27,19 +27,27 @@
     <a href="/talcadatos/" class="brand">📌 Talcadatos</a>
     <nav class="topnav">
       <a href="/talcadatos/avisos">Explorar</a>
+      <a href="/talcadatos/favoritos">☆ Favoritos</a>
+      <a href="/talcadatos/ayuda">Ayuda</a>
       <a href="/talcadatos/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
-<div class="flash static-notice">🔧 Vista de demostración estática (GitHub Pages) — el buscador y los filtros funcionan (corren en tu navegador). Lo único inactivo aquí es publicar un aviso nuevo y el panel de administración, porque necesitan un servidor real. <a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo completo →</a></div>
+<div class="flash static-notice">🔧 Vista de demostración estática (GitHub Pages) — el buscador, los filtros y los favoritos funcionan (corren en tu navegador). Publicar un aviso, reportar y el panel de administración quedan inactivos aquí porque necesitan un servidor real. <a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo completo →</a></div>
 
 
 <div class="detalle">
   <div class="detalle-photo" style="--card-accent:#F2DA9E">
     <span class="card-icon big">💡</span>
     <span class="badge badge-gold">Destacado</span>
+    <button class="fav-btn" type="button" data-fav-id="4" data-titulo="Electricista certificado SEC"
+       data-negocio="Electricidad Rengo" data-comuna="Talca"
+       data-categoria="Electricidad" data-icono="💡"
+       data-color="#F2DA9E" data-verificado="1"
+       data-plan="Destacado"
+       title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   </div>
   <div class="detalle-body">
     <div class="mono detalle-cat">💡 Electricidad · Talca</div>
@@ -47,12 +55,25 @@
     <div class="detalle-negocio">Electricidad Rengo <span class="check">✔ Negocio verificado</span></div>
     <p class="detalle-desc">Instalaciones eléctricas domiciliarias y comerciales, certificación SEC, tableros y cambio de medidores.</p>
     <p class="detalle-horario"><strong>Horario:</strong> Lun a Vie 9:00-18:00</p>
+    
     <a class="btn btn-whatsapp btn-lg" href="https://wa.me/56912345004?text=Hola%20Electricidad%20Rengo%2C%20vi%20tu%20aviso%20%22Electricista%20certificado%20SEC%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
        data-aviso-id="4" data-wa-click="1">
        💬 Escribir por WhatsApp
     </a>
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='¡Link copiado!'">Compartir aviso</button>
+      <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=Electricidad%20Rengo%20Talca%20Chile" target="_blank" rel="noopener">📍 Ver en el mapa</a>
+      <details class="report-details">
+        <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
+        <form method="post" action="/talcadatos/avisos/4/reportar" class="form report-form">
+          <textarea name="motivo" rows="2" required placeholder="¿Qué está mal con este aviso? Ej: negocio cerrado, información falsa..."></textarea>
+          <button class="btn btn-bad btn-sm" type="submit">Enviar reporte</button>
+        </form>
+      </details>
+    </div>
+    <div class="qr-block">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=http%3A//pipp0.github.io/avisos/4" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
+      <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
   </div>
 </div>

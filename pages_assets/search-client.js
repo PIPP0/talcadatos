@@ -103,9 +103,14 @@
     var wa = whatsappUrl(a.whatsapp, a.negocio_nombre, a.titulo);
     var clickAttr = termino ? ' data-termino="' + esc(termino) + '"' : "";
     var href = PREFIX + "/avisos/" + a.id + "/";
+    var favAttrs = 'data-fav-id="' + a.id + '" data-titulo="' + esc(a.titulo) + '" data-negocio="' +
+      esc(a.negocio_nombre) + '" data-comuna="' + esc(a.comuna) + '" data-categoria="' + esc(a.categoria_nombre) +
+      '" data-icono="' + a.icono + '" data-color="' + esc(a.color) + '" data-verificado="' +
+      (a.verificado ? "1" : "") + '" data-plan="' + esc(a.plan_nombre) + '"';
     return (
       '<article class="card" style="--card-accent:' + esc(a.color) + '"' + clickAttr + ' data-aviso-id="' + a.id + '">' +
       '<a class="card-photo" href="' + href + '"><span class="card-icon">' + a.icono + "</span>" + badge + "</a>" +
+      '<button class="fav-btn" type="button" ' + favAttrs + ' title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>' +
       '<div class="card-body">' +
       '<a class="card-title" href="' + href + '">' + esc(a.titulo) + "</a>" +
       '<div class="card-meta"><span>' + esc(a.negocio_nombre) + " " + verificado + "</span>" +
@@ -211,6 +216,7 @@
         if (titulo) titulo.textContent = "Explorar avisos";
       }
       mount.innerHTML = cardsGridHtml(lista, q || null, "No hay avisos que coincidan con tu búsqueda.");
+      refrescarFavBotones();
     });
   }
 
@@ -233,10 +239,86 @@
     });
   }
 
+  // Mismo caso que publicar: reportar un aviso tambien necesita guardar en
+  // un servidor compartido (para que el equipo de moderacion lo vea).
+  function initReportarForm() {
+    document.querySelectorAll('form[action*="/reportar"]').forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        alert("Reportar necesita un servidor real para guardar el reporte. Corre el sitio con el servidor Python del repo para probarlo.");
+      });
+    });
+  }
+
+  // ---- Favoritos (localStorage, funciona igual sin servidor) ----
+  var FAV_KEY = "talca_favoritos";
+
+  function leerFavoritos() {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || "{}"); } catch (e) { return {}; }
+  }
+  function guardarFavoritos(datos) { localStorage.setItem(FAV_KEY, JSON.stringify(datos)); }
+
+  function refrescarFavBotones() {
+    var favs = leerFavoritos();
+    document.querySelectorAll(".fav-btn[data-fav-id]").forEach(function (btn) {
+      var esFav = !!favs[btn.getAttribute("data-fav-id")];
+      btn.textContent = esFav ? "★" : "☆";
+      btn.classList.toggle("is-fav", esFav);
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest(".fav-btn[data-fav-id]");
+    if (!btn) return;
+    e.preventDefault();
+    var id = btn.getAttribute("data-fav-id");
+    var favs = leerFavoritos();
+    if (favs[id]) {
+      delete favs[id];
+    } else {
+      favs[id] = {
+        id: id, titulo: btn.getAttribute("data-titulo") || "", negocio: btn.getAttribute("data-negocio") || "",
+        comuna: btn.getAttribute("data-comuna") || "", categoria: btn.getAttribute("data-categoria") || "",
+        icono: btn.getAttribute("data-icono") || "📌", color: btn.getAttribute("data-color") || "#9C82C2",
+        verificado: btn.getAttribute("data-verificado") === "1", plan: btn.getAttribute("data-plan") || "Gratis",
+      };
+    }
+    guardarFavoritos(favs);
+    refrescarFavBotones();
+  });
+
+  function initFavoritosPage() {
+    var mount = document.getElementById("favoritos-mount");
+    if (!mount) return;
+    var favs = leerFavoritos();
+    var items = Object.keys(favs).map(function (id) { return favs[id]; });
+    if (!items.length) {
+      mount.innerHTML = '<p class="fav-empty">Todavía no guardaste ningún aviso. Toca el ☆ en cualquier aviso para guardarlo aquí.</p>';
+      return;
+    }
+    mount.innerHTML = '<div class="grid">' + items.map(function (d) {
+      var badge = d.plan && d.plan !== "Gratis" ? '<span class="badge badge-gold">' + esc(d.plan) + "</span>" : "";
+      var verificado = d.verificado ? '<span class="check">✔</span>' : "";
+      var href = PREFIX + "/avisos/" + d.id + "/";
+      return (
+        '<article class="card" style="--card-accent:' + esc(d.color) + '">' +
+        '<a class="card-photo" href="' + href + '"><span class="card-icon">' + d.icono + "</span>" + badge + "</a>" +
+        '<button class="fav-btn is-fav" type="button" data-fav-id="' + d.id + '" title="Quitar de favoritos">★</button>' +
+        '<div class="card-body"><a class="card-title" href="' + href + '">' + esc(d.titulo) + "</a>" +
+        '<div class="card-meta"><span>' + esc(d.negocio) + " " + verificado + "</span>" +
+        '<span class="dot">·</span><span>' + esc(d.comuna) + "</span></div>" +
+        '<div class="card-cat mono">' + d.icono + " " + esc(d.categoria) + "</div></div></article>"
+      );
+    }).join("") + "</div>";
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initHomeSearch();
     initListado();
     initPublicarForm();
+    initReportarForm();
+    initFavoritosPage();
+    refrescarFavBotones();
   });
 
   window.logEvento = logEvento;
