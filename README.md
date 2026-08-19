@@ -4,12 +4,18 @@ Sitio de avisos de pymes y emprendedores de Talca, construido en base al PRD.
 MVP funcional: sitio público con buscador "IA" y filtros, avisos destacados,
 detalle con WhatsApp directo, y panel de administración completo.
 
-**Vista en vivo (estática, solo lectura):** https://pipp0.github.io/talcadatos/
-Es una versión sin servidor pensada solo para *ver* el sitio — navegación y
-botones de WhatsApp funcionan, pero el buscador, los filtros, el formulario
-de publicar y el panel de admin están desactivados (lo dice un aviso en la
-página). Para la versión completa y funcional, corre el servidor localmente
-(ver más abajo) o despliega en Render.
+**Vista en vivo:** https://pipp0.github.io/talcadatos/
+Es una versión sin servidor (GitHub Pages), pero el **buscador y los filtros
+funcionan de verdad** — corren en JavaScript en el navegador
+([pages_assets/search-client.js](pages_assets/search-client.js) reimplementa
+el mismo algoritmo de `search.py` contra `avisos.json`). Lo único que no
+funciona ahí es publicar un aviso nuevo y el panel de admin, porque esos
+necesitan un servidor con estado compartido real (que todos los visitantes
+vean el mismo cambio). Para esa parte, corre el servidor localmente (ver más
+abajo) o despliega en Render.
+
+Para regenerar la versión estática después de cambios: `python3 export_static.py`
+(reescribe `docs/`, que Pages sirve automáticamente al hacer push).
 
 ## Por qué Python y no Next.js
 
