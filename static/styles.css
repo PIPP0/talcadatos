@@ -122,6 +122,20 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px;}
 .section-head a{font-size:.9rem; font-weight:600;}
 .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:18px;}
+
+/* ---- carrusel de destacados ---- */
+.carousel{position:relative;}
+.carousel-track{display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 2px 12px;
+  scrollbar-width:none;}
+.carousel-track::-webkit-scrollbar{display:none;}
+.carousel-track .card{flex:0 0 260px; scroll-snap-align:start;}
+.carousel-arrow{position:absolute; top:calc(50% - 14px); width:38px; height:38px; border-radius:50%; border:1px solid var(--line);
+  background:var(--paper-raised); color:var(--ink); font-size:1.3rem; line-height:1; cursor:pointer; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center; z-index:2;}
+.carousel-arrow:hover{border-color:var(--accent); color:var(--accent-deep);}
+.carousel-prev{left:-14px;}
+.carousel-next{right:-14px;}
+@media (max-width:640px){ .carousel-arrow{display:none;} .carousel-track .card{flex-basis:78vw;} }
 .empty-state{color:var(--ink-faint); padding:24px; text-align:center; border:1px dashed var(--line); border-radius:var(--radius);}
 .alerta-box p{color:var(--ink-soft);}
 .alerta-box .form-inline{justify-content:center; margin-top:12px;}

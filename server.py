@@ -230,10 +230,10 @@ def home(handler):
 
 <section class="section">
   <div class="section-head">
-    <h2>Destacados de esta semana</h2>
+    <h2>Destacados</h2>
     <a href="/avisos">Ver todos →</a>
   </div>
-  {t.cards_grid(destacados, vacio_msg="Todavía no hay avisos destacados. ¡Sé el primero en Publicar tu negocio!")}
+  {t.carousel(destacados)}
 </section>
 
 <section class="how">

@@ -127,9 +127,9 @@ def whatsapp_url(whatsapp, negocio_nombre, titulo):
     return f"https://wa.me/{numero}?text={quote(mensaje)}"
 
 
-def aviso_card(aviso, termino_busqueda=None):
+def aviso_card(aviso, termino_busqueda=None, show_badge=True):
     destacado = aviso["plan_nombre"] in ("Destacado", "Premium")
-    badge_html = plan_badge(aviso["plan_nombre"]) if destacado else ""
+    badge_html = plan_badge(aviso["plan_nombre"]) if destacado and show_badge else ""
     verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
     wa = whatsapp_url(aviso["whatsapp"], aviso["negocio_nombre"], aviso["titulo"])
@@ -167,6 +167,18 @@ def cards_grid(avisos, termino_busqueda=None, vacio_msg="No hay avisos que coinc
     if not avisos:
         return f'<p class="empty-state">{esc(vacio_msg)}</p>'
     return '<div class="grid">' + "".join(aviso_card(a, termino_busqueda) for a in avisos) + "</div>"
+
+
+def carousel(avisos, vacio_msg="Todavía no hay avisos destacados. ¡Sé el primero en publicar tu negocio!"):
+    if not avisos:
+        return f'<p class="empty-state">{esc(vacio_msg)}</p>'
+    items = "".join(aviso_card(a, show_badge=False) for a in avisos)
+    return f"""
+<div class="carousel">
+  <button class="carousel-arrow carousel-prev" type="button" aria-label="Ver anteriores">‹</button>
+  <div class="carousel-track">{items}</div>
+  <button class="carousel-arrow carousel-next" type="button" aria-label="Ver siguientes">›</button>
+</div>"""
 
 
 def categorias_pills(categorias, activa_slug=None):

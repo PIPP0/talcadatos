@@ -1,3 +1,12 @@
+document.addEventListener("click", function (e) {
+  var arrow = e.target.closest(".carousel-arrow");
+  if (!arrow) return;
+  var track = arrow.parentElement.querySelector(".carousel-track");
+  if (!track) return;
+  var paso = Math.round(track.clientWidth * 0.85) * (arrow.classList.contains("carousel-prev") ? -1 : 1);
+  track.scrollBy({ left: paso, behavior: "smooth" });
+});
+
 function logEvento(tipo, avisoId, termino) {
   var payload = JSON.stringify({ tipo: tipo, aviso_id: avisoId || null, termino_busqueda: termino || null });
   if (navigator.sendBeacon) {

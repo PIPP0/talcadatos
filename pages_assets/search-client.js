@@ -224,6 +224,15 @@
     // No hay backend en GitHub Pages para registrar vistas/contactos: no-op.
   }
 
+  document.addEventListener("click", function (e) {
+    var arrow = e.target.closest(".carousel-arrow");
+    if (!arrow) return;
+    var track = arrow.parentElement.querySelector(".carousel-track");
+    if (!track) return;
+    var paso = Math.round(track.clientWidth * 0.85) * (arrow.classList.contains("carousel-prev") ? -1 : 1);
+    track.scrollBy({ left: paso, behavior: "smooth" });
+  });
+
   // El formulario de publicar necesita guardar en un servidor compartido
   // (que todos los visitantes vean el aviso nuevo) -- eso no existe en
   // GitHub Pages, asi que se avisa en vez de dejar que el POST falle solo.
