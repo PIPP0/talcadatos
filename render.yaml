@@ -3,7 +3,7 @@ services:
     name: talcadatos
     runtime: python
     plan: free
-    buildCommand: "true"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "python3 server.py"
     envVars:
       - key: ADMIN_PASSWORD
