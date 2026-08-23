@@ -44,11 +44,9 @@ def _fs():
         elif os.path.isfile(_KEY_PATH):
             cred = credentials.Certificate(_KEY_PATH)
         else:
-            raise RuntimeError(
-                "Falta la credencial de Firebase: define la variable de entorno "
-                "FIREBASE_CREDENTIALS_JSON (contenido del .json) o coloca "
-                "firebase-key.json junto a este archivo."
-            )
+            # En Cloud Run / GCP no hace falta ninguna de las dos: usa las
+            # credenciales por defecto de la cuenta de servicio del servicio.
+            cred = credentials.ApplicationDefault()
         firebase_admin.initialize_app(cred)
     _db = firestore.client()
     return _db
