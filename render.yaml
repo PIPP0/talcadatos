@@ -8,3 +8,5 @@ services:
     envVars:
       - key: ADMIN_PASSWORD
         generateValue: true
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false

@@ -1,1 +1,2 @@
 Pillow>=10.0.0
+firebase-admin>=6.5.0

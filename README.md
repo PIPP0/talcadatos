@@ -21,47 +21,80 @@ Para regenerar la versión estática después de cambios: `python3 export_static
 
 El PRD (sección 12) recomienda Next.js + Postgres + pgvector para producción.
 Este entorno no tiene Node.js instalado, así que el MVP se construyó con la
-librería estándar de Python (`http.server` + `sqlite3`), sin dependencias que
-instalar. La estructura de datos y rutas sigue el PRD 1:1, para poder migrar
-a la stack de producción sin rediseñar nada.
+librería estándar de Python (`http.server`), sin framework. La estructura de
+rutas sigue el PRD 1:1, para poder migrar a la stack de producción sin
+rediseñar nada.
+
+## Base de datos: Firestore (Firebase)
+
+La base de datos vive en **Firestore**, no en un archivo local — así los
+datos son permanentes de verdad (avisos publicados, moderación, pagos, etc.
+no se pierden nunca, a diferencia de la primera versión que usaba SQLite en
+un disco efímero). `db.py` trae la colección completa a Python y filtra/junta
+ahí en vez de traducir cada consulta a un query nativo de Firestore — con el
+tamaño de datos de este sitio es rápido y evita el problema de "falta un
+índice compuesto". Ver el comentario al inicio de `db.py` para el detalle.
 
 ## Cómo correrlo
 
+Necesitas la credencial de tu proyecto de Firebase (Firestore ya debe estar
+creado, en modo producción):
+
+1. [Firebase Console](https://console.firebase.google.com) → tu proyecto → ⚙️ Configuración del
+   proyecto → **Cuentas de servicio** → **Generar nueva clave privada**.
+2. Guarda ese `.json` como `talcadatos/firebase-key.json` (ya está en `.gitignore`,
+   nunca se sube al repo — es una credencial sensible).
+3. Instala las dependencias y corre:
+
 ```bash
 cd talcadatos
+pip3 install --only-binary=:all: -r requirements.txt
 python3 server.py 8002
 ```
 
-Abre http://localhost:8002 — la base de datos (`talcadatos.db`) y los datos
-de ejemplo se crean solos la primera vez que corre.
+Abre http://localhost:8002 — la primera vez que corre, si Firestore está vacío,
+siembra automáticamente las categorías y los avisos de ejemplo (tarda ~2 minutos,
+son varias escrituras a Firestore). Las siguientes veces arranca al toque.
 
 También puedes usar el botón de vista previa de Claude Code (`talcadatos` en
 `.claude/launch.json`, puerto 8002).
 
 ## Admin
 
-http://localhost:8002/admin — usuario `admin`, contraseña `talca2026`
-(o la que definas en la variable de entorno `ADMIN_PASSWORD`).
+http://localhost:8002/admin — usuario `admin`. La contraseña **no es la de
+demo del README anterior** (`talca2026`) porque los datos ahora son permanentes
+en Firestore — pídesela a quien administre este proyecto, o genera una nueva
+corriendo esto una vez (sobreescribe la actual):
+
+```bash
+python3 -c "
+import db, secrets
+nueva = secrets.token_urlsafe(9)
+db._fs().collection('admin_usuarios').document('admin').update({'password': db.hash_password(nueva)})
+print(nueva)
+"
+```
 
 ## Desplegar en Render (gratis, con tu cuenta de GitHub)
 
-Este repo incluye `render.yaml`, así que el despliegue es automático:
+Este repo incluye `render.yaml`, así que el despliegue es casi automático:
 
 1. Entra a [render.com](https://render.com) y elige **"Sign in with GitHub"** (misma cuenta, sin password nuevo).
 2. **New → Blueprint** y selecciona este repositorio (`talcadatos`).
-3. Render detecta `render.yaml` solo y genera una contraseña de admin aleatoria
-   (variable `ADMIN_PASSWORD`) — la ves en el dashboard del servicio, pestaña *Environment*.
-4. En unos minutos queda con un link público tipo `https://talcadatos.onrender.com`.
+3. Render detecta `render.yaml` y crea el servicio — te va a pedir el valor de
+   **`FIREBASE_CREDENTIALS_JSON`**: pega ahí el **contenido completo** del archivo
+   `firebase-key.json` (el `.json` entero, como texto).
+4. En unos minutos queda con un link público tipo `https://talcadatos.onrender.com`,
+   ya conectado a la misma base de datos de Firestore.
 
 Nota: el plan free de Render "duerme" el servicio tras un rato sin visitas (la
-primera carga después de eso tarda ~30s en despertar) y el disco es efímero,
-así que la base de datos se reinicia con los datos de ejemplo si el servicio
-se reinicia. Para persistencia real, ver la sección de arquitectura recomendada
-del PRD (Postgres vía Supabase).
+primera carga después de eso tarda ~30-50s en despertar) — eso es solo el
+servidor, no afecta los datos, que ahora viven en Firestore y no en el disco
+de Render.
 
 ## Estructura
 
-- `db.py` — esquema SQLite + datos y eventos de ejemplo (sigue el modelo de datos del PRD §8).
+- `db.py` — capa de datos sobre Firestore (sigue el modelo del PRD §8, adaptado a documentos).
 - `search.py` — el buscador "por necesidad" del PRD §9: sinónimos por rubro + puntaje de texto.
   Sin llave de API en este entorno no se generaron embeddings reales; la función
   `buscar_avisos()` está aislada para reemplazarse por embeddings (OpenAI + pgvector)
@@ -121,6 +154,8 @@ del PRD (Postgres vía Supabase).
 ## Qué falta para producción
 
 Ver PRD §15 (roadmap). Lo más relevante para pasar de este prototipo a producción:
-subir fotos reales (hoy son íconos por categoría), pasar SQLite → Postgres + pgvector,
-embeddings reales de IA, pasarela de pago automática (Webpay/MercadoPago), rate limiting
-real (hoy no lo hay) y un hash de contraseña con más iteraciones (bcrypt/argon2) para el admin.
+subir fotos reales (hoy son íconos por categoría), embeddings reales de IA, pasarela
+de pago automática (Webpay/MercadoPago), rate limiting real (hoy no lo hay), reglas de
+seguridad de Firestore más finas si algún día se llama desde el navegador (hoy todo
+pasa por el servidor con la cuenta de servicio, que ya tiene acceso total) y un hash
+de contraseña con más iteraciones (bcrypt/argon2) para el admin.

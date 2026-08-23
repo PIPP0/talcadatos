@@ -18,11 +18,16 @@ import io
 import re
 import json
 import shutil
-import tempfile
 
 import db
 import server
 import ogimage
+
+# Generar el export no debe inflar las metricas reales de la demo en vivo:
+# server.detalle() registra una "vista" y suma vistas_total cada vez que se
+# llama, y aca lo llamamos una vez por aviso solo para capturar el HTML.
+db.registrar_evento = lambda *a, **k: None
+db.incrementar_vistas = lambda *a, **k: None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCS_DIR = os.path.join(BASE_DIR, "docs")
@@ -89,17 +94,8 @@ def main():
         shutil.rmtree(DOCS_DIR)
     os.makedirs(DOCS_DIR)
 
-    # Trabajar sobre una copia de la base de datos: las rutas de detalle
-    # registran una "vista" cada vez que se llaman, y no queremos que
-    # generar el export infle las metricas de la demo real.
-    tmp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
-    shutil.copy(db.DB_PATH, tmp_db)
-    db.DB_PATH = tmp_db
-
-    conn = db.get_conn()
-    aviso_ids = [r["id"] for r in conn.execute("SELECT id FROM aviso WHERE estado='activo'").fetchall()]
-    avisos_full = {r["id"]: r for r in conn.execute(server.AVISO_SELECT).fetchall()}
-    conn.close()
+    avisos_full = {a["id"]: a for a in db.get_avisos(estado="activo")}
+    aviso_ids = list(avisos_full.keys())
 
     # Home
     h = FakeHandler()
@@ -148,7 +144,6 @@ def main():
         f.write(js)
 
     # Datos que consume ese JS: avisos activos + diccionario de sinonimos por rubro.
-    conn = db.get_conn()
     avisos_json = [{
         "id": a["id"], "titulo": a["titulo"], "descripcion": a["descripcion"],
         "categoria_nombre": a["categoria_nombre"], "categoria_slug": a["categoria_slug"],
@@ -157,14 +152,8 @@ def main():
         "verificado": bool(a["verificado"]), "plan_nombre": a["plan_nombre"],
         "plan_prioridad": a["plan_prioridad"], "publicado_en": a["publicado_en"],
         "contactos_total": a["contactos_total"], "vistas_total": a["vistas_total"],
-    } for a in conn.execute(server.AVISO_SELECT + " WHERE aviso.estado='activo'").fetchall()]
-    sinonimos_json = {}
-    for row in conn.execute(
-        "SELECT categoria.slug AS slug, sinonimo.palabra FROM sinonimo "
-        "JOIN categoria ON categoria.id = sinonimo.categoria_id"
-    ).fetchall():
-        sinonimos_json.setdefault(row["slug"], []).append(row["palabra"])
-    conn.close()
+    } for a in avisos_full.values()]
+    sinonimos_json = db.get_sinonimos_por_categoria()
     _write(os.path.join(DOCS_DIR, "static", "avisos.json"),
            json.dumps(avisos_json, ensure_ascii=False).encode("utf-8"))
     _write(os.path.join(DOCS_DIR, "static", "sinonimos.json"),
@@ -180,7 +169,6 @@ def main():
            f"User-agent: *\nAllow: /\nSitemap: {PAGES_BASE}/sitemap.xml\n".encode("utf-8"))
     _write(os.path.join(DOCS_DIR, ".nojekyll"), b"")
 
-    os.remove(tmp_db)
     print(f"Listo: {DOCS_DIR} generado con {len(aviso_ids)} avisos.")
 
 

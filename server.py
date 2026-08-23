@@ -53,13 +53,7 @@ def is_admin(handler):
 def auditar(handler, accion, detalle=""):
     admin = current_admin(handler)
     usuario = admin["usuario"] if admin else "?"
-    conn = db.get_conn()
-    conn.execute(
-        "INSERT INTO auditoria (usuario, accion, detalle, creado_en) VALUES (?,?,?,?)",
-        (usuario, accion, detalle, db.now()),
-    )
-    conn.commit()
-    conn.close()
+    db.crear_auditoria(usuario, accion, detalle)
 
 
 def get_flash(handler):
@@ -178,35 +172,16 @@ def require_role(handler, roles):
     return True
 
 
-AVISO_SELECT = """
-SELECT aviso.*, negocio.nombre AS negocio_nombre, negocio.whatsapp,
-       negocio.verificado, categoria.nombre AS categoria_nombre,
-       categoria.slug AS categoria_slug, categoria.icono,
-       plan.prioridad AS plan_prioridad, plan.nombre AS plan_nombre
-FROM aviso
-JOIN negocio ON negocio.id = aviso.negocio_id
-JOIN categoria ON categoria.id = aviso.categoria_id
-JOIN plan ON plan.id = negocio.plan_id
-"""
-
-
 # --------------------------------------------------------------- publico
 
 def home(handler):
-    conn = db.get_conn()
-    categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
-    destacados = conn.execute(
-        AVISO_SELECT + " WHERE aviso.estado='activo' AND plan.prioridad > 0 "
-        "ORDER BY plan.prioridad DESC, aviso.publicado_en DESC LIMIT 6"
-    ).fetchall()
-    recientes = conn.execute(
-        AVISO_SELECT + " WHERE aviso.estado='activo' ORDER BY aviso.publicado_en DESC LIMIT 8"
-    ).fetchall()
-    n_negocios = conn.execute("SELECT COUNT(DISTINCT negocio_id) c FROM aviso WHERE estado='activo'").fetchone()["c"]
-    n_contactos = conn.execute("SELECT COUNT(*) c FROM evento WHERE tipo='click_whatsapp'").fetchone()["c"]
-    n_categorias = conn.execute(
-        "SELECT COUNT(DISTINCT categoria_id) c FROM aviso WHERE estado='activo'").fetchone()["c"]
-    conn.close()
+    categorias = db.get_categorias()
+    activos = db.get_avisos(estado="activo", orden="destacados")
+    destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
+    recientes = db.get_avisos(estado="activo", orden="recientes", limit=8)
+    n_negocios = len({a["negocio_id"] for a in activos})
+    n_contactos = sum(1 for e in db.get_eventos() if e.get("tipo") == "click_whatsapp")
+    n_categorias = len({a["categoria_slug"] for a in activos})
 
     body = f"""
 <section class="hero">
@@ -261,32 +236,16 @@ def listado(handler, query):
     comuna = params.get("comuna", "")
     orden = params.get("orden", "relevancia")
 
-    conn = db.get_conn()
-    categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
-    comunas = [r["comuna"] for r in conn.execute(
-        "SELECT DISTINCT comuna FROM aviso WHERE estado='activo' ORDER BY comuna").fetchall()]
+    categorias = db.get_categorias()
+    comunas = db.get_comunas_activas()
 
     if q:
-        avisos = search.buscar_avisos(conn, q, limite=40)
+        avisos = search.buscar_avisos(db.get_avisos(estado="activo"), db.get_sinonimos_por_categoria(), q, limite=40)
         titulo_pagina = f'Resultados para "{q}"'
     else:
-        sql = AVISO_SELECT + " WHERE aviso.estado='activo'"
-        args = []
-        if categoria_slug:
-            sql += " AND categoria.slug = ?"
-            args.append(categoria_slug)
-        if comuna:
-            sql += " AND aviso.comuna = ?"
-            args.append(comuna)
-        if orden == "recientes":
-            sql += " ORDER BY aviso.publicado_en DESC"
-        elif orden == "populares":
-            sql += " ORDER BY aviso.contactos_total DESC"
-        else:
-            sql += " ORDER BY plan.prioridad DESC, aviso.publicado_en DESC"
-        avisos = conn.execute(sql, args).fetchall()
+        avisos = db.get_avisos(estado="activo", categoria_slug=categoria_slug or None,
+                                comuna=comuna or None, orden=orden)
         titulo_pagina = "Explorar avisos"
-    conn.close()
 
     def opt(value, current, label):
         sel = " selected" if value == current else ""
@@ -332,25 +291,15 @@ def listado(handler, query):
 
 def detalle(handler, aviso_id, query=""):
     reportado = qs(query).get("reportado") == "1"
-    conn = db.get_conn()
-    aviso = conn.execute(AVISO_SELECT + " WHERE aviso.id = ?", (aviso_id,)).fetchone()
+    aviso = db.get_aviso(aviso_id)
     if not aviso or aviso["estado"] != "activo":
-        conn.close()
         return not_found(handler)
 
-    conn.execute(
-        "INSERT INTO evento (aviso_id, tipo, sesion_hash, creado_en) VALUES (?, 'vista', ?, ?)",
-        (aviso_id, secrets.token_hex(4), db.now()),
-    )
-    conn.execute("UPDATE aviso SET vistas_total = vistas_total + 1 WHERE id = ?", (aviso_id,))
-    conn.commit()
+    db.registrar_evento("vista", aviso_id=aviso_id)
+    db.incrementar_vistas(aviso_id)
 
-    relacionados = conn.execute(
-        AVISO_SELECT + " WHERE aviso.estado='activo' AND categoria.id = ? AND aviso.id != ? "
-        "ORDER BY plan.prioridad DESC LIMIT 3",
-        (aviso["categoria_id"], aviso_id),
-    ).fetchall()
-    conn.close()
+    relacionados = db.get_avisos(estado="activo", categoria_slug=aviso["categoria_slug"],
+                                  excluir_id=str(aviso_id), orden="destacados", limit=3)
 
     wa = t.whatsapp_url(aviso["whatsapp"], aviso["negocio_nombre"], aviso["titulo"])
     destacado_html = t.plan_badge(aviso["plan_nombre"]) if aviso["plan_nombre"] != "Gratis" else ""
@@ -466,9 +415,7 @@ def _publicar_body(categorias, form=None, errores=None):
 
 
 def publicar_form(handler, ok=False, token=None, form=None, errores=None):
-    conn = db.get_conn()
-    categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
-    conn.close()
+    categorias = db.get_categorias()
 
     if ok:
         mi_negocio_url = f"{_origin(handler)}/mi-negocio/{token}"
@@ -509,54 +456,30 @@ def _validar_publicar(form, categoria_ids):
 
 
 def publicar_submit(handler, form):
-    conn = db.get_conn()
-    categorias = conn.execute("SELECT id, slug FROM categoria").fetchall()
-    categoria_ids = {str(c["id"]) for c in categorias}
+    categorias = db.get_categorias()
+    categoria_ids = {c["id"] for c in categorias}
     errores = _validar_publicar(form, categoria_ids)
     if errores:
-        conn.close()
         return publicar_form(handler, form=form, errores=errores)
 
-    slug = next(c["slug"] for c in categorias if str(c["id"]) == form["categoria_id"])
+    slug = form["categoria_id"]
     color = db.COLOR_POR_CATEGORIA.get(slug, "#8C5F22")
-    gratis_id = conn.execute("SELECT id FROM plan WHERE nombre='Gratis'").fetchone()["id"]
-    token_acceso = secrets.token_urlsafe(12)
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO negocio (nombre, whatsapp, verificado, plan_id, plan_vencimiento, token_acceso, creado_en) "
-        "VALUES (?, ?, 0, ?, NULL, ?, ?)",
-        (form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(), gratis_id,
-         token_acceso, db.now()),
-    )
-    negocio_id = cur.lastrowid
-    cur.execute(
-        "INSERT INTO aviso (negocio_id, titulo, descripcion, categoria_id, comuna, horario, "
-        "color, estado, publicado_en, creado_en) VALUES (?,?,?,?,?,?,?, 'pendiente', NULL, ?)",
-        (negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
-         form.get("categoria_id"), form.get("comuna", "Talca").strip(), form.get("horario", "").strip(),
-         color, db.now()),
-    )
-    conn.commit()
-    conn.close()
+    negocio_id, token_acceso = db.crear_negocio(
+        form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip())
+    db.crear_aviso(
+        negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
+        slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente")
     redirect(handler, f"/publicar?ok=1&token={token_acceso}")
 
 
 def api_buscar(handler, body):
     data = json.loads(body or "{}")
     q = (data.get("q") or "").strip()
-    conn = db.get_conn()
     if len(q) < 2:
-        conn.close()
         return render_json(handler, {"resultados": []})
-    avisos = search.buscar_avisos(conn, q, limite=6)
+    avisos = search.buscar_avisos(db.get_avisos(estado="activo"), db.get_sinonimos_por_categoria(), q, limite=6)
     if not avisos:
-        conn.execute(
-            "INSERT INTO evento (aviso_id, tipo, termino_busqueda, sesion_hash, creado_en) "
-            "VALUES (NULL, 'busqueda_sin_resultado', ?, ?, ?)",
-            (q, secrets.token_hex(4), db.now()),
-        )
-        conn.commit()
-    conn.close()
+        db.registrar_evento("busqueda_sin_resultado", termino_busqueda=q)
     resultados = [{
         "id": a["id"], "titulo": a["titulo"], "negocio": a["negocio_nombre"],
         "comuna": a["comuna"], "categoria": a["categoria_nombre"], "icono": a["icono"],
@@ -572,15 +495,9 @@ def api_evento(handler, body):
     termino = data.get("termino_busqueda")
     if tipo not in ("click_whatsapp", "click_resultado_busqueda"):
         return render_json(handler, {"ok": False}, status=400)
-    conn = db.get_conn()
-    conn.execute(
-        "INSERT INTO evento (aviso_id, tipo, termino_busqueda, sesion_hash, creado_en) VALUES (?,?,?,?,?)",
-        (aviso_id, tipo, termino, secrets.token_hex(4), db.now()),
-    )
+    db.registrar_evento(tipo, aviso_id=aviso_id, termino_busqueda=termino)
     if tipo == "click_whatsapp" and aviso_id:
-        conn.execute("UPDATE aviso SET contactos_total = contactos_total + 1 WHERE id = ?", (aviso_id,))
-    conn.commit()
-    conn.close()
+        db.incrementar_contactos(aviso_id)
     render_json(handler, {"ok": True})
 
 
@@ -604,11 +521,7 @@ def admin_login_form(handler, error=False):
 
 
 def admin_login_submit(handler, form):
-    conn = db.get_conn()
-    row = conn.execute(
-        "SELECT * FROM admin_usuario WHERE usuario = ?", (form.get("usuario", ""),)
-    ).fetchone()
-    conn.close()
+    row = db.get_admin_usuario(form.get("usuario", ""))
     if not row or not db.verify_password(form.get("password", ""), row["password"]):
         return admin_login_form(handler, error=True)
     token = secrets.token_urlsafe(24)
@@ -625,38 +538,16 @@ def admin_logout(handler):
 
 def admin_dashboard(handler, query):
     dias = int(qs(query).get("dias", "30"))
-    cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=dias)).isoformat()
-    conn = db.get_conn()
-
-    avisos_activos = conn.execute("SELECT COUNT(*) c FROM aviso WHERE estado='activo'").fetchone()["c"]
-    pendientes = conn.execute("SELECT COUNT(*) c FROM aviso WHERE estado='pendiente'").fetchone()["c"]
-    vistas = conn.execute(
-        "SELECT COUNT(*) c FROM evento WHERE tipo='vista' AND creado_en >= ?", (cutoff,)).fetchone()["c"]
-    contactos = conn.execute(
-        "SELECT COUNT(*) c FROM evento WHERE tipo='click_whatsapp' AND creado_en >= ?", (cutoff,)).fetchone()["c"]
+    stats = db.get_dashboard_stats(dias)
+    avisos_activos = stats["avisos_activos"]
+    pendientes = stats["pendientes"]
+    vistas = stats["vistas"]
+    contactos = stats["contactos"]
     tasa = round(100 * contactos / vistas, 1) if vistas else 0.0
-    anunciantes_pagando = conn.execute(
-        "SELECT COUNT(*) c FROM negocio JOIN plan ON plan.id = negocio.plan_id "
-        "WHERE plan.precio_clp > 0 AND (negocio.plan_vencimiento IS NULL OR negocio.plan_vencimiento >= date('now'))"
-    ).fetchone()["c"]
-    mrr = conn.execute(
-        "SELECT COALESCE(SUM(plan.precio_clp),0) s FROM negocio JOIN plan ON plan.id = negocio.plan_id "
-        "WHERE plan.precio_clp > 0 AND (negocio.plan_vencimiento IS NULL OR negocio.plan_vencimiento >= date('now'))"
-    ).fetchone()["s"]
-
-    top_vistos = conn.execute(
-        "SELECT aviso.id, aviso.titulo, negocio.nombre AS negocio_nombre, COUNT(*) n "
-        "FROM evento JOIN aviso ON aviso.id = evento.aviso_id JOIN negocio ON negocio.id = aviso.negocio_id "
-        "WHERE evento.tipo='vista' AND evento.creado_en >= ? "
-        "GROUP BY aviso.id ORDER BY n DESC LIMIT 10", (cutoff,)
-    ).fetchall()
-    top_contactados = conn.execute(
-        "SELECT aviso.id, aviso.titulo, negocio.nombre AS negocio_nombre, COUNT(*) n "
-        "FROM evento JOIN aviso ON aviso.id = evento.aviso_id JOIN negocio ON negocio.id = aviso.negocio_id "
-        "WHERE evento.tipo='click_whatsapp' AND evento.creado_en >= ? "
-        "GROUP BY aviso.id ORDER BY n DESC LIMIT 10", (cutoff,)
-    ).fetchall()
-    conn.close()
+    anunciantes_pagando = stats["anunciantes_pagando"]
+    mrr = stats["mrr"]
+    top_vistos = stats["top_vistos"]
+    top_contactados = stats["top_contactados"]
 
     mrr_fmt = f"{mrr:,}".replace(",", ".")
 
@@ -708,11 +599,7 @@ def admin_dashboard(handler, query):
 
 
 def admin_moderacion(handler):
-    conn = db.get_conn()
-    pendientes = conn.execute(
-        AVISO_SELECT + " WHERE aviso.estado='pendiente' ORDER BY aviso.creado_en ASC"
-    ).fetchall()
-    conn.close()
+    pendientes = db.get_avisos(estado="pendiente", orden="creado_asc")
 
     if not pendientes:
         rows = '<p class="empty-state">No hay avisos pendientes de moderación. 🎉</p>'
@@ -739,13 +626,7 @@ def admin_moderacion(handler):
 
 def admin_moderar(handler, aviso_id, accion):
     nuevo_estado = "activo" if accion == "aprobar" else "rechazado"
-    conn = db.get_conn()
-    if nuevo_estado == "activo":
-        conn.execute("UPDATE aviso SET estado=?, publicado_en=? WHERE id=?", (nuevo_estado, db.now(), aviso_id))
-    else:
-        conn.execute("UPDATE aviso SET estado=? WHERE id=?", (nuevo_estado, aviso_id))
-    conn.commit()
-    conn.close()
+    db.cambiar_estado_aviso(aviso_id, nuevo_estado)
     mensaje = "Aviso aprobado y publicado." if nuevo_estado == "activo" else "Aviso rechazado."
     auditar(handler, "aprobar" if nuevo_estado == "activo" else "rechazar", f"aviso {aviso_id}")
     redirect(handler, "/admin/moderacion", flash=mensaje)
@@ -754,15 +635,7 @@ def admin_moderar(handler, aviso_id, accion):
 def admin_avisos_lista(handler, query):
     params = qs(query)
     estado = params.get("estado", "")
-    conn = db.get_conn()
-    sql = AVISO_SELECT + " WHERE 1=1"
-    args = []
-    if estado:
-        sql += " AND aviso.estado = ?"
-        args.append(estado)
-    sql += " ORDER BY aviso.creado_en DESC"
-    avisos = conn.execute(sql, args).fetchall()
-    conn.close()
+    avisos = db.get_avisos(estado=estado or None, orden="creado")
 
     def opt(v, label):
         sel = " selected" if v == estado else ""
@@ -808,10 +681,8 @@ def admin_avisos_lista(handler, query):
 
 
 def admin_aviso_editar_form(handler, aviso_id):
-    conn = db.get_conn()
-    aviso = conn.execute(AVISO_SELECT + " WHERE aviso.id=?", (aviso_id,)).fetchone()
-    categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
-    conn.close()
+    aviso = db.get_aviso(aviso_id)
+    categorias = db.get_categorias()
     if not aviso:
         return not_found(handler)
 
@@ -841,49 +712,40 @@ def admin_aviso_editar_form(handler, aviso_id):
 
 
 def admin_aviso_editar_submit(handler, aviso_id, form):
-    conn = db.get_conn()
-    actual = conn.execute("SELECT estado, publicado_en FROM aviso WHERE id=?", (aviso_id,)).fetchone()
+    actual = db.get_aviso(aviso_id)
     if not actual:
-        conn.close()
         return not_found(handler)
     nuevo_estado = form.get("estado", actual["estado"])
-    publicado_en = actual["publicado_en"]
-    if nuevo_estado == "activo" and not publicado_en:
-        publicado_en = db.now()
-    conn.execute(
-        "UPDATE aviso SET titulo=?, descripcion=?, categoria_id=?, comuna=?, horario=?, estado=?, publicado_en=? "
-        "WHERE id=?",
-        (form.get("titulo", ""), form.get("descripcion", ""), form.get("categoria_id"),
-         form.get("comuna", ""), form.get("horario", ""), nuevo_estado, publicado_en, aviso_id),
-    )
-    conn.commit()
-    conn.close()
+    ok = db.editar_aviso(
+        aviso_id, form.get("titulo", ""), form.get("descripcion", ""), form.get("categoria_id"),
+        form.get("comuna", ""), form.get("horario", ""), nuevo_estado)
+    if not ok:
+        return not_found(handler)
     _og_cache_evict(aviso_id)
     auditar(handler, "editar_aviso", f"aviso {aviso_id}")
     redirect(handler, "/admin/avisos", flash="Cambios guardados.")
 
 
 def admin_aviso_eliminar(handler, aviso_id):
-    conn = db.get_conn()
-    conn.execute("DELETE FROM evento WHERE aviso_id=?", (aviso_id,))
-    conn.execute("DELETE FROM reporte WHERE aviso_id=?", (aviso_id,))
-    conn.execute("DELETE FROM aviso WHERE id=?", (aviso_id,))
-    conn.commit()
-    conn.close()
+    db.eliminar_aviso(aviso_id)
     _og_cache_evict(aviso_id)
     auditar(handler, "eliminar_aviso", f"aviso {aviso_id}")
     redirect(handler, "/admin/avisos", flash="Aviso eliminado.")
 
 
 def admin_anunciantes(handler):
-    conn = db.get_conn()
-    negocios = conn.execute(
-        "SELECT negocio.*, plan.nombre AS plan_nombre, plan.precio_clp, "
-        "(SELECT COUNT(*) FROM aviso WHERE aviso.negocio_id = negocio.id) AS n_avisos "
-        "FROM negocio JOIN plan ON plan.id = negocio.plan_id ORDER BY negocio.nombre"
-    ).fetchall()
-    planes = conn.execute("SELECT * FROM plan ORDER BY prioridad").fetchall()
-    conn.close()
+    planes = db.get_planes()
+    planes_por_id = {p["id"]: p for p in planes}
+    conteo_avisos = db.contar_avisos_por_negocio()
+    negocios = []
+    for n in db.get_negocios():
+        plan = planes_por_id.get(n.get("plan_id"), {})
+        row = dict(n)
+        row["plan_nombre"] = plan.get("nombre", "Gratis")
+        row["precio_clp"] = plan.get("precio_clp", 0)
+        row["n_avisos"] = conteo_avisos.get(n["id"], 0)
+        negocios.append(row)
+    negocios.sort(key=lambda n: n["nombre"])
 
     plan_options_tpl = "".join(f'<option value="{p["id"]}">{p["nombre"]} (${p["precio_clp"]:,})</option>'.replace(",", ".")
                                 for p in planes)
@@ -925,48 +787,29 @@ def admin_anunciantes(handler):
 
 def admin_anunciante_plan(handler, negocio_id, form):
     plan_id = form.get("plan_id")
-    conn = db.get_conn()
-    plan = conn.execute("SELECT * FROM plan WHERE id=?", (plan_id,)).fetchone()
+    plan = db.get_plan(plan_id)
     vencimiento = None
     if plan and plan["precio_clp"] > 0:
         vencimiento = (datetime.date.today() + datetime.timedelta(days=plan["duracion_dias"])).isoformat()
-    conn.execute("UPDATE negocio SET plan_id=?, plan_vencimiento=? WHERE id=?", (plan_id, vencimiento, negocio_id))
+    db.cambiar_plan_negocio(negocio_id, plan_id, vencimiento)
     if plan and plan["precio_clp"] > 0:
-        conn.execute("INSERT INTO pago (negocio_id, plan_id, precio_clp, creado_en) VALUES (?,?,?,?)",
-                     (negocio_id, plan_id, plan["precio_clp"], db.now()))
-    conn.commit()
+        db.crear_pago(negocio_id, plan_id, plan["precio_clp"])
     nombre_plan = plan["nombre"] if plan else "?"
-    conn.close()
     auditar(handler, "cambiar_plan", f"negocio {negocio_id} -> {nombre_plan}")
     redirect(handler, "/admin/anunciantes", flash=f"Plan actualizado a {nombre_plan}.")
 
 
 def admin_anunciante_verificar(handler, negocio_id):
-    conn = db.get_conn()
-    actual = conn.execute("SELECT verificado FROM negocio WHERE id=?", (negocio_id,)).fetchone()
-    nuevo = 0 if actual["verificado"] else 1
-    conn.execute("UPDATE negocio SET verificado=? WHERE id=?", (nuevo, negocio_id))
-    conn.commit()
-    conn.close()
+    nuevo = db.toggle_verificado_negocio(negocio_id)
     mensaje = "Negocio verificado." if nuevo else "Verificación removida."
     auditar(handler, "verificar_negocio" if nuevo else "quitar_verificacion", f"negocio {negocio_id}")
     redirect(handler, "/admin/anunciantes", flash=mensaje)
 
 
 def admin_analitica(handler):
-    conn = db.get_conn()
-    avisos = conn.execute(
-        AVISO_SELECT + " WHERE aviso.estado != 'rechazado' ORDER BY aviso.vistas_total DESC"
-    ).fetchall()
-    mas_buscados = conn.execute(
-        "SELECT termino_busqueda, COUNT(*) n FROM evento WHERE tipo='click_resultado_busqueda' "
-        "AND termino_busqueda IS NOT NULL GROUP BY termino_busqueda ORDER BY n DESC LIMIT 15"
-    ).fetchall()
-    sin_resultado = conn.execute(
-        "SELECT termino_busqueda, COUNT(*) n FROM evento WHERE tipo='busqueda_sin_resultado' "
-        "GROUP BY termino_busqueda ORDER BY n DESC LIMIT 15"
-    ).fetchall()
-    conn.close()
+    avisos = db.get_avisos(estado_ne="rechazado", orden="vistas")
+    mas_buscados = db.get_terminos_mas_buscados(15)
+    sin_resultado = db.get_terminos_sin_resultado(15)
 
     filas = "".join(f"""
 <tr>
@@ -1008,9 +851,7 @@ def admin_analitica(handler):
 
 
 def admin_avisos_csv(handler):
-    conn = db.get_conn()
-    avisos = conn.execute(AVISO_SELECT + " ORDER BY aviso.id").fetchall()
-    conn.close()
+    avisos = db.get_avisos(orden="creado")
     rows = [(a["id"], a["titulo"], a["negocio_nombre"], a["categoria_nombre"], a["comuna"],
               a["estado"], a["plan_nombre"], a["vistas_total"], a["contactos_total"]) for a in avisos]
     render_csv(handler, "avisos.csv",
@@ -1018,37 +859,21 @@ def admin_avisos_csv(handler):
 
 
 def admin_anunciantes_csv(handler):
-    conn = db.get_conn()
-    negocios = conn.execute(
-        "SELECT negocio.*, plan.nombre AS plan_nombre FROM negocio JOIN plan ON plan.id=negocio.plan_id "
-        "ORDER BY negocio.nombre"
-    ).fetchall()
-    conn.close()
-    rows = [(n["id"], n["nombre"], n["whatsapp"], n["plan_nombre"], n["plan_vencimiento"] or "",
-              "si" if n["verificado"] else "no") for n in negocios]
+    planes_por_id = {p["id"]: p for p in db.get_planes()}
+    negocios = sorted(db.get_negocios(), key=lambda n: n["nombre"])
+    rows = [(n["id"], n["nombre"], n["whatsapp"], planes_por_id.get(n.get("plan_id"), {}).get("nombre", "Gratis"),
+              n.get("plan_vencimiento") or "", "si" if n.get("verificado") else "no") for n in negocios]
     render_csv(handler, "anunciantes.csv", ["id", "nombre", "whatsapp", "plan", "vence", "verificado"], rows)
 
 
 def admin_pagos_csv(handler):
-    conn = db.get_conn()
-    pagos = conn.execute(
-        "SELECT pago.*, negocio.nombre AS negocio_nombre, plan.nombre AS plan_nombre FROM pago "
-        "JOIN negocio ON negocio.id = pago.negocio_id JOIN plan ON plan.id = pago.plan_id "
-        "ORDER BY pago.creado_en DESC"
-    ).fetchall()
-    conn.close()
+    pagos = db.get_pagos()
     rows = [(p["creado_en"][:10], p["negocio_nombre"], p["plan_nombre"], p["precio_clp"]) for p in pagos]
     render_csv(handler, "pagos.csv", ["fecha", "negocio", "plan", "precio_clp"], rows)
 
 
 def admin_reportes(handler):
-    conn = db.get_conn()
-    reportes = conn.execute(
-        "SELECT reporte.*, aviso.titulo AS aviso_titulo FROM reporte "
-        "JOIN aviso ON aviso.id = reporte.aviso_id WHERE reporte.estado='pendiente' "
-        "ORDER BY reporte.creado_en DESC"
-    ).fetchall()
-    conn.close()
+    reportes = db.get_reportes_pendientes()
     if not reportes:
         filas = '<p class="empty-state">No hay reportes pendientes. 🎉</p>'
     else:
@@ -1069,26 +894,18 @@ def admin_reportes(handler):
 
 
 def admin_reporte_descartar(handler, reporte_id):
-    conn = db.get_conn()
-    conn.execute("UPDATE reporte SET estado='descartado' WHERE id=?", (reporte_id,))
-    conn.commit()
-    conn.close()
+    db.descartar_reporte(reporte_id)
     auditar(handler, "descartar_reporte", f"reporte {reporte_id}")
     redirect(handler, "/admin/reportes", flash="Reporte descartado.")
 
 
 def admin_sinonimos(handler):
-    conn = db.get_conn()
-    categorias = conn.execute("SELECT * FROM categoria ORDER BY nombre").fetchall()
-    sinonimos = conn.execute(
-        "SELECT sinonimo.*, categoria.nombre AS categoria_nombre FROM sinonimo "
-        "JOIN categoria ON categoria.id = sinonimo.categoria_id ORDER BY categoria.nombre, sinonimo.palabra"
-    ).fetchall()
-    conn.close()
+    categorias = db.get_categorias()
+    sinonimos = db.get_sinonimos()
 
     por_categoria = {}
     for s in sinonimos:
-        por_categoria.setdefault(s["categoria_id"], []).append(s)
+        por_categoria.setdefault(s["categoria_slug"], []).append(s)
 
     cat_options = "".join(f'<option value="{c["id"]}">{c["icono"]} {t.esc(c["nombre"])}</option>' for c in categorias)
 
@@ -1128,29 +945,21 @@ asociada (ej: "ventana" muestra vidriería y aluminios). Es la tabla de respaldo
 
 def admin_sinonimo_agregar(handler, form):
     palabra = form.get("palabra", "").strip()
-    categoria_id = form.get("categoria_id")
-    if palabra and categoria_id:
-        conn = db.get_conn()
-        conn.execute("INSERT INTO sinonimo (categoria_id, palabra) VALUES (?, ?)", (categoria_id, palabra))
-        conn.commit()
-        conn.close()
+    categoria_slug = form.get("categoria_id")
+    if palabra and categoria_slug:
+        db.crear_sinonimo(categoria_slug, palabra)
         auditar(handler, "agregar_sinonimo", palabra)
     redirect(handler, "/admin/sinonimos", flash="Sinónimo agregado.")
 
 
 def admin_sinonimo_eliminar(handler, sinonimo_id):
-    conn = db.get_conn()
-    conn.execute("DELETE FROM sinonimo WHERE id=?", (sinonimo_id,))
-    conn.commit()
-    conn.close()
+    db.eliminar_sinonimo(sinonimo_id)
     auditar(handler, "eliminar_sinonimo", f"id {sinonimo_id}")
     redirect(handler, "/admin/sinonimos", flash="Sinónimo eliminado.")
 
 
 def admin_auditoria(handler):
-    conn = db.get_conn()
-    registros = conn.execute("SELECT * FROM auditoria ORDER BY creado_en DESC LIMIT 200").fetchall()
-    conn.close()
+    registros = db.get_auditoria(limit=200)
     filas = "".join(f"""
 <tr>
   <td class="mono small">{r['creado_en'][:16].replace('T', ' ')}</td>
@@ -1170,14 +979,8 @@ def admin_auditoria(handler):
 
 
 def admin_pagos(handler):
-    conn = db.get_conn()
-    pagos = conn.execute(
-        "SELECT pago.*, negocio.nombre AS negocio_nombre, plan.nombre AS plan_nombre FROM pago "
-        "JOIN negocio ON negocio.id = pago.negocio_id JOIN plan ON plan.id = pago.plan_id "
-        "ORDER BY pago.creado_en DESC"
-    ).fetchall()
+    pagos = db.get_pagos()
     total = sum(p["precio_clp"] for p in pagos)
-    conn.close()
     filas = "".join(f"""
 <tr>
   <td class="mono small">{p['creado_en'][:10]}</td>
@@ -1200,9 +1003,7 @@ def admin_pagos(handler):
 
 
 def admin_alertas(handler):
-    conn = db.get_conn()
-    alertas = conn.execute("SELECT * FROM alerta WHERE atendida=0 ORDER BY creado_en DESC").fetchall()
-    conn.close()
+    alertas = db.get_alertas_pendientes()
     filas = "".join(f"""
 <tr>
   <td>{t.esc(a['termino'])}</td>
@@ -1223,17 +1024,12 @@ apenas exista un negocio de ese rubro — son prospectos de venta directa (PRD �
 
 
 def admin_alerta_atendida(handler, alerta_id):
-    conn = db.get_conn()
-    conn.execute("UPDATE alerta SET atendida=1 WHERE id=?", (alerta_id,))
-    conn.commit()
-    conn.close()
+    db.marcar_alerta_atendida(alerta_id)
     redirect(handler, "/admin/alertas", flash="Marcada como atendida.")
 
 
 def admin_usuarios(handler):
-    conn = db.get_conn()
-    usuarios = conn.execute("SELECT id, usuario, rol FROM admin_usuario ORDER BY usuario").fetchall()
-    conn.close()
+    usuarios = db.get_admin_usuarios()
     filas = "".join(f"""
 <tr>
   <td>{t.esc(u['usuario'])}</td>
@@ -1273,31 +1069,20 @@ def admin_usuario_crear(handler, form):
     rol = form.get("rol") if form.get("rol") in ("super_admin", "moderador") else "moderador"
     if not usuario or not password:
         return redirect(handler, "/admin/usuarios", flash="Usuario y contraseña son obligatorios.")
-    conn = db.get_conn()
-    existe = conn.execute("SELECT id FROM admin_usuario WHERE usuario=?", (usuario,)).fetchone()
-    if existe:
-        conn.close()
+    creado = db.crear_admin_usuario(usuario, db.hash_password(password), rol)
+    if not creado:
         return redirect(handler, "/admin/usuarios", flash="Ese usuario ya existe.")
-    conn.execute("INSERT INTO admin_usuario (usuario, password, rol) VALUES (?,?,?)",
-                 (usuario, db.hash_password(password), rol))
-    conn.commit()
-    conn.close()
     auditar(handler, "crear_usuario_admin", f"{usuario} ({rol})")
     redirect(handler, "/admin/usuarios", flash=f"Usuario {usuario} creado.")
 
 
-def admin_usuario_eliminar(handler, usuario_id):
-    conn = db.get_conn()
-    row = conn.execute("SELECT usuario FROM admin_usuario WHERE id=?", (usuario_id,)).fetchone()
-    total = conn.execute("SELECT COUNT(*) c FROM admin_usuario").fetchone()["c"]
-    if row and total > 1:
-        conn.execute("DELETE FROM admin_usuario WHERE id=?", (usuario_id,))
-        conn.commit()
-        auditar(handler, "eliminar_usuario_admin", row["usuario"])
-        mensaje = f"Usuario {row['usuario']} eliminado."
+def admin_usuario_eliminar(handler, usuario):
+    eliminado = db.eliminar_admin_usuario(usuario)
+    if eliminado:
+        auditar(handler, "eliminar_usuario_admin", usuario)
+        mensaje = f"Usuario {usuario} eliminado."
     else:
         mensaje = "No puedes eliminar el único usuario administrador que queda."
-    conn.close()
     redirect(handler, "/admin/usuarios", flash=mensaje)
 
 
@@ -1343,13 +1128,10 @@ def favoritos(handler):
 
 
 def mi_negocio(handler, token):
-    conn = db.get_conn()
-    negocio = conn.execute("SELECT * FROM negocio WHERE token_acceso=?", (token,)).fetchone()
+    negocio = db.get_negocio_por_token(token)
     if not negocio:
-        conn.close()
         return not_found(handler)
-    avisos = conn.execute(AVISO_SELECT + " WHERE negocio.id=?", (negocio["id"],)).fetchall()
-    conn.close()
+    avisos = db.get_avisos(negocio_id=negocio["id"])
 
     filas = "".join(f"""
 <tr>
@@ -1379,22 +1161,14 @@ def api_alerta(handler, body):
     digitos = "".join(c for c in whatsapp if c.isdigit())
     if not termino or len(digitos) < 8:
         return render_json(handler, {"ok": False, "error": "Datos incompletos"}, status=400)
-    conn = db.get_conn()
-    conn.execute("INSERT INTO alerta (termino, whatsapp, creado_en) VALUES (?,?,?)", (termino, whatsapp, db.now()))
-    conn.commit()
-    conn.close()
+    db.crear_alerta(termino, whatsapp)
     render_json(handler, {"ok": True})
 
 
 def aviso_reportar(handler, aviso_id, form):
     motivo = form.get("motivo", "").strip()[:300] or "Sin motivo especificado"
-    conn = db.get_conn()
-    existe = conn.execute("SELECT id FROM aviso WHERE id=?", (aviso_id,)).fetchone()
-    if existe:
-        conn.execute("INSERT INTO reporte (aviso_id, motivo, creado_en) VALUES (?,?,?)",
-                     (aviso_id, motivo, db.now()))
-        conn.commit()
-    conn.close()
+    if db.get_aviso(aviso_id):
+        db.crear_reporte(aviso_id, motivo)
     redirect(handler, f"/avisos/{aviso_id}?reportado=1")
 
 
@@ -1415,9 +1189,7 @@ def og_aviso(handler, aviso_id):
     if os.path.isfile(cache_path):
         with open(cache_path, "rb") as f:
             return render_png(handler, f.read())
-    conn = db.get_conn()
-    aviso = conn.execute(AVISO_SELECT + " WHERE aviso.id = ?", (aviso_id,)).fetchone()
-    conn.close()
+    aviso = db.get_aviso(aviso_id)
     if not aviso:
         handler.send_response(404)
         handler.end_headers()
@@ -1449,9 +1221,7 @@ def robots_txt(handler):
 
 def sitemap_xml(handler):
     origin = _origin(handler)
-    conn = db.get_conn()
-    ids = [r["id"] for r in conn.execute("SELECT id FROM aviso WHERE estado='activo'").fetchall()]
-    conn.close()
+    ids = [a["id"] for a in db.get_avisos(estado="activo")]
     urls = [f"{origin}/", f"{origin}/avisos", f"{origin}/publicar"] + [f"{origin}/avisos/{i}" for i in ids]
     body = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
@@ -1586,7 +1356,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/admin/usuarios/crear":
                 return admin_usuario_crear(self, self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "usuarios" and segs[3] == "eliminar":
-                return admin_usuario_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+                return admin_usuario_eliminar(self, segs[2]) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "alertas" and segs[3] == "atendida":
                 return admin_alerta_atendida(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
 

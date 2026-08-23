@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 talcadatos.db
 og_cache/
+firebase-key.json
+*firebase-adminsdk*.json
+.DS_Store

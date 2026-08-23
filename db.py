@@ -1,128 +1,57 @@
 """
-Capa de datos de Talcadatos.
+Capa de datos de Talcadatos -- Firestore (Firebase).
 
-Usa SQLite (stdlib) como sustituto local de PostgreSQL + pgvector definido
-en el PRD (seccion 8 y 12). El modelo de tablas sigue el PRD 1:1; la unica
-diferencia real de produccion es que aqui no hay columna `embedding` vector
--- la busqueda "IA" vive en search.py con un motor de sinonimos+puntaje que
-se puede reemplazar por embeddings reales sin tocar el resto del sitio
-(ver comentario en search.py).
+Estrategia deliberada para mantener esto simple y confiable: en vez de
+traducir cada consulta SQL a un query de Firestore equivalente (Firestore
+no tiene JOIN, y las consultas compuestas piden indices manuales), cada
+funcion de lectura trae la coleccion completa a Python y filtra/ordena/junta
+ahi. Con el tamano de datos de este sitio (decenas o cientos de documentos)
+es rapido y evita por completo el problema de "falta un indice compuesto".
+Si el sitio creciera mucho, ahi si conviene mover los filtros mas usados a
+queries nativos de Firestore.
+
+IDs: aviso, negocio, reporte, alerta y sinonimo usan un contador propio
+(coleccion `_contadores`) para que sigan siendo numericos como "1", "2", ...
+-- asi las rutas de server.py (`/avisos/<id>`, etc.) no tuvieron que
+rediseñarse. categoria y plan usan su slug/nombre como id directamente.
+evento, pago y auditoria usan el id automatico de Firestore porque nunca
+se referencian por id en una URL.
 """
-import sqlite3
 import os
+import json
 import random
 import hashlib
 import secrets
 import datetime
 
+import firebase_admin
+from firebase_admin import credentials, firestore
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "talcadatos.db")
+_KEY_PATH = os.path.join(BASE_DIR, "firebase-key.json")
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS categoria (
-    id INTEGER PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE,
-    icono TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS sinonimo (
-    id INTEGER PRIMARY KEY,
-    categoria_id INTEGER NOT NULL REFERENCES categoria(id),
-    palabra TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS plan (
-    id INTEGER PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    precio_clp INTEGER NOT NULL,
-    duracion_dias INTEGER NOT NULL,
-    prioridad INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS negocio (
-    id INTEGER PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    whatsapp TEXT NOT NULL,
-    email TEXT,
-    verificado INTEGER NOT NULL DEFAULT 0,
-    plan_id INTEGER REFERENCES plan(id),
-    plan_vencimiento TEXT,
-    token_acceso TEXT UNIQUE,
-    creado_en TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS aviso (
-    id INTEGER PRIMARY KEY,
-    negocio_id INTEGER NOT NULL REFERENCES negocio(id),
-    titulo TEXT NOT NULL,
-    descripcion TEXT NOT NULL,
-    categoria_id INTEGER NOT NULL REFERENCES categoria(id),
-    comuna TEXT NOT NULL,
-    horario TEXT,
-    color TEXT NOT NULL DEFAULT '#8C5F22',
-    estado TEXT NOT NULL DEFAULT 'pendiente',
-    vistas_total INTEGER NOT NULL DEFAULT 0,
-    contactos_total INTEGER NOT NULL DEFAULT 0,
-    publicado_en TEXT,
-    creado_en TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS evento (
-    id INTEGER PRIMARY KEY,
-    aviso_id INTEGER REFERENCES aviso(id),
-    tipo TEXT NOT NULL,
-    termino_busqueda TEXT,
-    sesion_hash TEXT,
-    creado_en TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS admin_usuario (
-    id INTEGER PRIMARY KEY,
-    usuario TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    rol TEXT NOT NULL DEFAULT 'super_admin'
-);
-
-CREATE TABLE IF NOT EXISTS reporte (
-    id INTEGER PRIMARY KEY,
-    aviso_id INTEGER NOT NULL REFERENCES aviso(id),
-    motivo TEXT NOT NULL,
-    estado TEXT NOT NULL DEFAULT 'pendiente',
-    creado_en TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS auditoria (
-    id INTEGER PRIMARY KEY,
-    usuario TEXT NOT NULL,
-    accion TEXT NOT NULL,
-    detalle TEXT,
-    creado_en TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS pago (
-    id INTEGER PRIMARY KEY,
-    negocio_id INTEGER NOT NULL REFERENCES negocio(id),
-    plan_id INTEGER NOT NULL REFERENCES plan(id),
-    precio_clp INTEGER NOT NULL,
-    creado_en TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS alerta (
-    id INTEGER PRIMARY KEY,
-    termino TEXT NOT NULL,
-    whatsapp TEXT NOT NULL,
-    atendida INTEGER NOT NULL DEFAULT 0,
-    creado_en TEXT NOT NULL
-);
-"""
+_db = None
 
 
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+def _fs():
+    global _db
+    if _db is not None:
+        return _db
+    if not firebase_admin._apps:
+        raw = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+        if raw:
+            cred = credentials.Certificate(json.loads(raw))
+        elif os.path.isfile(_KEY_PATH):
+            cred = credentials.Certificate(_KEY_PATH)
+        else:
+            raise RuntimeError(
+                "Falta la credencial de Firebase: define la variable de entorno "
+                "FIREBASE_CREDENTIALS_JSON (contenido del .json) o coloca "
+                "firebase-key.json junto a este archivo."
+            )
+        firebase_admin.initialize_app(cred)
+    _db = firestore.client()
+    return _db
 
 
 def now():
@@ -142,6 +71,474 @@ def verify_password(password, stored):
     return hash_password(password, salt) == stored
 
 
+def _next_id(coleccion):
+    fs = _fs()
+    ref = fs.collection("_contadores").document(coleccion)
+    transaction = fs.transaction()
+
+    @firestore.transactional
+    def _incrementar(tx):
+        snap = ref.get(transaction=tx)
+        actual = snap.get("valor") if snap.exists else 0
+        nuevo = actual + 1
+        tx.set(ref, {"valor": nuevo})
+        return nuevo
+
+    return str(_incrementar(transaction))
+
+
+def _all(coleccion):
+    return {doc.id: doc.to_dict() for doc in _fs().collection(coleccion).stream()}
+
+
+def _con_id(d, doc_id):
+    row = dict(d)
+    row["id"] = doc_id
+    return row
+
+
+# ------------------------------------------------------------- categorias
+
+def _categoria_con_slug(c, slug):
+    row = _con_id(c, slug)
+    row["slug"] = slug
+    return row
+
+
+def get_categorias():
+    cats = _all("categorias")
+    filas = [_categoria_con_slug(c, slug) for slug, c in cats.items()]
+    filas.sort(key=lambda c: c["nombre"])
+    return filas
+
+
+def get_categoria(slug):
+    doc = _fs().collection("categorias").document(slug).get()
+    return _categoria_con_slug(doc.to_dict(), slug) if doc.exists else None
+
+
+# ------------------------------------------------------------------ planes
+
+def get_planes():
+    planes = _all("planes")
+    filas = [_con_id(p, pid) for pid, p in planes.items()]
+    filas.sort(key=lambda p: p["prioridad"])
+    return filas
+
+
+def get_plan(plan_id):
+    doc = _fs().collection("planes").document(plan_id).get()
+    return _con_id(doc.to_dict(), plan_id) if doc.exists else None
+
+
+# ---------------------------------------------------------------- avisos
+
+def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None):
+    negocios = negocios if negocios is not None else _all("negocios")
+    categorias = categorias if categorias is not None else _all("categorias")
+    planes = planes if planes is not None else _all("planes")
+    filas = []
+    for aid, a in avisos_raw.items():
+        neg = negocios.get(a.get("negocio_id"), {})
+        cat = categorias.get(a.get("categoria_slug"), {})
+        plan = planes.get(neg.get("plan_id", "gratis"), {})
+        row = dict(a)
+        row["id"] = aid
+        row["negocio_nombre"] = neg.get("nombre", "")
+        row["whatsapp"] = neg.get("whatsapp", "")
+        row["verificado"] = bool(neg.get("verificado", False))
+        row["categoria_id"] = a.get("categoria_slug")
+        row["categoria_nombre"] = cat.get("nombre", "")
+        row["categoria_slug"] = a.get("categoria_slug")
+        row["icono"] = cat.get("icono", "📌")
+        row["plan_prioridad"] = plan.get("prioridad", 0)
+        row["plan_nombre"] = plan.get("nombre", "Gratis")
+        filas.append(row)
+    return filas
+
+
+def get_avisos(estado=None, estado_ne=None, categoria_slug=None, comuna=None,
+               negocio_id=None, excluir_id=None, orden="creado", limit=None):
+    filas = _denormalizar_avisos(_all("avisos"))
+
+    if estado is not None:
+        filas = [a for a in filas if a["estado"] == estado]
+    if estado_ne is not None:
+        filas = [a for a in filas if a["estado"] != estado_ne]
+    if categoria_slug:
+        filas = [a for a in filas if a["categoria_slug"] == categoria_slug]
+    if comuna:
+        filas = [a for a in filas if a["comuna"] == comuna]
+    if negocio_id:
+        filas = [a for a in filas if a["negocio_id"] == negocio_id]
+    if excluir_id:
+        filas = [a for a in filas if a["id"] != excluir_id]
+
+    if orden == "recientes":
+        filas.sort(key=lambda a: a.get("publicado_en") or "", reverse=True)
+    elif orden == "populares":
+        filas.sort(key=lambda a: a.get("contactos_total", 0), reverse=True)
+    elif orden == "vistas":
+        filas.sort(key=lambda a: a.get("vistas_total", 0), reverse=True)
+    elif orden == "creado_asc":
+        filas.sort(key=lambda a: a.get("creado_en") or "")
+    elif orden == "destacados" or orden == "relevancia":
+        filas.sort(key=lambda a: (a.get("plan_prioridad", 0), a.get("publicado_en") or ""), reverse=True)
+    else:  # "creado"
+        filas.sort(key=lambda a: a.get("creado_en") or "", reverse=True)
+
+    if limit:
+        filas = filas[:limit]
+    return filas
+
+
+def get_aviso(aviso_id):
+    doc = _fs().collection("avisos").document(str(aviso_id)).get()
+    if not doc.exists:
+        return None
+    filas = _denormalizar_avisos({doc.id: doc.to_dict()})
+    return filas[0] if filas else None
+
+
+def get_comunas_activas():
+    comunas = {a["comuna"] for a in _all("avisos").values() if a.get("estado") == "activo"}
+    return sorted(comunas)
+
+
+def crear_aviso(negocio_id, titulo, descripcion, categoria_slug, comuna, horario, color, estado="pendiente"):
+    aid = _next_id("avisos")
+    _fs().collection("avisos").document(aid).set({
+        "negocio_id": negocio_id, "titulo": titulo, "descripcion": descripcion,
+        "categoria_slug": categoria_slug, "comuna": comuna, "horario": horario,
+        "color": color, "estado": estado, "vistas_total": 0, "contactos_total": 0,
+        "publicado_en": now() if estado == "activo" else None, "creado_en": now(),
+    })
+    return aid
+
+
+def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario, estado):
+    ref = _fs().collection("avisos").document(str(aviso_id))
+    actual = ref.get().to_dict()
+    if not actual:
+        return False
+    publicado_en = actual.get("publicado_en")
+    if estado == "activo" and not publicado_en:
+        publicado_en = now()
+    ref.update({
+        "titulo": titulo, "descripcion": descripcion, "categoria_slug": categoria_slug,
+        "comuna": comuna, "horario": horario, "estado": estado, "publicado_en": publicado_en,
+    })
+    return True
+
+
+def cambiar_estado_aviso(aviso_id, estado):
+    ref = _fs().collection("avisos").document(str(aviso_id))
+    datos = {"estado": estado}
+    if estado == "activo":
+        datos["publicado_en"] = now()
+    ref.update(datos)
+
+
+def eliminar_aviso(aviso_id):
+    aviso_id = str(aviso_id)
+    fs = _fs()
+    for doc in fs.collection("eventos").where("aviso_id", "==", aviso_id).stream():
+        doc.reference.delete()
+    for doc in fs.collection("reportes").where("aviso_id", "==", aviso_id).stream():
+        doc.reference.delete()
+    fs.collection("avisos").document(aviso_id).delete()
+
+
+def incrementar_vistas(aviso_id):
+    _fs().collection("avisos").document(str(aviso_id)).update({"vistas_total": firestore.Increment(1)})
+
+
+def incrementar_contactos(aviso_id):
+    _fs().collection("avisos").document(str(aviso_id)).update({"contactos_total": firestore.Increment(1)})
+
+
+# --------------------------------------------------------------- negocios
+
+def get_negocios():
+    negs = _all("negocios")
+    return [_con_id(n, nid) for nid, n in negs.items()]
+
+
+def get_negocio(negocio_id):
+    doc = _fs().collection("negocios").document(str(negocio_id)).get()
+    return _con_id(doc.to_dict(), negocio_id) if doc.exists else None
+
+
+def get_negocio_por_token(token):
+    docs = list(_fs().collection("negocios").where("token_acceso", "==", token).limit(1).stream())
+    return _con_id(docs[0].to_dict(), docs[0].id) if docs else None
+
+
+def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None):
+    nid = _next_id("negocios")
+    token = secrets.token_urlsafe(12)
+    _fs().collection("negocios").document(nid).set({
+        "nombre": nombre, "whatsapp": whatsapp, "verificado": False,
+        "plan_id": plan_id, "plan_vencimiento": plan_vencimiento,
+        "token_acceso": token, "creado_en": now(),
+    })
+    return nid, token
+
+
+def cambiar_plan_negocio(negocio_id, plan_id, plan_vencimiento):
+    _fs().collection("negocios").document(str(negocio_id)).update({
+        "plan_id": plan_id, "plan_vencimiento": plan_vencimiento,
+    })
+
+
+def toggle_verificado_negocio(negocio_id):
+    ref = _fs().collection("negocios").document(str(negocio_id))
+    actual = ref.get().to_dict() or {}
+    nuevo = not actual.get("verificado", False)
+    ref.update({"verificado": nuevo})
+    return nuevo
+
+
+def contar_avisos_por_negocio():
+    conteo = {}
+    for a in _all("avisos").values():
+        conteo[a.get("negocio_id")] = conteo.get(a.get("negocio_id"), 0) + 1
+    return conteo
+
+
+# ----------------------------------------------------------------- eventos
+
+def registrar_evento(tipo, aviso_id=None, termino_busqueda=None):
+    _fs().collection("eventos").add({
+        "aviso_id": str(aviso_id) if aviso_id else None,
+        "tipo": tipo,
+        "termino_busqueda": termino_busqueda,
+        "sesion_hash": secrets.token_hex(4),
+        "creado_en": now(),
+    })
+
+
+def get_eventos():
+    return list(_all("eventos").values())
+
+
+# ------------------------------------------------------------- sinonimos
+
+def get_sinonimos():
+    sins = _all("sinonimos")
+    categorias = _all("categorias")
+    filas = []
+    for sid, s in sins.items():
+        row = _con_id(s, sid)
+        row["categoria_nombre"] = categorias.get(s["categoria_slug"], {}).get("nombre", "")
+        filas.append(row)
+    filas.sort(key=lambda s: (s["categoria_nombre"], s["palabra"]))
+    return filas
+
+
+def get_sinonimos_por_categoria():
+    por_cat = {}
+    for s in _all("sinonimos").values():
+        por_cat.setdefault(s["categoria_slug"], []).append(s["palabra"])
+    return por_cat
+
+
+def crear_sinonimo(categoria_slug, palabra):
+    sid = _next_id("sinonimos")
+    _fs().collection("sinonimos").document(sid).set({"categoria_slug": categoria_slug, "palabra": palabra})
+    return sid
+
+
+def eliminar_sinonimo(sinonimo_id):
+    _fs().collection("sinonimos").document(str(sinonimo_id)).delete()
+
+
+# --------------------------------------------------------- admin_usuario
+
+def get_admin_usuario(usuario):
+    doc = _fs().collection("admin_usuarios").document(usuario).get()
+    return _con_id(doc.to_dict(), usuario) if doc.exists else None
+
+
+def get_admin_usuarios():
+    users = _all("admin_usuarios")
+    filas = [_con_id(u, uid) for uid, u in users.items()]
+    filas.sort(key=lambda u: u["usuario"])
+    return filas
+
+
+def crear_admin_usuario(usuario, password_hash, rol):
+    ref = _fs().collection("admin_usuarios").document(usuario)
+    if ref.get().exists:
+        return False
+    ref.set({"usuario": usuario, "password": password_hash, "rol": rol})
+    return True
+
+
+def eliminar_admin_usuario(usuario):
+    total = len(list(_fs().collection("admin_usuarios").stream()))
+    if total <= 1:
+        return False
+    _fs().collection("admin_usuarios").document(usuario).delete()
+    return True
+
+
+# ------------------------------------------------------------- reportes
+
+def crear_reporte(aviso_id, motivo):
+    rid = _next_id("reportes")
+    _fs().collection("reportes").document(rid).set({
+        "aviso_id": str(aviso_id), "motivo": motivo, "estado": "pendiente", "creado_en": now(),
+    })
+    return rid
+
+
+def get_reportes_pendientes():
+    reportes = _all("reportes")
+    avisos = _all("avisos")
+    filas = []
+    for rid, r in reportes.items():
+        if r.get("estado") != "pendiente":
+            continue
+        row = _con_id(r, rid)
+        row["aviso_titulo"] = avisos.get(r["aviso_id"], {}).get("titulo", "(aviso eliminado)")
+        filas.append(row)
+    filas.sort(key=lambda r: r["creado_en"], reverse=True)
+    return filas
+
+
+def descartar_reporte(reporte_id):
+    _fs().collection("reportes").document(str(reporte_id)).update({"estado": "descartado"})
+
+
+# ------------------------------------------------------------- auditoria
+
+def crear_auditoria(usuario, accion, detalle=""):
+    _fs().collection("auditoria").add({
+        "usuario": usuario, "accion": accion, "detalle": detalle, "creado_en": now(),
+    })
+
+
+def get_auditoria(limit=200):
+    filas = list(_all("auditoria").values())
+    filas.sort(key=lambda r: r["creado_en"], reverse=True)
+    return filas[:limit]
+
+
+# ----------------------------------------------------------------- pagos
+
+def crear_pago(negocio_id, plan_id, precio_clp):
+    _fs().collection("pagos").add({
+        "negocio_id": str(negocio_id), "plan_id": plan_id, "precio_clp": precio_clp, "creado_en": now(),
+    })
+
+
+def get_pagos():
+    pagos = list(_all("pagos").values())
+    negocios = _all("negocios")
+    planes = _all("planes")
+    filas = []
+    for p in pagos:
+        row = dict(p)
+        row["negocio_nombre"] = negocios.get(p["negocio_id"], {}).get("nombre", "(negocio eliminado)")
+        row["plan_nombre"] = planes.get(p["plan_id"], {}).get("nombre", p["plan_id"])
+        filas.append(row)
+    filas.sort(key=lambda p: p["creado_en"], reverse=True)
+    return filas
+
+
+# --------------------------------------------------------------- alertas
+
+def crear_alerta(termino, whatsapp):
+    _fs().collection("alertas").add({
+        "termino": termino, "whatsapp": whatsapp, "atendida": False, "creado_en": now(),
+    })
+
+
+def get_alertas_pendientes():
+    alertas = _all("alertas")
+    filas = [_con_id(a, aid) for aid, a in alertas.items() if not a.get("atendida")]
+    filas.sort(key=lambda a: a["creado_en"], reverse=True)
+    return filas
+
+
+def marcar_alerta_atendida(alerta_id):
+    _fs().collection("alertas").document(str(alerta_id)).update({"atendida": True})
+
+
+# ----------------------------------------------------------- estadisticas
+
+def get_dashboard_stats(dias):
+    cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=dias)).isoformat()
+    avisos = _all("avisos")
+    negocios = _all("negocios")
+    planes = _all("planes")
+    eventos = list(_all("eventos").values())
+
+    avisos_activos = sum(1 for a in avisos.values() if a.get("estado") == "activo")
+    pendientes = sum(1 for a in avisos.values() if a.get("estado") == "pendiente")
+
+    eventos_periodo = [e for e in eventos if e.get("creado_en", "") >= cutoff]
+    vistas = sum(1 for e in eventos_periodo if e.get("tipo") == "vista")
+    contactos = sum(1 for e in eventos_periodo if e.get("tipo") == "click_whatsapp")
+
+    hoy = datetime.date.today().isoformat()
+    anunciantes_pagando = 0
+    mrr = 0
+    for n in negocios.values():
+        plan = planes.get(n.get("plan_id", "gratis"), {})
+        precio = plan.get("precio_clp", 0)
+        vencimiento = n.get("plan_vencimiento")
+        vigente = vencimiento is None or vencimiento >= hoy
+        if precio > 0 and vigente:
+            anunciantes_pagando += 1
+            mrr += precio
+
+    def top(tipo):
+        conteo = {}
+        for e in eventos_periodo:
+            if e.get("tipo") == tipo and e.get("aviso_id"):
+                conteo[e["aviso_id"]] = conteo.get(e["aviso_id"], 0) + 1
+        filas = []
+        for aviso_id, n in conteo.items():
+            a = avisos.get(aviso_id)
+            if not a:
+                continue
+            neg = negocios.get(a.get("negocio_id"), {})
+            filas.append({"id": aviso_id, "titulo": a["titulo"], "negocio_nombre": neg.get("nombre", ""), "n": n})
+        filas.sort(key=lambda f: f["n"], reverse=True)
+        return filas[:10]
+
+    return {
+        "avisos_activos": avisos_activos, "pendientes": pendientes,
+        "vistas": vistas, "contactos": contactos,
+        "anunciantes_pagando": anunciantes_pagando, "mrr": mrr,
+        "top_vistos": top("vista"), "top_contactados": top("click_whatsapp"),
+    }
+
+
+def get_terminos_mas_buscados(limit=15):
+    conteo = {}
+    for e in _all("eventos").values():
+        if e.get("tipo") == "click_resultado_busqueda" and e.get("termino_busqueda"):
+            conteo[e["termino_busqueda"]] = conteo.get(e["termino_busqueda"], 0) + 1
+    filas = [{"termino_busqueda": k, "n": v} for k, v in conteo.items()]
+    filas.sort(key=lambda f: f["n"], reverse=True)
+    return filas[:limit]
+
+
+def get_terminos_sin_resultado(limit=15):
+    conteo = {}
+    for e in _all("eventos").values():
+        if e.get("tipo") == "busqueda_sin_resultado" and e.get("termino_busqueda"):
+            conteo[e["termino_busqueda"]] = conteo.get(e["termino_busqueda"], 0) + 1
+    filas = [{"termino_busqueda": k, "n": v} for k, v in conteo.items()]
+    filas.sort(key=lambda f: f["n"], reverse=True)
+    return filas[:limit]
+
+
+# ------------------------------------------------------------------- seed
+
 CATEGORIAS = [
     ("Vidriería y ventanas", "vidrieria", "🪟"),
     ("Gásfitería y plomería", "gasfiteria", "🔧"),
@@ -155,7 +552,6 @@ CATEGORIAS = [
     ("Contabilidad y trámites", "contabilidad", "📊"),
 ]
 
-# Color de acento por categoria (fondo de la tarjeta y de la imagen OG).
 COLOR_POR_CATEGORIA = {
     "vidrieria": "#BBD1EF",
     "gasfiteria": "#AEDFC4",
@@ -190,29 +586,27 @@ SINONIMOS = {
 }
 
 PLANES = [
-    ("Gratis", 0, 36500, 0),
-    ("Destacado", 9990, 30, 1),
-    ("Premium", 19990, 30, 2),
+    ("gratis", "Gratis", 0, 36500, 0),
+    ("destacado", "Destacado", 9990, 30, 1),
+    ("premium", "Premium", 19990, 30, 2),
 ]
 
 NEGOCIOS = [
-    # nombre, whatsapp, plan_idx, verificado
-    ("Vidriería Maule", "+56912345001", 2, 1),
-    ("Aluminios del Sur", "+56912345002", 1, 1),
-    ("Gásfiter Express Talca", "+56912345003", 0, 0),
-    ("Electricidad Rengo", "+56912345004", 1, 1),
-    ("Inglés con Pauli", "+56912345005", 0, 0),
-    ("PC Rápido Talca", "+56912345006", 2, 1),
-    ("Panadería Doña Elba", "+56912345007", 1, 0),
-    ("Salón Bella Maule", "+56912345008", 0, 0),
-    ("Jardines del Maule", "+56912345009", 1, 1),
-    ("Contabilidad Ríos & Asociados", "+56912345010", 2, 1),
-    ("Vidrios y Cristales Central", "+56912345011", 0, 0),
-    ("TecnoServicio Talca", "+56912345012", 0, 0),
+    ("Vidriería Maule", "+56912345001", "premium", 1),
+    ("Aluminios del Sur", "+56912345002", "destacado", 1),
+    ("Gásfiter Express Talca", "+56912345003", "gratis", 0),
+    ("Electricidad Rengo", "+56912345004", "destacado", 1),
+    ("Inglés con Pauli", "+56912345005", "gratis", 0),
+    ("PC Rápido Talca", "+56912345006", "premium", 1),
+    ("Panadería Doña Elba", "+56912345007", "destacado", 0),
+    ("Salón Bella Maule", "+56912345008", "gratis", 0),
+    ("Jardines del Maule", "+56912345009", "destacado", 1),
+    ("Contabilidad Ríos & Asociados", "+56912345010", "premium", 1),
+    ("Vidrios y Cristales Central", "+56912345011", "gratis", 0),
+    ("TecnoServicio Talca", "+56912345012", "gratis", 0),
 ]
 
 AVISOS = [
-    # negocio_idx, titulo, categoria_slug, comuna, descripcion, horario, estado
     (0, "Instalación y reparación de termopaneles", "vidrieria", "Talca",
      "Fabricamos e instalamos termopaneles y ventanas de PVC y aluminio a medida. "
      "Retiro de vidrios rotos y presupuesto sin costo.", "Lun a Vie 9:00-18:30", "activo"),
@@ -251,7 +645,6 @@ AVISOS = [
      "para pequeñas empresas.", "Lun a Vie 9:00-18:00", "pendiente"),
 ]
 
-
 TERMINOS_SIN_RESULTADO = [
     "veterinario 24 horas", "traductor jurado", "arriendo de andamios",
     "clases de yoga", "diseñador gráfico freelance", "mudanzas Talca",
@@ -259,126 +652,102 @@ TERMINOS_SIN_RESULTADO = [
 
 
 def _fecha_aleatoria(dias_atras, rng):
-    delta = datetime.timedelta(
-        days=rng.randint(0, dias_atras),
-        hours=rng.randint(0, 23),
-        minutes=rng.randint(0, 59),
-    )
+    delta = datetime.timedelta(days=rng.randint(0, dias_atras), hours=rng.randint(0, 23), minutes=rng.randint(0, 59))
     return (datetime.datetime.utcnow() - delta).isoformat()
 
 
-def _sembrar_eventos(cur, rng):
-    """Genera historial de vistas/contactos/búsquedas de las últimas 4 semanas
-    para que el panel de admin (seccion 7 del PRD) tenga datos reales que mostrar."""
-    avisos = cur.execute(
-        "SELECT aviso.id, categoria.slug AS cat_slug, negocio.plan_id, plan.prioridad "
-        "FROM aviso JOIN categoria ON categoria.id = aviso.categoria_id "
-        "JOIN negocio ON negocio.id = aviso.negocio_id "
-        "JOIN plan ON plan.id = negocio.plan_id "
-        "WHERE aviso.estado = 'activo'"
-    ).fetchall()
+def seed_if_empty():
+    fs = _fs()
+    if list(fs.collection("categorias").limit(1).stream()):
+        return
 
+    for nombre, slug, icono in CATEGORIAS:
+        fs.collection("categorias").document(slug).set({"nombre": nombre, "icono": icono})
+
+    for slug, palabras in SINONIMOS.items():
+        for palabra in palabras:
+            crear_sinonimo(slug, palabra)
+
+    for pid, nombre, precio, dur, prioridad in PLANES:
+        fs.collection("planes").document(pid).set({
+            "nombre": nombre, "precio_clp": precio, "duracion_dias": dur, "prioridad": prioridad,
+        })
+
+    neg_ids = []
+    for nombre, whatsapp, plan_id, verificado in NEGOCIOS:
+        nid = _next_id("negocios")
+        fs.collection("negocios").document(nid).set({
+            "nombre": nombre, "whatsapp": whatsapp, "verificado": bool(verificado),
+            "plan_id": plan_id, "plan_vencimiento": "2026-12-31" if plan_id != "gratis" else None,
+            "token_acceso": secrets.token_urlsafe(12), "creado_en": now(),
+        })
+        neg_ids.append(nid)
+
+    aviso_ids = []
+    for neg_idx, titulo, cat_slug, comuna, desc, horario, estado in AVISOS:
+        aid = _next_id("avisos")
+        fs.collection("avisos").document(aid).set({
+            "negocio_id": neg_ids[neg_idx], "titulo": titulo, "descripcion": desc,
+            "categoria_slug": cat_slug, "comuna": comuna, "horario": horario,
+            "color": COLOR_POR_CATEGORIA[cat_slug], "estado": estado,
+            "vistas_total": 0, "contactos_total": 0,
+            "publicado_en": now() if estado == "activo" else None, "creado_en": now(),
+        })
+        aviso_ids.append((aid, cat_slug, estado, neg_idx))
+
+    fs.collection("admin_usuarios").document("admin").set({
+        "usuario": "admin", "password": hash_password(os.environ.get("ADMIN_PASSWORD", "talca2026")),
+        "rol": "super_admin",
+    })
+
+    _sembrar_eventos(fs, aviso_ids, random.Random(42))
+
+
+def _sembrar_eventos(fs, aviso_ids, rng):
+    planes_prioridad = {"gratis": 0, "destacado": 1, "premium": 2}
     terminos_por_cat = {}
-    for row in cur.execute(
-        "SELECT categoria.slug AS slug, sinonimo.palabra FROM sinonimo "
-        "JOIN categoria ON categoria.id = sinonimo.categoria_id"
-    ).fetchall():
-        terminos_por_cat.setdefault(row["slug"], []).append(row["palabra"])
+    for s in _all("sinonimos").values():
+        terminos_por_cat.setdefault(s["categoria_slug"], []).append(s["palabra"])
 
-    for aviso in avisos:
-        popularidad = 1 + aviso["prioridad"]  # destacados/premium tienden a tener mas trafico
+    batch = fs.batch()
+    ops = 0
+
+    def add(coleccion, datos):
+        nonlocal batch, ops
+        batch.set(fs.collection(coleccion).document(), datos)
+        ops += 1
+        if ops >= 400:
+            batch.commit()
+            batch = fs.batch()
+            ops = 0
+
+    for aid, cat_slug, estado, neg_idx in aviso_ids:
+        if estado != "activo":
+            continue
+        plan_id = NEGOCIOS[neg_idx][2]
+        popularidad = 1 + planes_prioridad.get(plan_id, 0)
         n_vistas = rng.randint(15, 90) * popularidad
         n_contactos = max(1, int(n_vistas * rng.uniform(0.06, 0.18)))
         n_busquedas = rng.randint(2, 10) * popularidad
 
         for _ in range(n_vistas):
-            cur.execute(
-                "INSERT INTO evento (aviso_id, tipo, sesion_hash, creado_en) VALUES (?,?,?,?)",
-                (aviso["id"], "vista", f"s{rng.randint(1, 999999):06x}", _fecha_aleatoria(28, rng)),
-            )
+            add("eventos", {"aviso_id": aid, "tipo": "vista", "termino_busqueda": None,
+                             "sesion_hash": f"s{rng.randint(1, 999999):06x}", "creado_en": _fecha_aleatoria(28, rng)})
         for _ in range(n_contactos):
-            cur.execute(
-                "INSERT INTO evento (aviso_id, tipo, sesion_hash, creado_en) VALUES (?,?,?,?)",
-                (aviso["id"], "click_whatsapp", f"s{rng.randint(1, 999999):06x}", _fecha_aleatoria(28, rng)),
-            )
-        terminos = terminos_por_cat.get(aviso["cat_slug"], [aviso["cat_slug"]])
+            add("eventos", {"aviso_id": aid, "tipo": "click_whatsapp", "termino_busqueda": None,
+                             "sesion_hash": f"s{rng.randint(1, 999999):06x}", "creado_en": _fecha_aleatoria(28, rng)})
+        terminos = terminos_por_cat.get(cat_slug, [cat_slug])
         for _ in range(n_busquedas):
-            termino = rng.choice(terminos)
-            cur.execute(
-                "INSERT INTO evento (aviso_id, tipo, termino_busqueda, sesion_hash, creado_en) "
-                "VALUES (?,?,?,?,?)",
-                (aviso["id"], "click_resultado_busqueda", termino,
-                 f"s{rng.randint(1, 999999):06x}", _fecha_aleatoria(28, rng)),
-            )
+            add("eventos", {"aviso_id": aid, "tipo": "click_resultado_busqueda",
+                             "termino_busqueda": rng.choice(terminos),
+                             "sesion_hash": f"s{rng.randint(1, 999999):06x}", "creado_en": _fecha_aleatoria(28, rng)})
 
-        cur.execute(
-            "UPDATE aviso SET vistas_total = ?, contactos_total = ? WHERE id = ?",
-            (n_vistas, n_contactos, aviso["id"]),
-        )
+        fs.collection("avisos").document(aid).update({"vistas_total": n_vistas, "contactos_total": n_contactos})
 
     for termino in TERMINOS_SIN_RESULTADO:
         for _ in range(rng.randint(2, 8)):
-            cur.execute(
-                "INSERT INTO evento (aviso_id, tipo, termino_busqueda, sesion_hash, creado_en) "
-                "VALUES (NULL, 'busqueda_sin_resultado', ?, ?, ?)",
-                (termino, f"s{rng.randint(1, 999999):06x}", _fecha_aleatoria(28, rng)),
-            )
+            add("eventos", {"aviso_id": None, "tipo": "busqueda_sin_resultado", "termino_busqueda": termino,
+                             "sesion_hash": f"s{rng.randint(1, 999999):06x}", "creado_en": _fecha_aleatoria(28, rng)})
 
-
-def seed_if_empty():
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.executescript(SCHEMA)
-
-    if cur.execute("SELECT COUNT(*) FROM categoria").fetchone()[0] == 0:
-        cat_ids = {}
-        for nombre, slug, icono in CATEGORIAS:
-            cur.execute(
-                "INSERT INTO categoria (nombre, slug, icono) VALUES (?, ?, ?)",
-                (nombre, slug, icono),
-            )
-            cat_ids[slug] = cur.lastrowid
-
-        for slug, palabras in SINONIMOS.items():
-            cid = cat_ids[slug]
-            for palabra in palabras:
-                cur.execute(
-                    "INSERT INTO sinonimo (categoria_id, palabra) VALUES (?, ?)",
-                    (cid, palabra),
-                )
-
-        plan_ids = []
-        for nombre, precio, dur, prioridad in PLANES:
-            cur.execute(
-                "INSERT INTO plan (nombre, precio_clp, duracion_dias, prioridad) VALUES (?, ?, ?, ?)",
-                (nombre, precio, dur, prioridad),
-            )
-            plan_ids.append(cur.lastrowid)
-
-        neg_ids = []
-        for nombre, whatsapp, plan_idx, verificado in NEGOCIOS:
-            cur.execute(
-                "INSERT INTO negocio (nombre, whatsapp, verificado, plan_id, plan_vencimiento, "
-                "token_acceso, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (nombre, whatsapp, verificado, plan_ids[plan_idx],
-                 "2026-12-31" if plan_idx > 0 else None, secrets.token_urlsafe(12), now()),
-            )
-            neg_ids.append(cur.lastrowid)
-
-        for neg_idx, titulo, cat_slug, comuna, desc, horario, estado in AVISOS:
-            cur.execute(
-                "INSERT INTO aviso (negocio_id, titulo, descripcion, categoria_id, comuna, "
-                "horario, color, estado, publicado_en, creado_en) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (neg_ids[neg_idx], titulo, desc, cat_ids[cat_slug], comuna, horario,
-                 COLOR_POR_CATEGORIA[cat_slug], estado, now() if estado == "activo" else None, now()),
-            )
-
-        _sembrar_eventos(cur, random.Random(42))
-
-        cur.execute(
-            "INSERT INTO admin_usuario (usuario, password, rol) VALUES (?, ?, ?)",
-            ("admin", hash_password(os.environ.get("ADMIN_PASSWORD", "talca2026")), "super_admin"),
-        )
-
-        conn.commit()
-    conn.close()
+    if ops:
+        batch.commit()

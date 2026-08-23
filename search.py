@@ -39,31 +39,13 @@ def _tokens(texto):
     return [_stem(t) for t in re.split(r"[^a-z0-9]+", _normalizar(texto)) if len(t) > 2]
 
 
-def buscar_avisos(conn, query, limite=20):
+def buscar_avisos(avisos, sinonimos_por_categoria, query, limite=20):
+    """avisos: lista de dicts de avisos activos (con categoria_id/categoria_slug
+    ya resuelto). sinonimos_por_categoria: dict {categoria_slug: [palabras]}."""
     query_norm = _normalizar(query)
     query_tokens = set(_tokens(query))
     if not query_tokens:
         return []
-
-    avisos = conn.execute(
-        """
-        SELECT aviso.*, negocio.nombre AS negocio_nombre, negocio.whatsapp,
-               negocio.verificado, categoria.nombre AS categoria_nombre,
-               categoria.slug AS categoria_slug, categoria.icono,
-               plan.prioridad AS plan_prioridad, plan.nombre AS plan_nombre
-        FROM aviso
-        JOIN negocio ON negocio.id = aviso.negocio_id
-        JOIN categoria ON categoria.id = aviso.categoria_id
-        JOIN plan ON plan.id = negocio.plan_id
-        WHERE aviso.estado = 'activo'
-        """
-    ).fetchall()
-
-    sinonimos_por_categoria = {}
-    for row in conn.execute("SELECT categoria_id, palabra FROM sinonimo").fetchall():
-        sinonimos_por_categoria.setdefault(row["categoria_id"], []).append(
-            _normalizar(row["palabra"])
-        )
 
     resultados = []
     for aviso in avisos:
@@ -84,7 +66,8 @@ def buscar_avisos(conn, query, limite=20):
         score += 2.5 * len(query_tokens & titulo_tokens)
         score += 1.0 * len(query_tokens & desc_tokens)
 
-        for palabra in sinonimos_por_categoria.get(aviso["categoria_id"], []):
+        for palabra_cruda in sinonimos_por_categoria.get(aviso["categoria_id"], []):
+            palabra = _normalizar(palabra_cruda)
             if palabra in query_norm or query_norm in palabra:
                 score += 3.5
                 break
