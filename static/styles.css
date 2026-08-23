@@ -82,16 +82,19 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 
 /* ---- hero ---- */
 .hero{
-  padding:110px 20px 40px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:clamp(320px, 42vw, 640px);
+  padding:90px 20px 28px;
   text-align:center;
   background:
-    linear-gradient(180deg, rgba(20,24,15,.22) 0%, rgba(20,24,15,.34) 45%, rgba(20,24,15,.62) 78%, var(--paper) 100%),
-    url("img/hero-talca.jpg") center 64% / cover no-repeat;
+    linear-gradient(180deg, rgba(20,24,15,.16) 0%, rgba(20,24,15,.3) 55%, rgba(20,24,15,.6) 86%, var(--paper) 100%),
+    url("img/hero-talca.jpg") center 42% / cover no-repeat;
   margin:0 calc(50% - 50vw);
-  padding-left:20px; padding-right:20px;
 }
-.hero h1{max-width:20ch; margin:0 auto 10px; color:#fff; text-shadow:0 2px 18px rgba(15,18,10,.55), 0 1px 3px rgba(15,18,10,.5);}
-.hero-sub{max-width:56ch; margin:0 auto 28px; color:rgba(255,255,255,.94); font-size:1.03rem; text-shadow:0 1px 10px rgba(15,18,10,.45);}
+.hero h1{max-width:20ch; margin:0 auto 10px; color:#fff; text-shadow:0 2px 16px rgba(15,18,10,.5), 0 1px 3px rgba(15,18,10,.45);}
+.hero-sub{max-width:56ch; margin:0 auto 28px; color:rgba(255,255,255,.94); font-size:1.03rem; text-shadow:0 1px 8px rgba(15,18,10,.4);}
 .search-box{position:relative; max-width:640px; margin:0 auto; display:flex; align-items:center; gap:8px;
   background:var(--paper-raised); border:1px solid var(--line); border-radius:14px; padding:8px 8px 8px 16px; box-shadow:var(--shadow);}
 .search-icon{font-size:1.1rem;}
