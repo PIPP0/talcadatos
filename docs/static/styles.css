@@ -1,21 +1,21 @@
 :root{
-  --paper:#FAF8FC;
-  --paper-raised:#FFFFFF;
-  --ink:#37333F;
-  --ink-soft:#767185;
-  --ink-faint:#A8A2B5;
-  --accent:#9C82C2;
-  --accent-deep:#7A5CA0;
-  --accent-soft:#F0E7F7;
-  --line:#EDE7F3;
-  --brick:#C97B92;
-  --brick-soft:#FBEAF0;
-  --teal:#5FA893;
-  --teal-soft:#E4F3EE;
+  --paper:#EFEAD9;
+  --paper-raised:#FBF7EA;
+  --ink:#1D2419;
+  --ink-soft:#56604C;
+  --ink-faint:#8B927E;
+  --accent:#B67818;
+  --accent-deep:#8F5E11;
+  --accent-soft:#F1DEB2;
+  --line:#DDD5BC;
+  --brick:#A34428;
+  --brick-soft:#F0D9CC;
+  --teal:#35593F;
+  --teal-soft:#DCE7D6;
   --whatsapp:#25D366;
   --whatsapp-deep:#1DA851;
-  --shadow:0 1px 2px rgba(55,51,63,.04), 0 12px 28px -18px rgba(55,51,63,.14);
-  --radius:16px;
+  --shadow:0 1px 2px rgba(29,36,25,.06), 0 10px 22px -16px rgba(29,36,25,.22);
+  --radius:6px;
 }
 *{box-sizing:border-box;}
 html{-webkit-text-size-adjust:100%;}
@@ -23,7 +23,7 @@ body{
   margin:0;
   background:var(--paper);
   color:var(--ink);
-  font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family:"Work Sans", ui-sans-serif, system-ui, sans-serif;
   line-height:1.55;
 }
 h1,h2,h3{
@@ -61,7 +61,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .topnav a{color:var(--ink-soft); font-weight:500; font-size:.94rem;}
 .topnav a:hover{color:var(--ink);}
 .topbar-admin{background:var(--ink); border-bottom-color:var(--ink);}
-.topbar-admin .brand,.topbar-admin .topnav a{color:#F1EDF7;}
+.topbar-admin .brand,.topbar-admin .topnav a{color:#EFE9D6;}
 .topbar-admin .topnav a:hover{color:#fff;}
 
 /* ---- buttons ---- */
@@ -78,7 +78,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .btn-block{width:100%; margin-top:10px;}
 .btn-ok{background:var(--teal); color:#fff;}
 .btn-bad{background:var(--brick); color:#fff;}
-.topbar-admin .btn-ghost{border-color:#4E4A5A; color:#F1EDF7;}
+.topbar-admin .btn-ghost{border-color:#48513E; color:#EFE9D6;}
 
 /* ---- hero ---- */
 .hero{padding:56px 0 28px; text-align:center;}
@@ -235,9 +235,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .badge-mvp,.badge-gold{background:var(--accent-soft); color:var(--accent-deep);}
 .badge-brick{background:var(--brick-soft); color:var(--brick);}
 .badge-ok{background:var(--teal-soft); color:var(--teal);}
-.badge-warn{background:#FAEFD2; color:#9C7F3A;}
+.badge-warn{background:#F1DEB2; color:#8F5E11;}
 .badge-bad{background:var(--brick-soft); color:var(--brick);}
-.badge-muted{background:#EEEAF2; color:var(--ink-faint);}
+.badge-muted{background:#E4DFCB; color:var(--ink-faint);}
 
 /* ---- admin ---- */
 .kpi-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin:20px 0 32px;}

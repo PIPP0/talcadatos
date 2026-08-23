@@ -288,7 +288,7 @@
       favs[id] = {
         id: id, titulo: btn.getAttribute("data-titulo") || "", negocio: btn.getAttribute("data-negocio") || "",
         comuna: btn.getAttribute("data-comuna") || "", categoria: btn.getAttribute("data-categoria") || "",
-        icono: btn.getAttribute("data-icono") || "📌", color: btn.getAttribute("data-color") || "#9C82C2",
+        icono: btn.getAttribute("data-icono") || "📌", color: btn.getAttribute("data-color") || "#B67818",
         verificado: btn.getAttribute("data-verificado") === "1", plan: btn.getAttribute("data-plan") || "Gratis",
       };
     }
