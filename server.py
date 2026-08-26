@@ -175,7 +175,6 @@ def require_role(handler, roles):
 # --------------------------------------------------------------- publico
 
 def home(handler):
-    categorias = db.get_categorias()
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
     recientes = db.get_avisos(estado="activo", orden="recientes", limit=8)
@@ -197,7 +196,6 @@ def home(handler):
     <button class="btn btn-primary" type="submit">Buscar</button>
     <div id="search-results" class="search-results" hidden></div>
   </form>
-  {t.categorias_pills(categorias)}
 </section>
 
 <section class="section section-featured">
