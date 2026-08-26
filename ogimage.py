@@ -73,7 +73,7 @@ def _wrap(draw, text, font, max_width):
 
 
 def generar(aviso):
-    accent = aviso["color"] or "#8C5F22"
+    accent = aviso["color"] or "#5E7CE2"
     bg = _mix(accent, (20, 24, 20), 0.55)
     img = Image.new("RGB", (W, H), bg)
     draw = ImageDraw.Draw(img, "RGBA")
@@ -109,9 +109,9 @@ def generar(aviso):
 
 
 def generar_default():
-    img = Image.new("RGB", (W, H), (30, 36, 31))
+    img = Image.new("RGB", (W, H), (29, 29, 31))
     draw = ImageDraw.Draw(img, "RGBA")
-    draw.ellipse((W - 480, -220, W + 260, 460), fill=(140, 95, 34, 255))
+    draw.ellipse((W - 480, -220, W + 260, 460), fill=(0, 113, 227, 255))
     font_wordmark = _load_font(FONT_CANDIDATES_BOLD, 46)
     font_title = _load_font(FONT_CANDIDATES_BOLD, 58)
     font_label = _load_font(FONT_CANDIDATES_REGULAR, 30)

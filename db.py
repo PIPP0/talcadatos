@@ -551,16 +551,16 @@ CATEGORIAS = [
 ]
 
 COLOR_POR_CATEGORIA = {
-    "vidrieria": "#9FB4C4",
-    "gasfiteria": "#7FA07E",
-    "electricidad": "#D9A63C",
-    "aluminios": "#B7AF9C",
-    "clases": "#A97CA0",
-    "tecnologia": "#7FA3A6",
-    "panaderia": "#C98A4B",
-    "belleza": "#C98878",
-    "jardineria": "#8FA35E",
-    "contabilidad": "#C7A34A",
+    "vidrieria": "#5AC8FA",
+    "gasfiteria": "#30D158",
+    "electricidad": "#FFD60A",
+    "aluminios": "#8E93A1",
+    "clases": "#BF5AF2",
+    "tecnologia": "#5E7CE2",
+    "panaderia": "#FF9F45",
+    "belleza": "#FF6482",
+    "jardineria": "#34C759",
+    "contabilidad": "#32C6D0",
 }
 
 SINONIMOS = {

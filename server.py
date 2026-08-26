@@ -325,7 +325,7 @@ def detalle(handler, aviso_id, query=""):
     body = f"""
 <div class="detalle">
   <div class="detalle-photo" style="--card-accent:{t.esc(aviso['color'])}">
-    <span class="card-icon big">{aviso['icono']}</span>
+    <span class="icon-tile big"><span class="card-icon big">{aviso['icono']}</span></span>
     {destacado_html}
     <button class="fav-btn" type="button" data-fav-id="{aviso['id']}" data-titulo="{t.esc(aviso['titulo'])}"
        data-negocio="{t.esc(aviso['negocio_nombre'])}" data-comuna="{t.esc(aviso['comuna'])}"
@@ -463,7 +463,7 @@ def publicar_submit(handler, form):
         return publicar_form(handler, form=form, errores=errores)
 
     slug = form["categoria_id"]
-    color = db.COLOR_POR_CATEGORIA.get(slug, "#8C5F22")
+    color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
     negocio_id, token_acceso = db.crear_negocio(
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip())
     db.crear_aviso(
