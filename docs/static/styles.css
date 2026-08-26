@@ -121,6 +121,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .stat-bar div{display:flex; flex-direction:column; gap:2px;}
 .stat-bar strong{font-size:2rem; font-weight:800; letter-spacing:-0.02em; color:var(--ink); font-variant-numeric:tabular-nums;}
 .stat-bar span{font-size:.84rem; color:var(--ink-soft);}
+.stat-bar-hero{padding:2px 20px 26px; margin:0; border:none; gap:40px;}
+.stat-bar-hero strong{color:#fff; font-size:1.7rem; text-shadow:0 1px 10px rgba(0,0,0,.35);}
+.stat-bar-hero span{color:rgba(255,255,255,.82); text-shadow:0 1px 8px rgba(0,0,0,.3);}
 
 /* ---- como funciona ---- */
 .how{display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin:64px 0;}

@@ -186,8 +186,11 @@ def home(handler):
     body = f"""
 <section class="hero">
   <h1>Encuentra al negocio de Talca que necesitas, al toque.</h1>
-  <p class="hero-sub">Escribe lo que buscas —"ventanas", "clases de inglés", "gásfiter"— y Talcadatos te muestra
-  al negocio local correcto, con WhatsApp directo para escribirle ahora mismo.</p>
+  <div class="stat-bar stat-bar-hero">
+    <div><strong>{n_negocios}</strong><span>negocios activos en Talca</span></div>
+    <div><strong>{n_contactos}</strong><span>contactos por WhatsApp generados</span></div>
+    <div><strong>{n_categorias}</strong><span>rubros distintos</span></div>
+  </div>
   <form class="search-box" id="search-form" autocomplete="off">
     <span class="search-icon">🔎</span>
     <input id="search-input" name="q" type="text" placeholder="¿Qué estás buscando? Ej: ventanas, pan amasado, clases de inglés…">
@@ -195,12 +198,6 @@ def home(handler):
     <div id="search-results" class="search-results" hidden></div>
   </form>
   {t.categorias_pills(categorias)}
-</section>
-
-<section class="stat-bar">
-  <div><strong>{n_negocios}</strong><span>negocios activos en Talca</span></div>
-  <div><strong>{n_contactos}</strong><span>contactos por WhatsApp generados</span></div>
-  <div><strong>{n_categorias}</strong><span>rubros distintos</span></div>
 </section>
 
 <section class="section section-featured">
