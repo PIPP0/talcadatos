@@ -35,16 +35,6 @@ PAGES_HOST = "pipp0.github.io"
 PAGES_PREFIX = "/talcadatos"
 PAGES_BASE = f"https://{PAGES_HOST}{PAGES_PREFIX}"
 
-NOTICE = (
-    '<div class="flash static-notice">'
-    "🔧 Vista de demostración estática (GitHub Pages) — el buscador, los filtros y los "
-    "favoritos funcionan (corren en tu navegador). Publicar un aviso, reportar y el panel "
-    "de administración quedan inactivos aquí porque necesitan un servidor real. "
-    '<a href="https://github.com/PIPP0/talcadatos">Ver el código y cómo correrlo '
-    "completo →</a></div>"
-)
-
-
 class FakeHandler:
     """Imita lo minimo que las funciones de rutas de server.py necesitan de un
     http.server.BaseHTTPRequestHandler, para poder llamarlas directo sin
@@ -77,7 +67,6 @@ def _postprocess(html):
     html = re.sub(r'(href|src|action)="/(?!talcadatos)', rf'\1="{prefix}/', html)
     html = re.sub(r'href="' + re.escape(prefix) + r'/avisos/(\d+)"',
                    rf'href="{prefix}/avisos/\1/"', html)
-    html = html.replace('<main class="wrap">', '<main class="wrap">\n' + NOTICE, 1)
     html = re.sub(
         r'\s*<span>Panel de administración: <a href="[^"]*">/admin</a></span>', "", html)
     return html
