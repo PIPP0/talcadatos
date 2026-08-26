@@ -203,9 +203,9 @@ def home(handler):
   <div><strong>{n_categorias}</strong><span>rubros distintos</span></div>
 </section>
 
-<section class="section">
+<section class="section section-featured">
   <div class="section-head">
-    <h2>Destacados</h2>
+    <div><span class="eyebrow">Lo más buscado en Talca</span><h2>Destacados</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
   {t.carousel(destacados)}
