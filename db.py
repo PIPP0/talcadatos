@@ -33,6 +33,42 @@ _KEY_PATH = os.path.join(BASE_DIR, "firebase-key.json")
 _db = None
 
 
+CONTENIDO_SITIO_POR_DEFECTO = {
+    "marca": "Talcadatos",
+    "pie": "Talcadatos — directorio de pymes y emprendedores de Talca",
+    "descripcion": "Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.",
+    "hero_ubicacion": "Talca, Chile",
+    "hero_titulo": "Encuentra lo que necesitas en Talca, al toque.",
+    "hero_bajada": "Negocios, servicios, datos y oportunidades cerca de ti.",
+    "hero_placeholder": "¿Qué estás buscando? Ej: ventanas, pan amasado, clases de inglés…",
+    "hero_ayuda": "Prueba: gásfiter, veterinaria, clases particulares",
+    "destacados_eyebrow": "Lo más buscado en Talca",
+    "destacados_titulo": "Destacados",
+    "rubros_eyebrow": "Encuentra más rápido",
+    "rubros_titulo": "Explora por rubros",
+    "hoy_eyebrow": "Actualidad local",
+    "hoy_titulo": "Hoy en Talca",
+    "tendencias_eyebrow": "Tendencias locales",
+    "tendencias_titulo": "Lo que Talca está buscando",
+    "tendencias_bajada": "Señales agregadas para descubrir servicios útiles y oportunidades locales.",
+    "necesidad_eyebrow": "¿No aparece lo que buscas?",
+    "necesidad_titulo": "Cuéntanos qué necesitas.",
+    "necesidad_bajada": "Publica tu necesidad y la conectaremos con negocios de Talca que puedan ayudarte.",
+    "necesidad_boton": "Publicar necesidad",
+    "pymes_eyebrow": "Para pymes y emprendedores",
+    "pymes_titulo": "Haz que Talca encuentre tu negocio.",
+    "pymes_bajada": "Crea tu vitrina local gratis y empieza a recibir contactos reales.",
+    "pymes_boton": "Publicar mi negocio",
+    "explorar_eyebrow": "Descubrimiento local",
+    "explorar_titulo": "Explora Talca por lo que necesitas",
+    "explorar_bajada": "Encuentra negocios y servicios por rubro, o parte con una búsqueda.",
+    "necesito_titulo": "¿Qué necesitas resolver?",
+    "necesito_bajada": "Cuéntanos en pocas palabras. Buscaremos pymes y emprendedores de Talca que puedan ayudarte.",
+    "publicar_titulo": "Publica tu negocio en Talcadatos",
+    "publicar_bajada": "Es gratis. Completa el formulario y tu aviso queda listo para revisión — normalmente se aprueba el mismo día.",
+}
+
+
 def _fs():
     global _db
     if _db is not None:
@@ -93,6 +129,32 @@ def _con_id(d, doc_id):
     row = dict(d)
     row["id"] = doc_id
     return row
+
+
+# -------------------------------------------------------- contenido del sitio
+
+def get_contenido_sitio():
+    """Obtiene el CMS de una sola página y aplica valores seguros por defecto."""
+    doc = _fs().collection("configuracion").document("sitio").get()
+    contenido = dict(CONTENIDO_SITIO_POR_DEFECTO)
+    if doc.exists:
+        contenido.update({k: v for k, v in (doc.to_dict() or {}).items()
+                          if k in CONTENIDO_SITIO_POR_DEFECTO and isinstance(v, str) and v.strip()})
+    return contenido
+
+
+def actualizar_contenido_sitio(campos):
+    datos = {}
+    for clave, valor in campos.items():
+        if clave not in CONTENIDO_SITIO_POR_DEFECTO:
+            continue
+        texto = str(valor or "").strip()[:600]
+        if texto:
+            datos[clave] = texto
+    if datos:
+        datos["actualizado_en"] = now()
+        _fs().collection("configuracion").document("sitio").set(datos, merge=True)
+
 
 
 # ------------------------------------------------------------- categorias
@@ -373,6 +435,14 @@ def crear_admin_usuario(usuario, password_hash, rol):
     return True
 
 
+def actualizar_password_admin(usuario, password_hash):
+    ref = _fs().collection("admin_usuarios").document(usuario)
+    if not ref.get().exists:
+        return False
+    ref.update({"password": password_hash})
+    return True
+
+
 def eliminar_admin_usuario(usuario):
     total = len(list(_fs().collection("admin_usuarios").stream()))
     if total <= 1:
@@ -462,6 +532,43 @@ def get_alertas_pendientes():
 
 def marcar_alerta_atendida(alerta_id):
     _fs().collection("alertas").document(str(alerta_id)).update({"atendida": True})
+
+
+# ------------------------------------------------------------ necesidades
+
+def crear_necesidad(categoria_slug, descripcion, sector, cuando, whatsapp):
+    """Guarda una solicitud para que el equipo conecte demanda con pymes."""
+    nid = _next_id("necesidades")
+    _fs().collection("necesidades").document(nid).set({
+        "categoria_slug": categoria_slug,
+        "descripcion": descripcion,
+        "sector": sector,
+        "cuando": cuando,
+        "whatsapp": whatsapp,
+        "estado": "nueva",
+        "creado_en": now(),
+    })
+    return nid
+
+
+def get_necesidades_pendientes():
+    necesidades = _all("necesidades")
+    categorias = _all("categorias")
+    filas = []
+    for nid, necesidad in necesidades.items():
+        if necesidad.get("estado") != "nueva":
+            continue
+        row = _con_id(necesidad, nid)
+        categoria = categorias.get(row.get("categoria_slug"), {})
+        row["categoria_nombre"] = categoria.get("nombre", "Sin categoría")
+        row["icono"] = categoria.get("icono", "📌")
+        filas.append(row)
+    filas.sort(key=lambda n: n.get("creado_en", ""), reverse=True)
+    return filas
+
+
+def marcar_necesidad_atendida(necesidad_id):
+    _fs().collection("necesidades").document(str(necesidad_id)).update({"estado": "atendida"})
 
 
 # ----------------------------------------------------------- estadisticas

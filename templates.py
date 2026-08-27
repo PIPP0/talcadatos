@@ -24,10 +24,14 @@ SITE_DESCRIPTION = ("Encuentra pymes y emprendedores de Talca por lo que necesit
 
 
 def layout(title, body, active="home", admin=False, description=None, og_image="/og/default.png",
-           canonical=None, json_ld=None, flash=None):
-    nav = ADMIN_NAV if admin else PUBLIC_NAV
+           canonical=None, json_ld=None, flash=None, site=None):
+    site = site or {}
+    marca = esc(site.get("marca", "Talcadatos"))
+    pie = esc(site.get("pie", "Talcadatos — directorio de pymes y emprendedores de Talca"))
+    nav = ADMIN_NAV if admin else PUBLIC_NAV.replace("{{marca}}", marca)
+    mobile_nav = ADMIN_MOBILE_NAV if admin else MOBILE_NAV
     active_attr = f' data-active="{active}"'
-    desc = description or SITE_DESCRIPTION
+    desc = description or site.get("descripcion") or SITE_DESCRIPTION
     canonical_tag = f'<link rel="canonical" href="{esc(canonical)}">' if canonical else ""
     ld_tag = f'<script type="application/ld+json">{json_ld}</script>' if json_ld else ""
     flash_html = f'<div class="flash">{esc(flash)}</div>' if flash else ""
@@ -37,22 +41,24 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(title)} · Talcadatos</title>
+<title>{esc(title)} · {marca}</title>
 <meta name="description" content="{esc(desc)}">
 {robots}
 {canonical_tag}
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Talcadatos">
-<meta property="og:title" content="{esc(title)} · Talcadatos">
+<meta property="og:site_name" content="{marca}">
+<meta property="og:title" content="{esc(title)} · {marca}">
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:image" content="{esc(og_image)}">
 <meta name="twitter:card" content="summary_large_image">
 {ld_tag}
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📌</text></svg>">
+<meta name="theme-color" content="#E85D5D">
+<link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css">
+<link rel="stylesheet" href="/static/styles.css?v=20260826-3">
 </head>
 <body{active_attr}>
 {nav}
@@ -61,22 +67,43 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 {body}
 </main>
 <footer class="site-footer">
-  <span>Talcadatos — directorio de pymes y emprendedores de Talca</span>
+  <span>{pie}</span>
   <span>Panel de administración: <a href="/admin">/admin</a></span>
 </footer>
-<script src="/static/app.js"></script>
+{mobile_nav}
+<script src="/static/app.js?v=20260826-2"></script>
 </body>
 </html>"""
+
+
+MOBILE_NAV = """
+<nav class="mobile-nav" aria-label="Navegación principal">
+  <a href="/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
+  <a href="/explorar"><span aria-hidden="true">▦</span><span>Explorar</span></a>
+  <a href="/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
+  <a href="/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
+  <a href="/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
+</nav>
+"""
+
+
+ADMIN_MOBILE_NAV = """
+<nav class="admin-mobile-nav" aria-label="Navegación de administración">
+  <a href="/admin">Inicio</a><a href="/admin/editor">Editor</a><a href="/admin/contenido">Contenido</a>
+  <a href="/admin/avisos">Avisos</a><a href="/admin/cuenta">Cuenta</a>
+</nav>
+"""
 
 
 PUBLIC_NAV = """
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a href="/" class="brand">📌 Talcadatos</a>
+    <a href="/" class="brand">📌 {{marca}}</a>
     <nav class="topnav">
-      <a href="/avisos">Explorar</a>
-      <a href="/favoritos">☆ Favoritos</a>
-      <a href="/ayuda">Ayuda</a>
+      <a href="/">Inicio</a>
+      <a href="/explorar">Explorar</a>
+      <a href="/avisos">Avisos</a>
+      <a href="/favoritos">Favoritos</a>
       <a href="/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
@@ -96,9 +123,13 @@ ADMIN_NAV = """
       <a href="/admin/pagos">Pagos</a>
       <a href="/admin/sinonimos">Sinónimos</a>
       <a href="/admin/alertas">Alertas</a>
+      <a href="/admin/necesidades">Necesidades</a>
       <a href="/admin/analitica">Analítica</a>
       <a href="/admin/auditoria">Auditoría</a>
       <a href="/admin/usuarios">Usuarios</a>
+      <a href="/admin/editor">Editor visual</a>
+      <a href="/admin/contenido">Contenido</a>
+      <a href="/admin/cuenta">Mi cuenta</a>
       <a href="/" class="btn btn-ghost">Ver sitio</a>
       <a href="/admin/logout" class="btn btn-ghost">Salir</a>
     </nav>
@@ -187,3 +218,18 @@ def categorias_pills(categorias, activa_slug=None):
         cls = "pill active" if c["slug"] == activa_slug else "pill"
         items.append(f'<a class="{cls}" href="/avisos?categoria={c["slug"]}">{c["icono"]} {esc(c["nombre"])}</a>')
     return '<div class="pills">' + "".join(items) + "</div>"
+
+
+def categorias_grid(categorias):
+    """Atajos visuales para descubrir rubros sin depender del buscador."""
+    colores = ["#E85D5D", "#2B80D8", "#0AA39A", "#7D5CD6", "#D9921B", "#28A968"]
+    items = []
+    for i, c in enumerate(categorias):
+        color = colores[i % len(colores)]
+        items.append(
+            f'<a class="category-card" style="--category-accent:{color}" '
+            f'href="/avisos?categoria={quote(c["slug"])}">'
+            f'<span class="category-icon">{c["icono"]}</span>'
+            f'<span>{esc(c["nombre"])}</span><span class="category-arrow" aria-hidden="true">→</span></a>'
+        )
+    return '<div class="category-grid">' + "".join(items) + "</div>"

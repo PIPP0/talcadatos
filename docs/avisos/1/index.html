@@ -15,10 +15,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "LocalBusiness", "name": "Vidriería Maule", "description": "Fabricamos e instalamos termopaneles y ventanas de PVC y aluminio a medida. Retiro de vidrios rotos y presupuesto sin costo.", "areaServed": "Talca", "address": {"@type": "PostalAddress", "addressLocality": "Talca", "addressCountry": "CL"}, "telephone": "+56912345001", "url": "https://pipp0.github.io/talcadatos/avisos/1"}</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📌</text></svg>">
+<meta name="theme-color" content="#E85D5D">
+<link rel="manifest" href="/talcadatos/static/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/talcadatos/static/styles.css">
+<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260826-3">
 </head>
 <body data-active="avisos">
 
@@ -26,9 +28,10 @@
   <div class="wrap topbar-inner">
     <a href="/talcadatos/" class="brand">📌 Talcadatos</a>
     <nav class="topnav">
-      <a href="/talcadatos/avisos">Explorar</a>
-      <a href="/talcadatos/favoritos">☆ Favoritos</a>
-      <a href="/talcadatos/ayuda">Ayuda</a>
+      <a href="/talcadatos/">Inicio</a>
+      <a href="/talcadatos/explorar">Explorar</a>
+      <a href="/talcadatos/avisos">Avisos</a>
+      <a href="/talcadatos/favoritos">Favoritos</a>
       <a href="/talcadatos/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
@@ -53,8 +56,8 @@
     <h1>Instalación y reparación de termopaneles</h1>
     <div class="detalle-negocio">Vidriería Maule <span class="check">✔ Negocio verificado</span></div>
     <p class="detalle-desc">Fabricamos e instalamos termopaneles y ventanas de PVC y aluminio a medida. Retiro de vidrios rotos y presupuesto sin costo.</p>
-    <p class="detalle-horario"><strong>Horario:</strong> Lun a Vie 9:00-18:30</p>
-    
+
+
     <a class="btn btn-whatsapp btn-lg" href="https://wa.me/56912345001?text=Hola%20Vidrier%C3%ADa%20Maule%2C%20vi%20tu%20aviso%20%22Instalaci%C3%B3n%20y%20reparaci%C3%B3n%20de%20termopaneles%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
        data-aviso-id="1" data-wa-click="1">
        💬 Escribir por WhatsApp
@@ -71,7 +74,7 @@
       </details>
     </div>
     <div class="qr-block">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=http%3A//pipp0.github.io/avisos/1" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A//pipp0.github.io/talcadatos/avisos/1/" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
       <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
   </div>
@@ -80,7 +83,7 @@
 <article class="card" style="--card-accent:#5AC8FA" data-aviso-id="11">
   <a class="card-photo" href="/talcadatos/avisos/11/">
     <span class="icon-tile"><span class="card-icon">🪟</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="11" data-titulo="Venta y reparación de vidrios y espejos" data-negocio="Vidrios y Cristales Central" data-comuna="Maule" data-categoria="Vidriería y ventanas" data-icono="🪟" data-color="#5AC8FA" data-whatsapp="+56912345011" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -102,6 +105,15 @@
 <footer class="site-footer">
   <span>Talcadatos — directorio de pymes y emprendedores de Talca</span>
 </footer>
-<script src="/talcadatos/static/app.js"></script>
+
+<nav class="mobile-nav" aria-label="Navegación principal">
+  <a href="/talcadatos/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
+  <a href="/talcadatos/explorar"><span aria-hidden="true">▦</span><span>Explorar</span></a>
+  <a href="/talcadatos/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
+  <a href="/talcadatos/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
+  <a href="/talcadatos/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
+</nav>
+
+<script src="/talcadatos/static/app.js?v=20260826-2"></script>
 </body>
 </html>

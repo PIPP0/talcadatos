@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publicar una necesidad · Talcadatos</title>
+<meta name="description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
+
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Talcadatos">
+<meta property="og:title" content="Publicar una necesidad · Talcadatos">
+<meta property="og:description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
+<meta property="og:image" content="/og/default.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📌</text></svg>">
+<meta name="theme-color" content="#E85D5D">
+<link rel="manifest" href="/talcadatos/static/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260826-3">
+</head>
+<body data-active="necesito">
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a href="/talcadatos/" class="brand">📌 Talcadatos</a>
+    <nav class="topnav">
+      <a href="/talcadatos/">Inicio</a>
+      <a href="/talcadatos/explorar">Explorar</a>
+      <a href="/talcadatos/avisos">Avisos</a>
+      <a href="/talcadatos/favoritos">Favoritos</a>
+      <a href="/talcadatos/publicar" class="btn btn-ghost">Publicar mi negocio</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+
+<section class="need-page">
+  <div class="need-page-intro">
+    <span class="eyebrow">Conectamos demanda local</span>
+    <h1>¿Qué necesitas resolver?</h1>
+    <p class="lede">Cuéntanos en pocas palabras. Buscaremos pymes y emprendedores de Talca que puedan ayudarte.</p>
+    <div class="trust-points"><span>✓ Solo para conectar tu solicitud</span><span>✓ Sin costo para ti</span><span>✓ Respuesta directa por WhatsApp</span></div>
+  </div>
+  <div class="panel need-form-panel">
+    <h2>Publica tu necesidad</h2>
+
+    <form method="post" action="/talcadatos/necesito" class="form" id="necesito-form">
+      <label>¿En qué rubro?
+        <select name="categoria_id" required><option value="">Selecciona una categoría</option><option value="aluminios">🏗️ Aluminios y estructuras</option><option value="clases">📚 Clases particulares</option><option value="contabilidad">📊 Contabilidad y trámites</option><option value="electricidad">💡 Electricidad</option><option value="gasfiteria">🔧 Gásfitería y plomería</option><option value="jardineria">🌿 Jardinería</option><option value="panaderia">🥖 Panadería y pastelería</option><option value="belleza">💇 Peluquería y belleza</option><option value="tecnologia">💻 Tecnología y notebooks</option><option value="vidrieria">🪟 Vidriería y ventanas</option></select>
+      </label>
+      <label>¿Qué necesitas?
+        <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Necesito instalar dos ventanas termopanel esta semana."></textarea>
+      </label>
+      <div class="form-split">
+        <label>Sector o comuna
+          <input name="sector" required maxlength="120" value="Talca" placeholder="Ej: Las Rastras, Talca">
+        </label>
+        <label>¿Cuándo lo necesitas?
+          <select name="cuando"><option value="Hoy">Hoy</option><option value="Esta semana" selected>Esta semana</option><option value="Este mes">Este mes</option><option value="Flexible">Flexible</option></select>
+        </label>
+      </div>
+      <label>WhatsApp para responderte
+        <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="">
+      </label>
+      <button class="btn btn-primary btn-lg" type="submit">Publicar mi necesidad</button>
+      <p class="hint">Tu número no se publica: solo se usa para que te contacte un negocio que pueda ayudarte.</p>
+    </form>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <span>Talcadatos — directorio de pymes y emprendedores de Talca</span>
+</footer>
+
+<nav class="mobile-nav" aria-label="Navegación principal">
+  <a href="/talcadatos/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
+  <a href="/talcadatos/explorar"><span aria-hidden="true">▦</span><span>Explorar</span></a>
+  <a href="/talcadatos/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
+  <a href="/talcadatos/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
+  <a href="/talcadatos/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
+</nav>
+
+<script src="/talcadatos/static/app.js?v=20260826-2"></script>
+</body>
+</html>

@@ -159,8 +159,12 @@
       clearTimeout(timer);
       if (q.length < 2) { results.hidden = true; return; }
       timer = setTimeout(function () {
+        results.hidden = false;
+        results.innerHTML = '<div class="search-loading"><span></span>Buscando en Talca…</div>';
         cargarDatos().then(function (data) {
           render(buscarAvisos(q, data.avisos, data.sinonimos, 6), q);
+        }).catch(function () {
+          results.innerHTML = '<div class="search-empty">No pudimos completar la búsqueda. Intenta nuevamente.</div>';
         });
       }, 200);
     });
@@ -259,6 +263,47 @@
     });
   }
 
+  function initNecesitoForm() {
+    var form = document.getElementById("necesito-form");
+    if (!form) return;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      alert(
+        "Esta vista estática no puede guardar solicitudes todavía.\n\n" +
+        "Abre Talcadatos con su servidor para publicar una necesidad y conectarla con negocios locales."
+      );
+    });
+  }
+
+  function initServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register(PREFIX + "/sw.js", { scope: PREFIX + "/" }).catch(function () {
+        // Navegar sigue funcionando si el navegador no admite modo offline.
+      });
+    });
+  }
+
+  function initReveals() {
+    var blocks = document.querySelectorAll("[data-reveal]");
+    if (!blocks.length) return;
+    if (!window.IntersectionObserver || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      blocks.forEach(function (block) { block.classList.add("is-visible"); });
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    blocks.forEach(function (block) {
+      block.classList.add("reveal");
+      observer.observe(block);
+    });
+  }
+
   // ---- Favoritos (localStorage, funciona igual sin servidor) ----
   var FAV_KEY = "talca_favoritos";
 
@@ -282,6 +327,7 @@
     e.preventDefault();
     var id = btn.getAttribute("data-fav-id");
     var favs = leerFavoritos();
+    var agregando = !favs[id];
     if (favs[id]) {
       delete favs[id];
     } else {
@@ -294,6 +340,13 @@
     }
     guardarFavoritos(favs);
     refrescarFavBotones();
+    if (agregando) {
+      document.querySelectorAll('.fav-btn[data-fav-id="' + id + '"]').forEach(function (boton) {
+        boton.classList.remove("fav-pop");
+        void boton.offsetWidth;
+        boton.classList.add("fav-pop");
+      });
+    }
   });
 
   function initFavoritosPage() {
@@ -326,8 +379,11 @@
     initListado();
     initPublicarForm();
     initReportarForm();
+    initNecesitoForm();
     initFavoritosPage();
     refrescarFavBotones();
+    initServiceWorker();
+    initReveals();
   });
 
   window.logEvento = logEvento;

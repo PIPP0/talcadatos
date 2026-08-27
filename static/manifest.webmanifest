@@ -1,0 +1,10 @@
+{
+  "name": "Talcadatos — Talca, al toque",
+  "short_name": "Talcadatos",
+  "lang": "es-CL",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF9F5",
+  "theme_color": "#E85D5D",
+  "description": "Negocios, servicios, datos y oportunidades cerca de ti en Talca."
+}

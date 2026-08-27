@@ -15,10 +15,12 @@
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📌</text></svg>">
+<meta name="theme-color" content="#E85D5D">
+<link rel="manifest" href="/talcadatos/static/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/talcadatos/static/styles.css">
+<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260826-3">
 </head>
 <body data-active="favoritos">
 
@@ -26,9 +28,10 @@
   <div class="wrap topbar-inner">
     <a href="/talcadatos/" class="brand">📌 Talcadatos</a>
     <nav class="topnav">
-      <a href="/talcadatos/avisos">Explorar</a>
-      <a href="/talcadatos/favoritos">☆ Favoritos</a>
-      <a href="/talcadatos/ayuda">Ayuda</a>
+      <a href="/talcadatos/">Inicio</a>
+      <a href="/talcadatos/explorar">Explorar</a>
+      <a href="/talcadatos/avisos">Avisos</a>
+      <a href="/talcadatos/favoritos">Favoritos</a>
       <a href="/talcadatos/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
@@ -45,6 +48,15 @@
 <footer class="site-footer">
   <span>Talcadatos — directorio de pymes y emprendedores de Talca</span>
 </footer>
-<script src="/talcadatos/static/app.js"></script>
+
+<nav class="mobile-nav" aria-label="Navegación principal">
+  <a href="/talcadatos/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
+  <a href="/talcadatos/explorar"><span aria-hidden="true">▦</span><span>Explorar</span></a>
+  <a href="/talcadatos/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
+  <a href="/talcadatos/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
+  <a href="/talcadatos/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
+</nav>
+
+<script src="/talcadatos/static/app.js?v=20260826-2"></script>
 </body>
 </html>

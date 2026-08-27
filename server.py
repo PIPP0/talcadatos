@@ -17,6 +17,7 @@ import csv
 import json
 import secrets
 import datetime
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from urllib.parse import urlsplit, parse_qs, parse_qsl, quote, unquote
@@ -32,6 +33,7 @@ OG_CACHE_DIR = os.path.join(BASE_DIR, "og_cache")
 os.makedirs(OG_CACHE_DIR, exist_ok=True)
 
 SESSIONS = {}  # token -> {"usuario": str, "rol": "super_admin" | "moderador"}
+STATIC_EXPORT_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------- helpers
@@ -54,6 +56,29 @@ def auditar(handler, accion, detalle=""):
     admin = current_admin(handler)
     usuario = admin["usuario"] if admin else "?"
     db.crear_auditoria(usuario, accion, detalle)
+
+
+def sincronizar_sitio_estatico():
+    """Publica en docs/ los datos que se cambiaron en el admin.
+
+    La vista dinámica lee Firestore en cada petición. La estática es una copia
+    para Pages, por eso se regenera después de cada cambio que pueda verla.
+    Un fallo de exportación no revierte el cambio ya guardado en Firestore.
+    """
+    with STATIC_EXPORT_LOCK:
+        try:
+            import export_static
+            export_static.exportar()
+            return True
+        except Exception as exc:
+            sys.stderr.write(f"No se pudo sincronizar la versión estática: {exc!r}\n")
+            return False
+
+
+def mensaje_sincronizacion(mensaje, actualizado):
+    sufijo = " La versión estática también se actualizó." if actualizado else (
+        " El sitio dinámico ya tiene el cambio; la versión estática se actualizará en la próxima publicación.")
+    return mensaje + sufijo
 
 
 def get_flash(handler):
@@ -175,48 +200,163 @@ def require_role(handler, roles):
 # --------------------------------------------------------------- publico
 
 def home(handler):
+    sitio = db.get_contenido_sitio()
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
     recientes = db.get_avisos(estado="activo", orden="recientes", limit=8)
+    categorias = db.get_categorias()
+    tendencias = db.get_terminos_mas_buscados(4)
+    if not tendencias:
+        tendencias = [
+            {"termino_busqueda": "gásfiter", "n": 42},
+            {"termino_busqueda": "veterinaria", "n": 31},
+            {"termino_busqueda": "notebook", "n": 24},
+            {"termino_busqueda": "pan amasado", "n": 18},
+        ]
+
+    links_hoy = "".join(
+        f'<a class="today-link" href="/avisos?q={quote(r["termino_busqueda"])}">'
+        f'<span>{t.esc(r["termino_busqueda"])}</span><span aria-hidden="true">→</span></a>'
+        for r in tendencias
+    )
+    trend_rows = "".join(
+        f'<li><span class="trend-rank">{i + 1}</span><a href="/avisos?q={quote(r["termino_busqueda"])}">'
+        f'{t.esc(r["termino_busqueda"])}</a><span class="trend-up">↑</span></li>'
+        for i, r in enumerate(tendencias[:3])
+    )
 
     body = f"""
 <section class="hero">
-  <h1>Encuentra al negocio de Talca que necesitas, al toque.</h1>
+  <p class="hero-location">📍 {t.esc(sitio['hero_ubicacion'])}</p>
+  <h1>{t.esc(sitio['hero_titulo'])}</h1>
+  <p class="hero-sub">{t.esc(sitio['hero_bajada'])}</p>
   <form class="search-box" id="search-form" autocomplete="off">
     <span class="search-icon">🔎</span>
-    <input id="search-input" name="q" type="text" placeholder="¿Qué estás buscando? Ej: ventanas, pan amasado, clases de inglés…">
+    <input id="search-input" name="q" type="text" placeholder="{t.esc(sitio['hero_placeholder'])}">
     <button class="btn btn-primary" type="submit">Buscar</button>
     <div id="search-results" class="search-results" hidden></div>
   </form>
+  <p class="hero-hint">{t.esc(sitio['hero_ayuda'])}</p>
 </section>
 
-<section class="section section-featured">
+<section class="trust-strip" data-reveal aria-label="Beneficios de Talcadatos">
+  <div><span class="trust-icon">⌁</span><p><strong>Hecho en Talca</strong><small>Datos y negocios de tu ciudad.</small></p></div>
+  <div><span class="trust-icon">✓</span><p><strong>Contacto directo</strong><small>Habla por WhatsApp, sin intermediarios.</small></p></div>
+  <div><span class="trust-icon">↗</span><p><strong>Oportunidades reales</strong><small>Encuentra o publica lo que hace falta.</small></p></div>
+</section>
+
+<section class="section section-featured" data-reveal>
   <div class="section-head">
-    <div><span class="eyebrow">Lo más buscado en Talca</span><h2>Destacados</h2></div>
+    <div><span class="eyebrow">{t.esc(sitio['destacados_eyebrow'])}</span><h2>{t.esc(sitio['destacados_titulo'])}</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
   {t.carousel(destacados)}
 </section>
 
-<section class="how">
-  <div class="how-step"><span class="how-n">1</span><h3>Busca lo que necesitas</h3><p>Escribe en el buscador o filtra por categoría y comuna.</p></div>
-  <div class="how-step"><span class="how-n">2</span><h3>Elige un negocio</h3><p>Revisa su ficha: qué ofrece, dónde atiende y su horario.</p></div>
-  <div class="how-step"><span class="how-n">3</span><h3>Escríbele por WhatsApp</h3><p>Un clic y quedas hablando directo con el negocio, sin intermediarios.</p></div>
+<section class="section" data-reveal>
+  <div class="section-head">
+    <div><span class="eyebrow">{t.esc(sitio['rubros_eyebrow'])}</span><h2>{t.esc(sitio['rubros_titulo'])}</h2></div>
+    <a href="/explorar">Ver todos →</a>
+  </div>
+  {t.categorias_grid(categorias)}
 </section>
 
-<section class="section">
+<section class="section local-now" data-reveal>
+  <div class="section-head"><div><span class="eyebrow">{t.esc(sitio['hoy_eyebrow'])}</span><h2>{t.esc(sitio['hoy_titulo'])}</h2></div></div>
+  <div class="local-now-grid">
+    <div class="today-card">
+      <span class="section-icon">🔥</span>
+      <h3>Lo más buscado hoy</h3>
+      <p>Atajos a lo que Talca está necesitando ahora.</p>
+      <div class="today-links">{links_hoy}</div>
+    </div>
+    <div class="today-card today-card-soft">
+      <span class="section-icon">💬</span>
+      <h3>Resuelve directo</h3>
+      <p>Contacta a cada negocio por WhatsApp, sin intermediarios ni comisiones.</p>
+      <a class="btn btn-ghost btn-sm" href="/avisos?orden=populares">Ver más contactados</a>
+    </div>
+  </div>
+</section>
+
+<section class="section local-story" data-reveal>
+  <figure class="local-story-visual">
+    <img src="/static/img/feria-local-editorial.jpg" alt="Emprendedores atendiendo una feria de comercio local" loading="lazy">
+    <figcaption><span></span> Cerca, útil y hecho por personas</figcaption>
+  </figure>
+  <div class="local-story-copy">
+    <span class="eyebrow">Comercio que se siente cerca</span>
+    <h2>Descubre a quien hace las cosas bien, a unas cuadras de ti.</h2>
+    <p>Desde oficios que resuelven el día hasta productos y clases que merecen ser encontrados. Talcadatos pone lo local primero.</p>
+    <div class="local-story-points">
+      <span>◆ Información clara</span><span>◆ Negocios verificables</span><span>◆ Atención humana</span>
+    </div>
+    <a class="btn btn-ghost" href="/explorar">Explorar negocios locales <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<section class="section" data-reveal>
   <div class="section-head">
-    <h2>Recién publicados</h2>
+    <div><span class="eyebrow">Nuevos en Talcadatos</span><h2>Recién publicados</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
   {t.cards_grid(recientes)}
 </section>
+
+<section class="section trend-section" data-reveal>
+  <div class="trend-copy">
+    <span class="eyebrow">{t.esc(sitio['tendencias_eyebrow'])}</span>
+    <h2>{t.esc(sitio['tendencias_titulo'])}</h2>
+    <p>{t.esc(sitio['tendencias_bajada'])}</p>
+    <a href="/avisos" class="text-link">Explorar todos los avisos →</a>
+  </div>
+  <ol class="trend-list">{trend_rows}</ol>
+</section>
+
+<section class="need-cta" data-reveal>
+  <div><span class="eyebrow">{t.esc(sitio['necesidad_eyebrow'])}</span><h2>{t.esc(sitio['necesidad_titulo'])}</h2>
+  <p>{t.esc(sitio['necesidad_bajada'])}</p></div>
+  <a class="btn btn-primary btn-lg" href="/necesito">{t.esc(sitio['necesidad_boton'])}</a>
+</section>
+
+<section class="how" data-reveal>
+  <div class="how-step"><span class="how-n">1</span><h3>Busca lo que necesitas</h3><p>Escribe en el buscador o explora por rubro.</p></div>
+  <div class="how-step"><span class="how-n">2</span><h3>Elige con confianza</h3><p>Revisa categoría, ubicación, horario y verificación.</p></div>
+  <div class="how-step"><span class="how-n">3</span><h3>Contacta y resuelve</h3><p>Un clic basta para hablar directo por WhatsApp.</p></div>
+</section>
+
+<section class="business-cta" data-reveal>
+  <div class="business-cta-copy"><span class="eyebrow">{t.esc(sitio['pymes_eyebrow'])}</span><h2>{t.esc(sitio['pymes_titulo'])}</h2>
+  <p>{t.esc(sitio['pymes_bajada'])}</p><a class="btn btn-ghost btn-lg" href="/publicar">{t.esc(sitio['pymes_boton'])} <span aria-hidden="true">→</span></a></div>
+  <figure class="business-cta-visual"><img src="/static/img/comercio-local-editorial.jpg" alt="Emprendedora preparando productos en su negocio local" loading="lazy"><figcaption>Tu vitrina también puede estar aquí.</figcaption></figure>
+</section>
 """
     render(handler, t.layout("Avisos de pymes y emprendedores de Talca", body, active="home",
-                              og_image=f"{_origin(handler)}/og/default.png"))
+                              og_image=f"{_origin(handler)}/og/default.png", site=sitio))
+
+
+def explorar(handler):
+    sitio = db.get_contenido_sitio()
+    categorias = db.get_categorias()
+    destacados = db.get_avisos(estado="activo", orden="destacados", limit=6)
+    body = f"""
+<section class="page-hero">
+  <span class="eyebrow">{t.esc(sitio['explorar_eyebrow'])}</span>
+  <h1>{t.esc(sitio['explorar_titulo'])}</h1>
+  <p class="lede">{t.esc(sitio['explorar_bajada'])}</p>
+  <form class="inline-search" action="/avisos" method="get">
+    <input name="q" type="search" placeholder="Ej: reparación de notebook" aria-label="Buscar en Talcadatos">
+    <button class="btn btn-primary" type="submit">Buscar</button>
+  </form>
+</section>
+<section class="section"><h2>Todos los rubros</h2>{t.categorias_grid(categorias)}</section>
+<section class="section"><div class="section-head"><h2>Negocios destacados</h2><a href="/avisos">Ver avisos →</a></div>{t.cards_grid(destacados)}</section>
+"""
+    render(handler, t.layout("Explorar Talca", body, active="explorar", site=sitio))
 
 
 def listado(handler, query):
+    sitio = db.get_contenido_sitio()
     params = qs(query)
     q = params.get("q", "").strip()
     categoria_slug = params.get("categoria", "")
@@ -232,7 +372,7 @@ def listado(handler, query):
     else:
         avisos = db.get_avisos(estado="activo", categoria_slug=categoria_slug or None,
                                 comuna=comuna or None, orden=orden)
-        titulo_pagina = "Explorar avisos"
+        titulo_pagina = "Avisos en Talca"
 
     def opt(value, current, label):
         sel = " selected" if value == current else ""
@@ -273,17 +413,111 @@ def listado(handler, query):
 {resultados_html}
 </div>
 """
-    render(handler, t.layout(titulo_pagina, body, active="avisos"))
+    render(handler, t.layout(titulo_pagina, body, active="avisos", site=sitio))
 
 
-def detalle(handler, aviso_id, query=""):
+def _necesito_body(categorias, sitio, form=None, errores=None):
+    form = form or {}
+    errores = errores or []
+    value = lambda field, default="": t.esc(form.get(field, default))
+    options = "".join(
+        f'<option value="{t.esc(c["id"])}"'
+        f'{" selected" if c["id"] == form.get("categoria_id") else ""}>'
+        f'{c["icono"]} {t.esc(c["nombre"])}</option>'
+        for c in categorias
+    )
+    cuando = form.get("cuando", "Esta semana")
+    cuando_options = "".join(
+        f'<option value="{opcion}"{" selected" if opcion == cuando else ""}>{opcion}</option>'
+        for opcion in ("Hoy", "Esta semana", "Este mes", "Flexible")
+    )
+    errors_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
+                   "</ul></div>") if errores else ""
+    return f"""
+<section class="need-page">
+  <div class="need-page-intro">
+    <span class="eyebrow">Conectamos demanda local</span>
+    <h1>{t.esc(sitio['necesito_titulo'])}</h1>
+    <p class="lede">{t.esc(sitio['necesito_bajada'])}</p>
+    <div class="trust-points"><span>✓ Solo para conectar tu solicitud</span><span>✓ Sin costo para ti</span><span>✓ Respuesta directa por WhatsApp</span></div>
+  </div>
+  <div class="panel need-form-panel">
+    <h2>Publica tu necesidad</h2>
+    {errors_html}
+    <form method="post" action="/necesito" class="form" id="necesito-form">
+      <label>¿En qué rubro?
+        <select name="categoria_id" required><option value="">Selecciona una categoría</option>{options}</select>
+      </label>
+      <label>¿Qué necesitas?
+        <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Necesito instalar dos ventanas termopanel esta semana.">{value("descripcion")}</textarea>
+      </label>
+      <div class="form-split">
+        <label>Sector o comuna
+          <input name="sector" required maxlength="120" value="{value("sector", "Talca")}" placeholder="Ej: Las Rastras, Talca">
+        </label>
+        <label>¿Cuándo lo necesitas?
+          <select name="cuando">{cuando_options}</select>
+        </label>
+      </div>
+      <label>WhatsApp para responderte
+        <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
+      </label>
+      <button class="btn btn-primary btn-lg" type="submit">Publicar mi necesidad</button>
+      <p class="hint">Tu número no se publica: solo se usa para que te contacte un negocio que pueda ayudarte.</p>
+    </form>
+  </div>
+</section>
+"""
+
+
+def necesito_form(handler, ok=False, form=None, errores=None):
+    categorias = db.get_categorias()
+    sitio = db.get_contenido_sitio()
+    if ok:
+        body = """
+<div class="panel panel-ok">
+  <div class="success-icon">✓</div>
+  <h1>Tu necesidad ya está en Talcadatos</h1>
+  <p>Buscaremos negocios de Talca relacionados y podrán escribirte directamente por WhatsApp.</p>
+  <a class="btn btn-primary" href="/avisos">Seguir explorando</a>
+</div>"""
+        return render(handler, t.layout("Necesidad publicada", body, active="necesito", site=sitio))
+    render(handler, t.layout("Publicar una necesidad", _necesito_body(categorias, sitio, form, errores), active="necesito", site=sitio))
+
+
+def necesito_submit(handler, form):
+    categorias = db.get_categorias()
+    categoria_ids = {c["id"] for c in categorias}
+    descripcion = form.get("descripcion", "").strip()
+    sector = form.get("sector", "").strip()
+    whatsapp = form.get("whatsapp", "").strip()
+    errores = []
+    if form.get("categoria_id") not in categoria_ids:
+        errores.append("Elige el rubro que mejor representa tu necesidad.")
+    if len(descripcion) < 12:
+        errores.append("Cuéntanos un poco más sobre lo que necesitas.")
+    if not sector:
+        errores.append("Indica el sector o comuna donde lo necesitas.")
+    if len("".join(c for c in whatsapp if c.isdigit())) < 8:
+        errores.append("Ingresa un WhatsApp válido con código de país.")
+    if errores:
+        return necesito_form(handler, form=form, errores=errores)
+
+    cuando = form.get("cuando") if form.get("cuando") in ("Hoy", "Esta semana", "Este mes", "Flexible") else "Flexible"
+    db.crear_necesidad(form["categoria_id"], descripcion[:500], sector[:120], cuando, whatsapp[:40])
+    redirect(handler, "/necesito?ok=1")
+
+
+def detalle(handler, aviso_id, query="", contabilizar=True):
+    sitio = db.get_contenido_sitio()
     reportado = qs(query).get("reportado") == "1"
     aviso = db.get_aviso(aviso_id)
     if not aviso or aviso["estado"] != "activo":
         return not_found(handler)
 
-    db.registrar_evento("vista", aviso_id=aviso_id)
-    db.incrementar_vistas(aviso_id)
+    if contabilizar:
+        db.registrar_evento("vista", aviso_id=aviso_id)
+        db.incrementar_vistas(aviso_id)
 
     relacionados = db.get_avisos(estado="activo", categoria_slug=aviso["categoria_slug"],
                                   excluir_id=str(aviso_id), orden="destacados", limit=3)
@@ -354,11 +588,11 @@ def detalle(handler, aviso_id, query=""):
     resumen = aviso["descripcion"][:157] + "…" if len(aviso["descripcion"]) > 160 else aviso["descripcion"]
     render(handler, t.layout(
         aviso["titulo"], body, active="avisos", description=resumen,
-        og_image=f"{_origin(handler)}/og/{aviso_id}.png", canonical=canonical, json_ld=json_ld,
+        og_image=f"{_origin(handler)}/og/{aviso_id}.png", canonical=canonical, json_ld=json_ld, site=sitio,
     ))
 
 
-def _publicar_body(categorias, form=None, errores=None):
+def _publicar_body(categorias, sitio, form=None, errores=None):
     form = form or {}
     errores = errores or []
     cat_options = "".join(
@@ -369,9 +603,8 @@ def _publicar_body(categorias, form=None, errores=None):
                      "</ul></div>") if errores else ""
     return f"""
 <div class="panel">
-  <h1>Publica tu negocio en Talcadatos</h1>
-  <p class="lede">Es gratis. Completa el formulario y tu aviso queda listo para revisión — normalmente
-  se aprueba el mismo día.</p>
+  <h1>{t.esc(sitio['publicar_titulo'])}</h1>
+  <p class="lede">{t.esc(sitio['publicar_bajada'])}</p>
   {errores_html}
   <form method="post" action="/publicar" class="form">
     <label>Nombre del negocio
@@ -403,6 +636,7 @@ def _publicar_body(categorias, form=None, errores=None):
 
 def publicar_form(handler, ok=False, token=None, form=None, errores=None):
     categorias = db.get_categorias()
+    sitio = db.get_contenido_sitio()
 
     if ok:
         mi_negocio_url = f"{_origin(handler)}/mi-negocio/{token}"
@@ -419,9 +653,9 @@ def publicar_form(handler, ok=False, token=None, form=None, errores=None):
   {panel_link}
   <a class="btn btn-primary" href="/">Volver al inicio</a>
 </div>"""
-        return render(handler, t.layout("Aviso enviado", body, active="publicar"))
+        return render(handler, t.layout("Aviso enviado", body, active="publicar", site=sitio))
 
-    render(handler, t.layout("Publicar mi negocio", _publicar_body(categorias, form, errores), active="publicar"))
+    render(handler, t.layout("Publicar mi negocio", _publicar_body(categorias, sitio, form, errores), active="publicar", site=sitio))
 
 
 def _validar_publicar(form, categoria_ids):
@@ -501,7 +735,7 @@ def admin_login_form(handler, error=False):
     <label>Contraseña <input name="password" type="password" required></label>
     <button class="btn btn-primary btn-lg" type="submit">Ingresar</button>
   </form>
-  <p class="hint">Demo: usuario <code>admin</code> / contraseña <code>talca2026</code></p>
+  <p class="hint">Usa las credenciales entregadas por el administrador del sitio.</p>
 </div>
 """
     render(handler, t.layout("Ingreso admin", body))
@@ -571,6 +805,15 @@ def admin_dashboard(handler, query):
   <div class="kpi"><div class="n">{anunciantes_pagando}</div><div class="l">anunciantes en plan pagado</div></div>
   <div class="kpi"><div class="n">${mrr_fmt} CLP</div><div class="l">ingreso mensual recurrente (MRR)</div></div>
 </div>
+<section class="admin-quick">
+  <div class="admin-quick-copy"><span class="eyebrow">Control del sitio</span><h2>¿Qué quieres administrar?</h2></div>
+  <div class="admin-quick-grid">
+    <a href="/admin/contenido"><span>✦</span><strong>Contenido</strong><small>Portada, textos y CTA</small></a>
+    <a href="/admin/avisos"><span>◈</span><strong>Avisos</strong><small>Editar y publicar ofertas</small></a>
+    <a href="/admin/anunciantes"><span>⌂</span><strong>Negocios</strong><small>Planes y verificación</small></a>
+    <a href="/admin/necesidades"><span>↗</span><strong>Demanda</strong><small>Necesidades de Talca</small></a>
+  </div>
+</section>
 <div class="two-col">
   <section class="panel">
     <h2>Top 10 más vistos</h2>
@@ -616,7 +859,7 @@ def admin_moderar(handler, aviso_id, accion):
     db.cambiar_estado_aviso(aviso_id, nuevo_estado)
     mensaje = "Aviso aprobado y publicado." if nuevo_estado == "activo" else "Aviso rechazado."
     auditar(handler, "aprobar" if nuevo_estado == "activo" else "rechazar", f"aviso {aviso_id}")
-    redirect(handler, "/admin/moderacion", flash=mensaje)
+    redirect(handler, "/admin/moderacion", flash=mensaje_sincronizacion(mensaje, sincronizar_sitio_estatico()))
 
 
 def admin_avisos_lista(handler, query):
@@ -710,14 +953,16 @@ def admin_aviso_editar_submit(handler, aviso_id, form):
         return not_found(handler)
     _og_cache_evict(aviso_id)
     auditar(handler, "editar_aviso", f"aviso {aviso_id}")
-    redirect(handler, "/admin/avisos", flash="Cambios guardados.")
+    redirect(handler, "/admin/avisos",
+             flash=mensaje_sincronizacion("Cambios guardados.", sincronizar_sitio_estatico()))
 
 
 def admin_aviso_eliminar(handler, aviso_id):
     db.eliminar_aviso(aviso_id)
     _og_cache_evict(aviso_id)
     auditar(handler, "eliminar_aviso", f"aviso {aviso_id}")
-    redirect(handler, "/admin/avisos", flash="Aviso eliminado.")
+    redirect(handler, "/admin/avisos",
+             flash=mensaje_sincronizacion("Aviso eliminado.", sincronizar_sitio_estatico()))
 
 
 def admin_anunciantes(handler):
@@ -783,14 +1028,15 @@ def admin_anunciante_plan(handler, negocio_id, form):
         db.crear_pago(negocio_id, plan_id, plan["precio_clp"])
     nombre_plan = plan["nombre"] if plan else "?"
     auditar(handler, "cambiar_plan", f"negocio {negocio_id} -> {nombre_plan}")
-    redirect(handler, "/admin/anunciantes", flash=f"Plan actualizado a {nombre_plan}.")
+    redirect(handler, "/admin/anunciantes",
+             flash=mensaje_sincronizacion(f"Plan actualizado a {nombre_plan}.", sincronizar_sitio_estatico()))
 
 
 def admin_anunciante_verificar(handler, negocio_id):
     nuevo = db.toggle_verificado_negocio(negocio_id)
     mensaje = "Negocio verificado." if nuevo else "Verificación removida."
     auditar(handler, "verificar_negocio" if nuevo else "quitar_verificacion", f"negocio {negocio_id}")
-    redirect(handler, "/admin/anunciantes", flash=mensaje)
+    redirect(handler, "/admin/anunciantes", flash=mensaje_sincronizacion(mensaje, sincronizar_sitio_estatico()))
 
 
 def admin_analitica(handler):
@@ -936,13 +1182,16 @@ def admin_sinonimo_agregar(handler, form):
     if palabra and categoria_slug:
         db.crear_sinonimo(categoria_slug, palabra)
         auditar(handler, "agregar_sinonimo", palabra)
-    redirect(handler, "/admin/sinonimos", flash="Sinónimo agregado.")
+        actualizado = sincronizar_sitio_estatico()
+        return redirect(handler, "/admin/sinonimos", flash=mensaje_sincronizacion("Sinónimo agregado.", actualizado))
+    redirect(handler, "/admin/sinonimos", flash="Completa una palabra y su categoría.")
 
 
 def admin_sinonimo_eliminar(handler, sinonimo_id):
     db.eliminar_sinonimo(sinonimo_id)
     auditar(handler, "eliminar_sinonimo", f"id {sinonimo_id}")
-    redirect(handler, "/admin/sinonimos", flash="Sinónimo eliminado.")
+    redirect(handler, "/admin/sinonimos",
+             flash=mensaje_sincronizacion("Sinónimo eliminado.", sincronizar_sitio_estatico()))
 
 
 def admin_auditoria(handler):
@@ -1013,6 +1262,189 @@ apenas exista un negocio de ese rubro — son prospectos de venta directa (PRD �
 def admin_alerta_atendida(handler, alerta_id):
     db.marcar_alerta_atendida(alerta_id)
     redirect(handler, "/admin/alertas", flash="Marcada como atendida.")
+
+
+def admin_necesidades(handler):
+    necesidades = db.get_necesidades_pendientes()
+    filas = "".join(f"""
+<tr>
+  <td><strong>{n['icono']} {t.esc(n['categoria_nombre'])}</strong><div class="small mono">{t.esc(n['cuando'])}</div></td>
+  <td>{t.esc(n['descripcion'])}<div class="small">📍 {t.esc(n['sector'])}</div></td>
+  <td class="mono">{t.esc(n['whatsapp'])}</td>
+  <td class="mono small">{n['creado_en'][:10]}</td>
+  <td><form method="post" action="/admin/necesidades/{n['id']}/atendida"><button class="btn btn-ghost btn-sm">Gestionada</button></form></td>
+</tr>""" for n in necesidades)
+    flash = get_flash(handler)
+    body = f"""
+<h1>Necesidades de Talca</h1>
+<p class="lede">Solicitudes que las personas publicaron para que las conectemos con pymes y emprendedores locales.</p>
+<div class="tbl-wrap"><table>
+  <tr><th>Rubro</th><th>Necesidad</th><th>WhatsApp</th><th>Fecha</th><th></th></tr>
+  {filas or "<tr><td colspan='5' class='empty-state'>No hay necesidades nuevas.</td></tr>"}
+</table></div>
+"""
+    render(handler, t.layout("Necesidades de Talca", body, active="admin", admin=True, flash=flash),
+           clear_flash=bool(flash))
+
+
+def admin_necesidad_atendida(handler, necesidad_id):
+    db.marcar_necesidad_atendida(necesidad_id)
+    auditar(handler, "gestionar_necesidad", f"necesidad {necesidad_id}")
+    redirect(handler, "/admin/necesidades", flash="Necesidad marcada como gestionada.")
+
+
+def contenido_grupos(sitio):
+    """Campos editables compartidos por el CMS tradicional y el editor visual."""
+    def campo(clave, etiqueta, largo=False):
+        valor = t.esc(sitio.get(clave, ""))
+        if largo:
+            return f'<label>{etiqueta}<textarea name="{clave}" rows="3" maxlength="600">{valor}</textarea></label>'
+        return f'<label>{etiqueta}<input name="{clave}" required maxlength="600" value="{valor}"></label>'
+
+    return [
+        ("Marca y pie de página", campo("marca", "Nombre de la marca") + campo("pie", "Texto del pie de página") +
+         campo("descripcion", "Descripción para buscadores y redes", True)),
+        ("Portada", campo("hero_ubicacion", "Ubicación") + campo("hero_titulo", "Título principal", True) +
+         campo("hero_bajada", "Bajada", True) + campo("hero_placeholder", "Texto del buscador") +
+         campo("hero_ayuda", "Ayuda bajo el buscador")),
+        ("Secciones de descubrimiento", campo("destacados_eyebrow", "Antetítulo de destacados") +
+         campo("destacados_titulo", "Título de destacados") + campo("rubros_eyebrow", "Antetítulo de rubros") +
+         campo("rubros_titulo", "Título de rubros") + campo("hoy_eyebrow", "Antetítulo de actualidad") +
+         campo("hoy_titulo", "Título de actualidad") + campo("tendencias_eyebrow", "Antetítulo de tendencias") +
+         campo("tendencias_titulo", "Título de tendencias") + campo("tendencias_bajada", "Bajada de tendencias", True)),
+        ("Llamados a la acción", campo("necesidad_eyebrow", "Antetítulo de necesidad") +
+         campo("necesidad_titulo", "Título de necesidad") + campo("necesidad_bajada", "Bajada de necesidad", True) +
+         campo("necesidad_boton", "Botón de necesidad") + campo("pymes_eyebrow", "Antetítulo para pymes") +
+         campo("pymes_titulo", "Título para pymes") + campo("pymes_bajada", "Bajada para pymes", True) +
+         campo("pymes_boton", "Botón para pymes")),
+        ("Páginas Explorar, Necesito esto y Publicar", campo("explorar_eyebrow", "Antetítulo de Explorar") +
+         campo("explorar_titulo", "Título de Explorar", True) + campo("explorar_bajada", "Bajada de Explorar", True) +
+         campo("necesito_titulo", "Título de Necesito esto", True) + campo("necesito_bajada", "Bajada de Necesito esto", True) +
+         campo("publicar_titulo", "Título de Publicar") + campo("publicar_bajada", "Bajada de Publicar", True)),
+    ]
+
+
+def admin_contenido(handler):
+    sitio = db.get_contenido_sitio()
+    flash = get_flash(handler)
+    grupos = "".join(
+        f'<section class="panel cms-section"><h2>{titulo}</h2><div class="form-grid">{campos}</div></section>'
+        for titulo, campos in contenido_grupos(sitio)
+    )
+    body = f"""
+<div class="admin-page-head">
+  <div><span class="eyebrow">CMS de Talcadatos</span><h1>Contenido del sitio</h1>
+  <p class="lede">Edita textos, llamados a la acción y la identidad de las páginas públicas. Los avisos, negocios y usuarios se gestionan desde sus secciones propias.</p></div>
+  <a class="btn btn-ghost" href="/admin/editor">Abrir editor visual</a>
+</div>
+<form method="post" action="/admin/contenido" class="form cms-form">
+  {grupos}
+  <div class="cms-save"><span class="hint">Los cambios se aplican al instante en la versión con servidor.</span><button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button></div>
+</form>
+"""
+    render(handler, t.layout("Contenido del sitio", body, active="admin", admin=True, flash=flash),
+           clear_flash=bool(flash))
+
+
+def admin_contenido_submit(handler, form):
+    db.actualizar_contenido_sitio(form)
+    auditar(handler, "actualizar_contenido_sitio", "portada y páginas públicas")
+    destino = "/admin/editor" if form.get("volver") == "editor" else "/admin/contenido"
+    redirect(handler, destino,
+             flash=mensaje_sincronizacion("Contenido actualizado.", sincronizar_sitio_estatico()))
+
+
+def admin_editor(handler):
+    """Vista fiel del sitio junto a todos sus campos de contenido editables."""
+    sitio = db.get_contenido_sitio()
+    flash = get_flash(handler)
+    grupos = "".join(
+        f'''<details class="editor-fields"{' open' if indice == 0 else ''}>
+  <summary>{titulo}<span>Editar</span></summary>
+  <div class="form-grid">{campos}</div>
+</details>'''
+        for indice, (titulo, campos) in enumerate(contenido_grupos(sitio))
+    )
+    body = f"""
+<div class="editor-page">
+  <div class="admin-page-head editor-page-head">
+    <div><span class="eyebrow">Editor visual</span><h1>El sitio, editable en un solo lugar</h1>
+    <p class="lede">La derecha es una réplica en vivo de Talcadatos. Edita cada texto a la izquierda, guarda y la vista se actualizará.</p></div>
+    <a class="btn btn-ghost" href="/" target="_blank" rel="noopener">Abrir sitio ↗</a>
+  </div>
+  <div class="editor-layout">
+    <aside class="editor-controls">
+      <div class="editor-controls-head"><strong>Contenido y datos</strong><span>Todos los campos públicos</span></div>
+      <label class="editor-route-label">Vista previa
+        <select id="editor-page-select" aria-label="Página que se muestra en la vista previa">
+          <option value="/">Inicio</option><option value="/explorar">Explorar</option><option value="/avisos">Avisos</option>
+          <option value="/necesito">Necesito esto</option><option value="/publicar">Publicar negocio</option><option value="/ayuda">Ayuda</option>
+        </select>
+      </label>
+      <form method="post" action="/admin/contenido" class="form editor-form">
+        <input type="hidden" name="volver" value="editor">
+        {grupos}
+        <button class="btn btn-primary editor-save" type="submit">Guardar y actualizar vista</button>
+      </form>
+      <div class="editor-data-links">
+        <strong>Editar información publicada</strong>
+        <a href="/admin/avisos">Avisos y servicios <span>→</span></a>
+        <a href="/admin/anunciantes">Negocios y planes <span>→</span></a>
+        <a href="/admin/sinonimos">Categorías y búsquedas <span>→</span></a>
+        <a href="/admin/necesidades">Solicitudes de personas <span>→</span></a>
+        <a href="/admin/usuarios">Usuarios administradores <span>→</span></a>
+      </div>
+    </aside>
+    <section class="editor-preview-panel" aria-label="Vista previa del sitio">
+      <div class="editor-preview-bar"><span class="editor-live-dot"></span><strong>Réplica del sitio público</strong><span class="editor-preview-url">talca.cl<span id="editor-page-name">/</span></span></div>
+      <iframe id="editor-preview" src="/" title="Vista previa de Talcadatos"></iframe>
+    </section>
+  </div>
+</div>
+"""
+    render(handler, t.layout("Editor visual", body, active="admin", admin=True, flash=flash),
+           clear_flash=bool(flash))
+
+
+def admin_cuenta(handler, error=None):
+    admin = current_admin(handler)
+    if not admin:
+        return redirect(handler, "/admin/login")
+    mensaje = f'<p class="form-error">{t.esc(error)}</p>' if error else ""
+    flash = get_flash(handler)
+    body = f"""
+<div class="panel panel-narrow">
+  <span class="eyebrow">Cuenta de administrador</span>
+  <h1>{t.esc(admin['usuario'])}</h1>
+  <p class="lede">Rol: <strong>{t.esc(admin['rol'])}</strong>. Cambia tu contraseña cuando lo necesites.</p>
+  {mensaje}
+  <form method="post" action="/admin/cuenta" class="form">
+    <label>Contraseña actual <input name="actual" type="password" required autocomplete="current-password"></label>
+    <label>Nueva contraseña <input name="nueva" type="password" required minlength="10" autocomplete="new-password"></label>
+    <label>Repite la nueva contraseña <input name="confirmacion" type="password" required minlength="10" autocomplete="new-password"></label>
+    <button class="btn btn-primary" type="submit">Actualizar contraseña</button>
+  </form>
+</div>
+"""
+    render(handler, t.layout("Mi cuenta", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+
+
+def admin_cuenta_submit(handler, form):
+    admin = current_admin(handler)
+    if not admin:
+        return redirect(handler, "/admin/login")
+    usuario = admin["usuario"]
+    registro = db.get_admin_usuario(usuario)
+    if not registro or not db.verify_password(form.get("actual", ""), registro["password"]):
+        return admin_cuenta(handler, "La contraseña actual no es correcta.")
+    nueva = form.get("nueva", "")
+    if len(nueva) < 10:
+        return admin_cuenta(handler, "La nueva contraseña debe tener al menos 10 caracteres.")
+    if nueva != form.get("confirmacion", ""):
+        return admin_cuenta(handler, "La confirmación de contraseña no coincide.")
+    db.actualizar_password_admin(usuario, db.hash_password(nueva))
+    auditar(handler, "actualizar_password", usuario)
+    redirect(handler, "/admin/cuenta", flash="Contraseña actualizada.")
 
 
 def admin_usuarios(handler):
@@ -1089,6 +1521,7 @@ FAQ = [
 
 
 def ayuda(handler):
+    sitio = db.get_contenido_sitio()
     items = "".join(f"""
 <details class="faq-item">
   <summary>{t.esc(pregunta)}</summary>
@@ -1102,19 +1535,21 @@ def ayuda(handler):
   y te contactamos nosotros.</p>
 </div>
 """
-    render(handler, t.layout("Ayuda", body, active="ayuda"))
+    render(handler, t.layout("Ayuda", body, active="ayuda", site=sitio))
 
 
 def favoritos(handler):
+    sitio = db.get_contenido_sitio()
     body = """
 <h1>Tus favoritos</h1>
 <p class="lede">Los avisos que guardaste con el ☆ quedan aquí, solo en este navegador.</p>
 <div id="favoritos-mount"><p class="empty-state">Cargando…</p></div>
 """
-    render(handler, t.layout("Favoritos", body, active="favoritos"))
+    render(handler, t.layout("Favoritos", body, active="favoritos", site=sitio))
 
 
 def mi_negocio(handler, token):
+    sitio = db.get_contenido_sitio()
     negocio = db.get_negocio_por_token(token)
     if not negocio:
         return not_found(handler)
@@ -1138,7 +1573,7 @@ def mi_negocio(handler, token):
 </table></div>
 <p class="hint">¿Quieres más visibilidad? Escríbenos por WhatsApp desde uno de tus propios avisos para subir de plan.</p>
 """
-    render(handler, t.layout(f"Panel de {negocio['nombre']}", body, active="mi-negocio"))
+    render(handler, t.layout(f"Panel de {negocio['nombre']}", body, active="mi-negocio", site=sitio))
 
 
 def api_alerta(handler, body):
@@ -1209,7 +1644,7 @@ def robots_txt(handler):
 def sitemap_xml(handler):
     origin = _origin(handler)
     ids = [a["id"] for a in db.get_avisos(estado="activo")]
-    urls = [f"{origin}/", f"{origin}/avisos", f"{origin}/publicar"] + [f"{origin}/avisos/{i}" for i in ids]
+    urls = [f"{origin}/", f"{origin}/explorar", f"{origin}/avisos", f"{origin}/publicar", f"{origin}/necesito"] + [f"{origin}/avisos/{i}" for i in ids]
     body = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
     data = body.encode("utf-8")
@@ -1241,12 +1676,18 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/":
                 return home(self)
+            if path == "/explorar":
+                return explorar(self)
             if path == "/avisos":
                 return listado(self, query)
             if len(segs) == 2 and segs[0] == "avisos" and segs[1].isdigit():
                 return detalle(self, int(segs[1]), query)
             if path == "/publicar":
                 return publicar_form(self, ok=qs(query).get("ok") == "1", token=qs(query).get("token"))
+            if path == "/necesito":
+                return necesito_form(self, ok=qs(query).get("ok") == "1")
+            if path == "/sw.js":
+                return self._static("/static/sw.js")
             if path == "/static" or path.startswith("/static/"):
                 return self._static(path)
             if path == "/robots.txt":
@@ -1290,6 +1731,14 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_pagos_csv(self) if require_role(self, {"super_admin"}) else None
             if path == "/admin/alertas":
                 return admin_alertas(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/necesidades":
+                return admin_necesidades(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/editor":
+                return admin_editor(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/contenido":
+                return admin_contenido(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/cuenta":
+                return admin_cuenta(self) if require_admin(self) else None
             if path == "/admin/usuarios":
                 return admin_usuarios(self) if require_role(self, {"super_admin"}) else None
             if path == "/ayuda":
@@ -1313,6 +1762,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/publicar":
                 return publicar_submit(self, self._form())
+            if path == "/necesito":
+                return necesito_submit(self, self._form())
             if path == "/api/buscar":
                 return api_buscar(self, self._body())
             if path == "/api/evento":
@@ -1323,6 +1774,10 @@ class Handler(BaseHTTPRequestHandler):
                 return aviso_reportar(self, int(segs[1]), self._form())
             if path == "/admin/login":
                 return admin_login_submit(self, self._form())
+            if path == "/admin/contenido":
+                return admin_contenido_submit(self, self._form()) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/cuenta":
+                return admin_cuenta_submit(self, self._form()) if require_admin(self) else None
 
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "moderacion" and segs[3] in ("aprobar", "rechazar"):
                 return admin_moderar(self, int(segs[2]), segs[3]) if require_admin(self) else None
@@ -1346,6 +1801,8 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_usuario_eliminar(self, segs[2]) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "alertas" and segs[3] == "atendida":
                 return admin_alerta_atendida(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "necesidades" and segs[3] == "atendida":
+                return admin_necesidad_atendida(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
 
             return not_found(self)
         except BrokenPipeError:
@@ -1361,7 +1818,10 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         ctype = "text/css" if full.endswith(".css") else \
-                "application/javascript" if full.endswith(".js") else "application/octet-stream"
+                "application/javascript" if full.endswith(".js") else \
+                "application/manifest+json" if full.endswith(".webmanifest") else \
+                "image/jpeg" if full.endswith((".jpg", ".jpeg")) else \
+                "image/png" if full.endswith(".png") else "application/octet-stream"
         with open(full, "rb") as f:
             data = f.read()
         self.send_response(200)

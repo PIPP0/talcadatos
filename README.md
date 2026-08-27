@@ -14,8 +14,11 @@ necesitan un servidor con estado compartido real (que todos los visitantes
 vean el mismo cambio). Para esa parte, corre el servidor localmente (ver más
 abajo) o despliega en Render.
 
-Para regenerar la versión estática después de cambios: `python3 export_static.py`
-(reescribe `docs/`, que Pages sirve automáticamente al hacer push).
+Cada cambio público hecho desde el admin (contenido, avisos, planes,
+verificaciones y sinónimos) también regenera automáticamente `docs/`, por lo
+que la vista estática local se actualiza junto con el sitio dinámico. Para
+GitHub Pages remoto, el nuevo contenido queda listo en `docs/` y se publica al
+subir esos cambios al repositorio.
 
 ## Por qué Python y no Next.js
 

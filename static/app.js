@@ -7,6 +7,50 @@ document.addEventListener("click", function (e) {
   track.scrollBy({ left: paso, behavior: "smooth" });
 });
 
+function initReveals() {
+  var blocks = document.querySelectorAll("[data-reveal]");
+  if (!blocks.length) return;
+  if (!window.IntersectionObserver || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    blocks.forEach(function (block) { block.classList.add("is-visible"); });
+    return;
+  }
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-visible");
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.12 });
+  blocks.forEach(function (block) {
+    block.classList.add("reveal");
+    observer.observe(block);
+  });
+}
+
+initReveals();
+
+/* El editor usa la misma página pública dentro de un iframe: este selector
+   cambia sólo la vista previa, sin perder los cambios aún no guardados. */
+(function initEditorPreview() {
+  var selector = document.getElementById("editor-page-select");
+  var preview = document.getElementById("editor-preview");
+  var pageName = document.getElementById("editor-page-name");
+  if (!selector || !preview) return;
+  selector.addEventListener("change", function () {
+    var ruta = selector.value || "/";
+    preview.src = ruta;
+    if (pageName) pageName.textContent = ruta;
+  });
+})();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/sw.js").catch(function () {
+      // La app sigue funcionando normalmente si el navegador bloquea PWA/offline.
+    });
+  });
+}
+
 function logEvento(tipo, avisoId, termino) {
   var payload = JSON.stringify({ tipo: tipo, aviso_id: avisoId || null, termino_busqueda: termino || null });
   if (navigator.sendBeacon) {
@@ -63,13 +107,18 @@ document.addEventListener("click", function (e) {
       return;
     }
     timer = setTimeout(function () {
+      results.hidden = false;
+      results.innerHTML = '<div class="search-loading"><span></span>Buscando en Talca…</div>';
       fetch("/api/buscar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ q: q }),
       })
         .then(function (r) { return r.json(); })
-        .then(function (data) { render(data.resultados || [], q); });
+        .then(function (data) { render(data.resultados || [], q); })
+        .catch(function () {
+          results.innerHTML = '<div class="search-empty">No pudimos completar la búsqueda. Intenta nuevamente.</div>';
+        });
     }, 220);
   });
 
@@ -144,6 +193,7 @@ document.addEventListener("click", function (e) {
     e.preventDefault();
     var id = btn.getAttribute("data-fav-id");
     var favs = leer();
+    var agregando = !favs[id];
     if (favs[id]) {
       delete favs[id];
     } else {
@@ -155,7 +205,14 @@ document.addEventListener("click", function (e) {
       };
     }
     guardar(favs);
-    document.querySelectorAll('.fav-btn[data-fav-id="' + id + '"]').forEach(actualizarBoton);
+    document.querySelectorAll('.fav-btn[data-fav-id="' + id + '"]').forEach(function (boton) {
+      actualizarBoton(boton);
+      if (agregando) {
+        boton.classList.remove("fav-pop");
+        void boton.offsetWidth;
+        boton.classList.add("fav-pop");
+      }
+    });
   });
 
   var mount = document.getElementById("favoritos-mount");

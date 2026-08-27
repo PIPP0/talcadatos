@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Avisos en Talca · Talcadatos</title>
+<title>Explorar Talca · Talcadatos</title>
 <meta name="description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
 
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Talcadatos">
-<meta property="og:title" content="Avisos en Talca · Talcadatos">
+<meta property="og:title" content="Explorar Talca · Talcadatos">
 <meta property="og:description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
 <meta property="og:image" content="/og/default.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -22,7 +22,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260826-3">
 </head>
-<body data-active="avisos">
+<body data-active="explorar">
 
 <header class="topbar">
   <div class="wrap topbar-inner">
@@ -40,17 +40,17 @@
 <main class="wrap">
 
 
-<div class="listado-head">
-  <h1 id="listado-titulo">Avisos en Talca</h1>
-  <form class="filters" id="listado-filtros" method="get" action="/talcadatos/avisos">
-
-    <select name="categoria" onchange="this.form.submit()"><option value="" selected>Todas las categorías</option><option value="aluminios">🏗️ Aluminios y estructuras</option><option value="clases">📚 Clases particulares</option><option value="contabilidad">📊 Contabilidad y trámites</option><option value="electricidad">💡 Electricidad</option><option value="gasfiteria">🔧 Gásfitería y plomería</option><option value="jardineria">🌿 Jardinería</option><option value="panaderia">🥖 Panadería y pastelería</option><option value="belleza">💇 Peluquería y belleza</option><option value="tecnologia">💻 Tecnología y notebooks</option><option value="vidrieria">🪟 Vidriería y ventanas</option></select>
-    <select name="comuna" onchange="this.form.submit()"><option value="" selected>Todas las comunas</option><option value="Maule">Maule</option><option value="Talca">Talca</option></select>
-    <select name="orden" onchange="this.form.submit()"><option value="relevancia" selected>Relevancia</option><option value="recientes">Más recientes</option><option value="populares">Más contactados</option></select>
+<section class="page-hero">
+  <span class="eyebrow">Descubrimiento local</span>
+  <h1>Explora Talca por lo que necesitas</h1>
+  <p class="lede">Encuentra negocios y servicios por rubro, o parte con una búsqueda.</p>
+  <form class="inline-search" action="/talcadatos/avisos" method="get">
+    <input name="q" type="search" placeholder="Ej: reparación de notebook" aria-label="Buscar en Talcadatos">
+    <button class="btn btn-primary" type="submit">Buscar</button>
   </form>
-</div>
-<div id="listado-resultados">
-<div class="grid">
+</section>
+<section class="section"><h2>Todos los rubros</h2><div class="category-grid"><a class="category-card" style="--category-accent:#E85D5D" href="/talcadatos/avisos?categoria=aluminios"><span class="category-icon">🏗️</span><span>Aluminios y estructuras</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#2B80D8" href="/talcadatos/avisos?categoria=clases"><span class="category-icon">📚</span><span>Clases particulares</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#0AA39A" href="/talcadatos/avisos?categoria=contabilidad"><span class="category-icon">📊</span><span>Contabilidad y trámites</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#7D5CD6" href="/talcadatos/avisos?categoria=electricidad"><span class="category-icon">💡</span><span>Electricidad</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#D9921B" href="/talcadatos/avisos?categoria=gasfiteria"><span class="category-icon">🔧</span><span>Gásfitería y plomería</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#28A968" href="/talcadatos/avisos?categoria=jardineria"><span class="category-icon">🌿</span><span>Jardinería</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#E85D5D" href="/talcadatos/avisos?categoria=panaderia"><span class="category-icon">🥖</span><span>Panadería y pastelería</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#2B80D8" href="/talcadatos/avisos?categoria=belleza"><span class="category-icon">💇</span><span>Peluquería y belleza</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#0AA39A" href="/talcadatos/avisos?categoria=tecnologia"><span class="category-icon">💻</span><span>Tecnología y notebooks</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#7D5CD6" href="/talcadatos/avisos?categoria=vidrieria"><span class="category-icon">🪟</span><span>Vidriería y ventanas</span><span class="category-arrow" aria-hidden="true">→</span></a></div></section>
+<section class="section"><div class="section-head"><h2>Negocios destacados</h2><a href="/talcadatos/avisos">Ver avisos →</a></div><div class="grid">
 <article class="card" style="--card-accent:#32C6D0" data-aviso-id="10">
   <a class="card-photo" href="/talcadatos/avisos/10/">
     <span class="icon-tile"><span class="card-icon">📊</span></span>
@@ -170,108 +170,7 @@
       Contactar por WhatsApp
     </a>
   </div>
-</article>
-<article class="card" style="--card-accent:#8E93A1" data-aviso-id="2">
-  <a class="card-photo" href="/talcadatos/avisos/2/">
-    <span class="icon-tile"><span class="card-icon">🏗️</span></span>
-    <span class="badge badge-gold">Destacado</span>
-  </a>
-  <button class="fav-btn" type="button" data-fav-id="2" data-titulo="Ventanas corredizas y estructuras de aluminio" data-negocio="Aluminios del Sur" data-comuna="Talca" data-categoria="Aluminios y estructuras" data-icono="🏗️" data-color="#8E93A1" data-whatsapp="+56912345002" data-verificado="1" data-plan="Destacado" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
-  <div class="card-body">
-    <a class="card-title" href="/talcadatos/avisos/2/">Ventanas corredizas y estructuras de aluminio</a>
-    <div class="card-meta">
-      <span>Aluminios del Sur <span class="check" title="Negocio verificado">✔</span></span>
-      <span class="dot">·</span>
-      <span>Talca</span>
-    </div>
-    <div class="card-cat mono">🏗️ Aluminios y estructuras</div>
-    <a class="btn btn-whatsapp btn-block" href="https://wa.me/56912345002?text=Hola%20Aluminios%20del%20Sur%2C%20vi%20tu%20aviso%20%22Ventanas%20corredizas%20y%20estructuras%20de%20aluminio%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
-       data-aviso-id="2" data-wa-click="1">
-      Contactar por WhatsApp
-    </a>
-  </div>
-</article>
-<article class="card" style="--card-accent:#5AC8FA" data-aviso-id="11">
-  <a class="card-photo" href="/talcadatos/avisos/11/">
-    <span class="icon-tile"><span class="card-icon">🪟</span></span>
-
-  </a>
-  <button class="fav-btn" type="button" data-fav-id="11" data-titulo="Venta y reparación de vidrios y espejos" data-negocio="Vidrios y Cristales Central" data-comuna="Maule" data-categoria="Vidriería y ventanas" data-icono="🪟" data-color="#5AC8FA" data-whatsapp="+56912345011" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
-  <div class="card-body">
-    <a class="card-title" href="/talcadatos/avisos/11/">Venta y reparación de vidrios y espejos</a>
-    <div class="card-meta">
-      <span>Vidrios y Cristales Central </span>
-      <span class="dot">·</span>
-      <span>Maule</span>
-    </div>
-    <div class="card-cat mono">🪟 Vidriería y ventanas</div>
-    <a class="btn btn-whatsapp btn-block" href="https://wa.me/56912345011?text=Hola%20Vidrios%20y%20Cristales%20Central%2C%20vi%20tu%20aviso%20%22Venta%20y%20reparaci%C3%B3n%20de%20vidrios%20y%20espejos%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
-       data-aviso-id="11" data-wa-click="1">
-      Contactar por WhatsApp
-    </a>
-  </div>
-</article>
-<article class="card" style="--card-accent:#FF6482" data-aviso-id="8">
-  <a class="card-photo" href="/talcadatos/avisos/8/">
-    <span class="icon-tile"><span class="card-icon">💇</span></span>
-
-  </a>
-  <button class="fav-btn" type="button" data-fav-id="8" data-titulo="Corte, color y peinados a domicilio" data-negocio="Salón Bella Maule" data-comuna="Talca" data-categoria="Peluquería y belleza" data-icono="💇" data-color="#FF6482" data-whatsapp="+56912345008" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
-  <div class="card-body">
-    <a class="card-title" href="/talcadatos/avisos/8/">Corte, color y peinados a domicilio</a>
-    <div class="card-meta">
-      <span>Salón Bella Maule </span>
-      <span class="dot">·</span>
-      <span>Talca</span>
-    </div>
-    <div class="card-cat mono">💇 Peluquería y belleza</div>
-    <a class="btn btn-whatsapp btn-block" href="https://wa.me/56912345008?text=Hola%20Sal%C3%B3n%20Bella%20Maule%2C%20vi%20tu%20aviso%20%22Corte%2C%20color%20y%20peinados%20a%20domicilio%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
-       data-aviso-id="8" data-wa-click="1">
-      Contactar por WhatsApp
-    </a>
-  </div>
-</article>
-<article class="card" style="--card-accent:#BF5AF2" data-aviso-id="5">
-  <a class="card-photo" href="/talcadatos/avisos/5/">
-    <span class="icon-tile"><span class="card-icon">📚</span></span>
-
-  </a>
-  <button class="fav-btn" type="button" data-fav-id="5" data-titulo="Clases particulares de inglés, todos los niveles" data-negocio="Inglés con Pauli" data-comuna="Talca" data-categoria="Clases particulares" data-icono="📚" data-color="#BF5AF2" data-whatsapp="+56912345005" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
-  <div class="card-body">
-    <a class="card-title" href="/talcadatos/avisos/5/">Clases particulares de inglés, todos los niveles</a>
-    <div class="card-meta">
-      <span>Inglés con Pauli </span>
-      <span class="dot">·</span>
-      <span>Talca</span>
-    </div>
-    <div class="card-cat mono">📚 Clases particulares</div>
-    <a class="btn btn-whatsapp btn-block" href="https://wa.me/56912345005?text=Hola%20Ingl%C3%A9s%20con%20Pauli%2C%20vi%20tu%20aviso%20%22Clases%20particulares%20de%20ingl%C3%A9s%2C%20todos%20los%20niveles%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
-       data-aviso-id="5" data-wa-click="1">
-      Contactar por WhatsApp
-    </a>
-  </div>
-</article>
-<article class="card" style="--card-accent:#30D158" data-aviso-id="3">
-  <a class="card-photo" href="/talcadatos/avisos/3/">
-    <span class="icon-tile"><span class="card-icon">🔧</span></span>
-
-  </a>
-  <button class="fav-btn" type="button" data-fav-id="3" data-titulo="Gásfiter a domicilio, respuesta rápida" data-negocio="Gásfiter Express Talca" data-comuna="Talca" data-categoria="Gásfitería y plomería" data-icono="🔧" data-color="#30D158" data-whatsapp="+56912345003" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
-  <div class="card-body">
-    <a class="card-title" href="/talcadatos/avisos/3/">Gásfiter a domicilio, respuesta rápida</a>
-    <div class="card-meta">
-      <span>Gásfiter Express Talca </span>
-      <span class="dot">·</span>
-      <span>Talca</span>
-    </div>
-    <div class="card-cat mono">🔧 Gásfitería y plomería</div>
-    <a class="btn btn-whatsapp btn-block" href="https://wa.me/56912345003?text=Hola%20G%C3%A1sfiter%20Express%20Talca%2C%20vi%20tu%20aviso%20%22G%C3%A1sfiter%20a%20domicilio%2C%20respuesta%20r%C3%A1pida%22%20en%20Talcadatos%20y%20quiero%20consultar%20por..." target="_blank" rel="noopener"
-       data-aviso-id="3" data-wa-click="1">
-      Contactar por WhatsApp
-    </a>
-  </div>
-</article></div>
-</div>
+</article></div></section>
 
 </main>
 <footer class="site-footer">

@@ -15,10 +15,12 @@
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📌</text></svg>">
+<meta name="theme-color" content="#E85D5D">
+<link rel="manifest" href="/talcadatos/static/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/talcadatos/static/styles.css">
+<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260826-3">
 </head>
 <body data-active="home">
 
@@ -26,9 +28,10 @@
   <div class="wrap topbar-inner">
     <a href="/talcadatos/" class="brand">📌 Talcadatos</a>
     <nav class="topnav">
-      <a href="/talcadatos/avisos">Explorar</a>
-      <a href="/talcadatos/favoritos">☆ Favoritos</a>
-      <a href="/talcadatos/ayuda">Ayuda</a>
+      <a href="/talcadatos/">Inicio</a>
+      <a href="/talcadatos/explorar">Explorar</a>
+      <a href="/talcadatos/avisos">Avisos</a>
+      <a href="/talcadatos/favoritos">Favoritos</a>
       <a href="/talcadatos/publicar" class="btn btn-ghost">Publicar mi negocio</a>
     </nav>
   </div>
@@ -38,28 +41,37 @@
 
 
 <section class="hero">
-  <h1>Encuentra al negocio de Talca que necesitas, al toque.</h1>
+  <p class="hero-location">📍 Talca, Chile</p>
+  <h1>Encuentra lo que necesitas en Talca, al toque.</h1>
+  <p class="hero-sub">Negocios, servicios, datos y oportunidades cerca de ti.</p>
   <form class="search-box" id="search-form" autocomplete="off">
     <span class="search-icon">🔎</span>
     <input id="search-input" name="q" type="text" placeholder="¿Qué estás buscando? Ej: ventanas, pan amasado, clases de inglés…">
     <button class="btn btn-primary" type="submit">Buscar</button>
     <div id="search-results" class="search-results" hidden></div>
   </form>
+  <p class="hero-hint">Prueba: gásfiter, veterinaria, clases particulares</p>
 </section>
 
-<section class="section section-featured">
+<section class="trust-strip" data-reveal aria-label="Beneficios de Talcadatos">
+  <div><span class="trust-icon">⌁</span><p><strong>Hecho en Talca</strong><small>Datos y negocios de tu ciudad.</small></p></div>
+  <div><span class="trust-icon">✓</span><p><strong>Contacto directo</strong><small>Habla por WhatsApp, sin intermediarios.</small></p></div>
+  <div><span class="trust-icon">↗</span><p><strong>Oportunidades reales</strong><small>Encuentra o publica lo que hace falta.</small></p></div>
+</section>
+
+<section class="section section-featured" data-reveal>
   <div class="section-head">
     <div><span class="eyebrow">Lo más buscado en Talca</span><h2>Destacados</h2></div>
     <a href="/talcadatos/avisos">Ver todos →</a>
   </div>
-  
+
 <div class="carousel">
   <button class="carousel-arrow carousel-prev" type="button" aria-label="Ver anteriores">‹</button>
   <div class="carousel-track">
 <article class="card" style="--card-accent:#32C6D0" data-aviso-id="10">
   <a class="card-photo" href="/talcadatos/avisos/10/">
     <span class="icon-tile"><span class="card-icon">📊</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="10" data-titulo="Contabilidad para pymes y emprendedores" data-negocio="Contabilidad Ríos &amp; Asociados" data-comuna="Talca" data-categoria="Contabilidad y trámites" data-icono="📊" data-color="#32C6D0" data-whatsapp="+56912345010" data-verificado="1" data-plan="Premium" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -79,7 +91,7 @@
 <article class="card" style="--card-accent:#5E7CE2" data-aviso-id="6">
   <a class="card-photo" href="/talcadatos/avisos/6/">
     <span class="icon-tile"><span class="card-icon">💻</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="6" data-titulo="Reparación de notebooks y computadores" data-negocio="PC Rápido Talca" data-comuna="Talca" data-categoria="Tecnología y notebooks" data-icono="💻" data-color="#5E7CE2" data-whatsapp="+56912345006" data-verificado="1" data-plan="Premium" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -99,7 +111,7 @@
 <article class="card" style="--card-accent:#5AC8FA" data-aviso-id="1">
   <a class="card-photo" href="/talcadatos/avisos/1/">
     <span class="icon-tile"><span class="card-icon">🪟</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="1" data-titulo="Instalación y reparación de termopaneles" data-negocio="Vidriería Maule" data-comuna="Talca" data-categoria="Vidriería y ventanas" data-icono="🪟" data-color="#5AC8FA" data-whatsapp="+56912345001" data-verificado="1" data-plan="Premium" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -119,7 +131,7 @@
 <article class="card" style="--card-accent:#34C759" data-aviso-id="9">
   <a class="card-photo" href="/talcadatos/avisos/9/">
     <span class="icon-tile"><span class="card-icon">🌿</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="9" data-titulo="Mantención de jardines y poda de árboles" data-negocio="Jardines del Maule" data-comuna="Talca" data-categoria="Jardinería" data-icono="🌿" data-color="#34C759" data-whatsapp="+56912345009" data-verificado="1" data-plan="Destacado" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -139,7 +151,7 @@
 <article class="card" style="--card-accent:#FF9F45" data-aviso-id="7">
   <a class="card-photo" href="/talcadatos/avisos/7/">
     <span class="icon-tile"><span class="card-icon">🥖</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="7" data-titulo="Pan amasado y tortas por encargo" data-negocio="Panadería Doña Elba" data-comuna="Talca" data-categoria="Panadería y pastelería" data-icono="🥖" data-color="#FF9F45" data-whatsapp="+56912345007" data-verificado="" data-plan="Destacado" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -159,7 +171,7 @@
 <article class="card" style="--card-accent:#FFD60A" data-aviso-id="4">
   <a class="card-photo" href="/talcadatos/avisos/4/">
     <span class="icon-tile"><span class="card-icon">💡</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="4" data-titulo="Electricista certificado SEC" data-negocio="Electricidad Rengo" data-comuna="Talca" data-categoria="Electricidad" data-icono="💡" data-color="#FFD60A" data-whatsapp="+56912345004" data-verificado="1" data-plan="Destacado" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -180,22 +192,58 @@
 </div>
 </section>
 
-<section class="how">
-  <div class="how-step"><span class="how-n">1</span><h3>Busca lo que necesitas</h3><p>Escribe en el buscador o filtra por categoría y comuna.</p></div>
-  <div class="how-step"><span class="how-n">2</span><h3>Elige un negocio</h3><p>Revisa su ficha: qué ofrece, dónde atiende y su horario.</p></div>
-  <div class="how-step"><span class="how-n">3</span><h3>Escríbele por WhatsApp</h3><p>Un clic y quedas hablando directo con el negocio, sin intermediarios.</p></div>
+<section class="section" data-reveal>
+  <div class="section-head">
+    <div><span class="eyebrow">Encuentra más rápido</span><h2>Explora por rubros</h2></div>
+    <a href="/talcadatos/explorar">Ver todos →</a>
+  </div>
+  <div class="category-grid"><a class="category-card" style="--category-accent:#E85D5D" href="/talcadatos/avisos?categoria=aluminios"><span class="category-icon">🏗️</span><span>Aluminios y estructuras</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#2B80D8" href="/talcadatos/avisos?categoria=clases"><span class="category-icon">📚</span><span>Clases particulares</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#0AA39A" href="/talcadatos/avisos?categoria=contabilidad"><span class="category-icon">📊</span><span>Contabilidad y trámites</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#7D5CD6" href="/talcadatos/avisos?categoria=electricidad"><span class="category-icon">💡</span><span>Electricidad</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#D9921B" href="/talcadatos/avisos?categoria=gasfiteria"><span class="category-icon">🔧</span><span>Gásfitería y plomería</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#28A968" href="/talcadatos/avisos?categoria=jardineria"><span class="category-icon">🌿</span><span>Jardinería</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#E85D5D" href="/talcadatos/avisos?categoria=panaderia"><span class="category-icon">🥖</span><span>Panadería y pastelería</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#2B80D8" href="/talcadatos/avisos?categoria=belleza"><span class="category-icon">💇</span><span>Peluquería y belleza</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#0AA39A" href="/talcadatos/avisos?categoria=tecnologia"><span class="category-icon">💻</span><span>Tecnología y notebooks</span><span class="category-arrow" aria-hidden="true">→</span></a><a class="category-card" style="--category-accent:#7D5CD6" href="/talcadatos/avisos?categoria=vidrieria"><span class="category-icon">🪟</span><span>Vidriería y ventanas</span><span class="category-arrow" aria-hidden="true">→</span></a></div>
 </section>
 
-<section class="section">
+<section class="section local-now" data-reveal>
+  <div class="section-head"><div><span class="eyebrow">Actualidad local</span><h2>Hoy en Talca</h2></div></div>
+  <div class="local-now-grid">
+    <div class="today-card">
+      <span class="section-icon">🔥</span>
+      <h3>Lo más buscado hoy</h3>
+      <p>Atajos a lo que Talca está necesitando ahora.</p>
+      <div class="today-links"><a class="today-link" href="/talcadatos/avisos?q=g%C3%A1sfiter"><span>gásfiter</span><span aria-hidden="true">→</span></a><a class="today-link" href="/talcadatos/avisos?q=veterinaria"><span>veterinaria</span><span aria-hidden="true">→</span></a><a class="today-link" href="/talcadatos/avisos?q=notebook"><span>notebook</span><span aria-hidden="true">→</span></a><a class="today-link" href="/talcadatos/avisos?q=pan%20amasado"><span>pan amasado</span><span aria-hidden="true">→</span></a></div>
+    </div>
+    <div class="today-card today-card-soft">
+      <span class="section-icon">💬</span>
+      <h3>Resuelve directo</h3>
+      <p>Contacta a cada negocio por WhatsApp, sin intermediarios ni comisiones.</p>
+      <a class="btn btn-ghost btn-sm" href="/talcadatos/avisos?orden=populares">Ver más contactados</a>
+    </div>
+  </div>
+</section>
+
+<section class="section local-story" data-reveal>
+  <figure class="local-story-visual">
+    <img src="/talcadatos/static/img/feria-local-editorial.jpg" alt="Emprendedores atendiendo una feria de comercio local" loading="lazy">
+    <figcaption><span></span> Cerca, útil y hecho por personas</figcaption>
+  </figure>
+  <div class="local-story-copy">
+    <span class="eyebrow">Comercio que se siente cerca</span>
+    <h2>Descubre a quien hace las cosas bien, a unas cuadras de ti.</h2>
+    <p>Desde oficios que resuelven el día hasta productos y clases que merecen ser encontrados. Talcadatos pone lo local primero.</p>
+    <div class="local-story-points">
+      <span>◆ Información clara</span><span>◆ Negocios verificables</span><span>◆ Atención humana</span>
+    </div>
+    <a class="btn btn-ghost" href="/talcadatos/explorar">Explorar negocios locales <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<section class="section" data-reveal>
   <div class="section-head">
-    <h2>Recién publicados</h2>
+    <div><span class="eyebrow">Nuevos en Talcadatos</span><h2>Recién publicados</h2></div>
     <a href="/talcadatos/avisos">Ver todos →</a>
   </div>
   <div class="grid">
 <article class="card" style="--card-accent:#5AC8FA" data-aviso-id="11">
   <a class="card-photo" href="/talcadatos/avisos/11/">
     <span class="icon-tile"><span class="card-icon">🪟</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="11" data-titulo="Venta y reparación de vidrios y espejos" data-negocio="Vidrios y Cristales Central" data-comuna="Maule" data-categoria="Vidriería y ventanas" data-icono="🪟" data-color="#5AC8FA" data-whatsapp="+56912345011" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -255,7 +303,7 @@
 <article class="card" style="--card-accent:#FF6482" data-aviso-id="8">
   <a class="card-photo" href="/talcadatos/avisos/8/">
     <span class="icon-tile"><span class="card-icon">💇</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="8" data-titulo="Corte, color y peinados a domicilio" data-negocio="Salón Bella Maule" data-comuna="Talca" data-categoria="Peluquería y belleza" data-icono="💇" data-color="#FF6482" data-whatsapp="+56912345008" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -315,7 +363,7 @@
 <article class="card" style="--card-accent:#BF5AF2" data-aviso-id="5">
   <a class="card-photo" href="/talcadatos/avisos/5/">
     <span class="icon-tile"><span class="card-icon">📚</span></span>
-    
+
   </a>
   <button class="fav-btn" type="button" data-fav-id="5" data-titulo="Clases particulares de inglés, todos los niveles" data-negocio="Inglés con Pauli" data-comuna="Talca" data-categoria="Clases particulares" data-icono="📚" data-color="#BF5AF2" data-whatsapp="+56912345005" data-verificado="" data-plan="Gratis" title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
@@ -354,10 +402,47 @@
 </article></div>
 </section>
 
+<section class="section trend-section" data-reveal>
+  <div class="trend-copy">
+    <span class="eyebrow">Tendencias locales</span>
+    <h2>Lo que Talca está buscando</h2>
+    <p>Señales agregadas para descubrir servicios útiles y oportunidades locales.</p>
+    <a href="/talcadatos/avisos" class="text-link">Explorar todos los avisos →</a>
+  </div>
+  <ol class="trend-list"><li><span class="trend-rank">1</span><a href="/talcadatos/avisos?q=g%C3%A1sfiter">gásfiter</a><span class="trend-up">↑</span></li><li><span class="trend-rank">2</span><a href="/talcadatos/avisos?q=veterinaria">veterinaria</a><span class="trend-up">↑</span></li><li><span class="trend-rank">3</span><a href="/talcadatos/avisos?q=notebook">notebook</a><span class="trend-up">↑</span></li></ol>
+</section>
+
+<section class="need-cta" data-reveal>
+  <div><span class="eyebrow">¿No aparece lo que buscas?</span><h2>Cuéntanos qué necesitas.</h2>
+  <p>Publica tu necesidad y la conectaremos con negocios de Talca que puedan ayudarte.</p></div>
+  <a class="btn btn-primary btn-lg" href="/talcadatos/necesito">Publicar necesidad</a>
+</section>
+
+<section class="how" data-reveal>
+  <div class="how-step"><span class="how-n">1</span><h3>Busca lo que necesitas</h3><p>Escribe en el buscador o explora por rubro.</p></div>
+  <div class="how-step"><span class="how-n">2</span><h3>Elige con confianza</h3><p>Revisa categoría, ubicación, horario y verificación.</p></div>
+  <div class="how-step"><span class="how-n">3</span><h3>Contacta y resuelve</h3><p>Un clic basta para hablar directo por WhatsApp.</p></div>
+</section>
+
+<section class="business-cta" data-reveal>
+  <div class="business-cta-copy"><span class="eyebrow">Para pymes y emprendedores</span><h2>Haz que Talca encuentre tu negocio.</h2>
+  <p>Crea tu vitrina local gratis y empieza a recibir contactos reales.</p><a class="btn btn-ghost btn-lg" href="/talcadatos/publicar">Publicar mi negocio <span aria-hidden="true">→</span></a></div>
+  <figure class="business-cta-visual"><img src="/talcadatos/static/img/comercio-local-editorial.jpg" alt="Emprendedora preparando productos en su negocio local" loading="lazy"><figcaption>Tu vitrina también puede estar aquí.</figcaption></figure>
+</section>
+
 </main>
 <footer class="site-footer">
   <span>Talcadatos — directorio de pymes y emprendedores de Talca</span>
 </footer>
-<script src="/talcadatos/static/app.js"></script>
+
+<nav class="mobile-nav" aria-label="Navegación principal">
+  <a href="/talcadatos/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
+  <a href="/talcadatos/explorar"><span aria-hidden="true">▦</span><span>Explorar</span></a>
+  <a href="/talcadatos/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
+  <a href="/talcadatos/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
+  <a href="/talcadatos/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
+</nav>
+
+<script src="/talcadatos/static/app.js?v=20260826-2"></script>
 </body>
 </html>
