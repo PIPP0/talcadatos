@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Publicar una necesidad · Talcadatos</title>
+<title>Recomendar un negocio · Talcadatos</title>
 <meta name="description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
 
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Talcadatos">
-<meta property="og:title" content="Publicar una necesidad · Talcadatos">
+<meta property="og:title" content="Recomendar un negocio · Talcadatos">
 <meta property="og:description" content="Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.">
 <meta property="og:image" content="/og/default.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -42,20 +42,20 @@
 
 <section class="need-page">
   <div class="need-page-intro">
-    <span class="eyebrow">Conectamos demanda local</span>
-    <h1>¿Qué necesitas resolver?</h1>
-    <p class="lede">Cuéntanos en pocas palabras. Buscaremos pymes y emprendedores de Talca que puedan ayudarte.</p>
-    <div class="trust-points"><span>✓ Solo para conectar tu solicitud</span><span>✓ Sin costo para ti</span><span>✓ Respuesta directa por WhatsApp</span></div>
+    <span class="eyebrow">Recomendaciones de la comunidad</span>
+    <h1>¿Qué te gustaría ver en Talca?</h1>
+    <p class="lede">Cuéntanos qué negocio o servicio te gustaría encontrar en tu barrio. Con estas recomendaciones destacamos lo que Talca está pidiendo.</p>
+    <div class="trust-points"><span>✓ Ayuda a traer nuevos negocios a Talca</span><span>✓ Sin costo para ti</span><span>✓ Te avisamos por WhatsApp si calza</span></div>
   </div>
   <div class="panel need-form-panel">
-    <h2>Publica tu necesidad</h2>
+    <h2>Cuéntanos qué te gustaría ver</h2>
 
     <form method="post" action="/talcadatos/necesito" class="form" id="necesito-form">
       <label>¿En qué rubro?
         <select name="categoria_id" required><option value="">Selecciona una categoría</option><option value="aluminios">🏗️ Aluminios y estructuras</option><option value="clases">📚 Clases particulares</option><option value="contabilidad">📊 Contabilidad y trámites</option><option value="electricidad">💡 Electricidad</option><option value="gasfiteria">🔧 Gásfitería y plomería</option><option value="jardineria">🌿 Jardinería</option><option value="panaderia">🥖 Panadería y pastelería</option><option value="belleza">💇 Peluquería y belleza</option><option value="tecnologia">💻 Tecnología y notebooks</option><option value="vidrieria">🪟 Vidriería y ventanas</option></select>
       </label>
-      <label>¿Qué necesitas?
-        <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Necesito instalar dos ventanas termopanel esta semana."></textarea>
+      <label>¿Qué te gustaría ver?
+        <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Una veterinaria de urgencia cerca del centro."></textarea>
       </label>
       <div class="form-split">
         <label>Sector o comuna
@@ -68,8 +68,8 @@
       <label>WhatsApp para responderte
         <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="">
       </label>
-      <button class="btn btn-primary btn-lg" type="submit">Publicar mi necesidad</button>
-      <p class="hint">Tu número no se publica: solo se usa para que te contacte un negocio que pueda ayudarte.</p>
+      <button class="btn btn-primary btn-lg" type="submit">Enviar recomendación</button>
+      <p class="hint">Tu número no se publica: solo se usa para avisarte si aparece un negocio que calce con lo que pediste.</p>
     </form>
   </div>
 </section>

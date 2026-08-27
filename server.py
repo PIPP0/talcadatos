@@ -436,20 +436,20 @@ def _necesito_body(categorias, sitio, form=None, errores=None):
     return f"""
 <section class="need-page">
   <div class="need-page-intro">
-    <span class="eyebrow">Conectamos demanda local</span>
+    <span class="eyebrow">Recomendaciones de la comunidad</span>
     <h1>{t.esc(sitio['necesito_titulo'])}</h1>
     <p class="lede">{t.esc(sitio['necesito_bajada'])}</p>
-    <div class="trust-points"><span>✓ Solo para conectar tu solicitud</span><span>✓ Sin costo para ti</span><span>✓ Respuesta directa por WhatsApp</span></div>
+    <div class="trust-points"><span>✓ Ayuda a traer nuevos negocios a Talca</span><span>✓ Sin costo para ti</span><span>✓ Te avisamos por WhatsApp si calza</span></div>
   </div>
   <div class="panel need-form-panel">
-    <h2>Publica tu necesidad</h2>
+    <h2>Cuéntanos qué te gustaría ver</h2>
     {errors_html}
     <form method="post" action="/necesito" class="form" id="necesito-form">
       <label>¿En qué rubro?
         <select name="categoria_id" required><option value="">Selecciona una categoría</option>{options}</select>
       </label>
-      <label>¿Qué necesitas?
-        <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Necesito instalar dos ventanas termopanel esta semana.">{value("descripcion")}</textarea>
+      <label>¿Qué te gustaría ver?
+        <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Una veterinaria de urgencia cerca del centro.">{value("descripcion")}</textarea>
       </label>
       <div class="form-split">
         <label>Sector o comuna
@@ -462,8 +462,8 @@ def _necesito_body(categorias, sitio, form=None, errores=None):
       <label>WhatsApp para responderte
         <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
       </label>
-      <button class="btn btn-primary btn-lg" type="submit">Publicar mi necesidad</button>
-      <p class="hint">Tu número no se publica: solo se usa para que te contacte un negocio que pueda ayudarte.</p>
+      <button class="btn btn-primary btn-lg" type="submit">Enviar recomendación</button>
+      <p class="hint">Tu número no se publica: solo se usa para avisarte si aparece un negocio que calce con lo que pediste.</p>
     </form>
   </div>
 </section>
@@ -477,12 +477,12 @@ def necesito_form(handler, ok=False, form=None, errores=None):
         body = """
 <div class="panel panel-ok">
   <div class="success-icon">✓</div>
-  <h1>Tu necesidad ya está en Talcadatos</h1>
-  <p>Buscaremos negocios de Talca relacionados y podrán escribirte directamente por WhatsApp.</p>
+  <h1>¡Gracias por tu recomendación!</h1>
+  <p>La tenemos en cuenta para recomendar nuevos comercios en Talca. Si aparece un negocio que calza, te contactamos por WhatsApp.</p>
   <a class="btn btn-primary" href="/avisos">Seguir explorando</a>
 </div>"""
-        return render(handler, t.layout("Necesidad publicada", body, active="necesito", site=sitio))
-    render(handler, t.layout("Publicar una necesidad", _necesito_body(categorias, sitio, form, errores), active="necesito", site=sitio))
+        return render(handler, t.layout("Recomendación enviada", body, active="necesito", site=sitio))
+    render(handler, t.layout("Recomendar un negocio", _necesito_body(categorias, sitio, form, errores), active="necesito", site=sitio))
 
 
 def necesito_submit(handler, form):
@@ -829,7 +829,7 @@ def admin_dashboard(handler, query):
     <a href="/admin/contenido"><span>✦</span><strong>Contenido</strong><small>Portada, textos y CTA</small></a>
     <a href="/admin/avisos"><span>◈</span><strong>Avisos</strong><small>Editar y publicar ofertas</small></a>
     <a href="/admin/anunciantes"><span>⌂</span><strong>Negocios</strong><small>Planes y verificación</small></a>
-    <a href="/admin/necesidades"><span>↗</span><strong>Demanda</strong><small>Necesidades de Talca</small></a>
+    <a href="/admin/necesidades"><span>↗</span><strong>Demanda</strong><small>Lo que Talca quiere ver</small></a>
   </div>
 </section>
 <div class="two-col">
@@ -1294,14 +1294,14 @@ def admin_necesidades(handler):
 </tr>""" for n in necesidades)
     flash = get_flash(handler)
     body = f"""
-<h1>Necesidades de Talca</h1>
-<p class="lede">Solicitudes que las personas publicaron para que las conectemos con pymes y emprendedores locales.</p>
+<h1>Lo que Talca quiere ver</h1>
+<p class="lede">Negocios y servicios que la gente recomendó — úsalas para invitar nuevos comercios o avisarles a los que ya están.</p>
 <div class="tbl-wrap"><table>
-  <tr><th>Rubro</th><th>Necesidad</th><th>WhatsApp</th><th>Fecha</th><th></th></tr>
-  {filas or "<tr><td colspan='5' class='empty-state'>No hay necesidades nuevas.</td></tr>"}
+  <tr><th>Rubro</th><th>Recomendación</th><th>WhatsApp</th><th>Fecha</th><th></th></tr>
+  {filas or "<tr><td colspan='5' class='empty-state'>No hay recomendaciones nuevas.</td></tr>"}
 </table></div>
 """
-    render(handler, t.layout("Necesidades de Talca", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Lo que Talca quiere ver", body, active="admin", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1335,9 +1335,9 @@ def contenido_grupos(sitio):
          campo("necesidad_boton", "Botón de necesidad") + campo("pymes_eyebrow", "Antetítulo para pymes") +
          campo("pymes_titulo", "Título para pymes") + campo("pymes_bajada", "Bajada para pymes", True) +
          campo("pymes_boton", "Botón para pymes")),
-        ("Páginas Explorar, Necesito esto y Publicar", campo("explorar_eyebrow", "Antetítulo de Explorar") +
+        ("Páginas Explorar, Recomendar negocio y Publicar", campo("explorar_eyebrow", "Antetítulo de Explorar") +
          campo("explorar_titulo", "Título de Explorar", True) + campo("explorar_bajada", "Bajada de Explorar", True) +
-         campo("necesito_titulo", "Título de Necesito esto", True) + campo("necesito_bajada", "Bajada de Necesito esto", True) +
+         campo("necesito_titulo", "Título de Recomendar negocio", True) + campo("necesito_bajada", "Bajada de Recomendar negocio", True) +
          campo("publicar_titulo", "Título de Publicar") + campo("publicar_bajada", "Bajada de Publicar", True)),
     ]
 
@@ -1396,7 +1396,7 @@ def admin_editor(handler):
       <label class="editor-route-label">Vista previa
         <select id="editor-page-select" aria-label="Página que se muestra en la vista previa">
           <option value="/">Inicio</option><option value="/explorar">Explorar</option><option value="/avisos">Avisos</option>
-          <option value="/necesito">Necesito esto</option><option value="/publicar">Publicar negocio</option><option value="/ayuda">Ayuda</option>
+          <option value="/necesito">Recomendar negocio</option><option value="/publicar">Publicar negocio</option><option value="/ayuda">Ayuda</option>
         </select>
       </label>
       <form method="post" action="/admin/contenido" class="form editor-form">
@@ -1409,7 +1409,7 @@ def admin_editor(handler):
         <a href="/admin/avisos">Avisos y servicios <span>→</span></a>
         <a href="/admin/anunciantes">Negocios y planes <span>→</span></a>
         <a href="/admin/sinonimos">Categorías y búsquedas <span>→</span></a>
-        <a href="/admin/necesidades">Solicitudes de personas <span>→</span></a>
+        <a href="/admin/necesidades">Recomendaciones de la comunidad <span>→</span></a>
         <a href="/admin/usuarios">Usuarios administradores <span>→</span></a>
       </div>
     </aside>
