@@ -178,18 +178,10 @@ def home(handler):
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
     recientes = db.get_avisos(estado="activo", orden="recientes", limit=8)
-    n_negocios = len({a["negocio_id"] for a in activos})
-    n_contactos = sum(1 for e in db.get_eventos() if e.get("tipo") == "click_whatsapp")
-    n_categorias = len({a["categoria_slug"] for a in activos})
 
     body = f"""
 <section class="hero">
   <h1>Encuentra al negocio de Talca que necesitas, al toque.</h1>
-  <div class="stat-bar stat-bar-hero">
-    <div><strong>{n_negocios}</strong><span>negocios activos en Talca</span></div>
-    <div><strong>{n_contactos}</strong><span>contactos por WhatsApp generados</span></div>
-    <div><strong>{n_categorias}</strong><span>rubros distintos</span></div>
-  </div>
   <form class="search-box" id="search-form" autocomplete="off">
     <span class="search-icon">🔎</span>
     <input id="search-input" name="q" type="text" placeholder="¿Qué estás buscando? Ej: ventanas, pan amasado, clases de inglés…">
