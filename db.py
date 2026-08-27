@@ -26,11 +26,14 @@ import datetime
 
 import firebase_admin
 from firebase_admin import credentials, firestore
+from google.cloud import storage as gcs
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _KEY_PATH = os.path.join(BASE_DIR, "firebase-key.json")
+_FOTOS_BUCKET = os.environ.get("FOTOS_BUCKET", "talcadatos-fotos")
 
 _db = None
+_storage_client = None
 
 
 CONTENIDO_SITIO_POR_DEFECTO = {
@@ -86,6 +89,33 @@ def _fs():
         firebase_admin.initialize_app(cred)
     _db = firestore.client()
     return _db
+
+
+def _storage():
+    global _storage_client
+    if _storage_client is not None:
+        return _storage_client
+    raw = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if raw:
+        from google.oauth2 import service_account
+        info = json.loads(raw)
+        creds = service_account.Credentials.from_service_account_info(info)
+        _storage_client = gcs.Client(credentials=creds, project=info["project_id"])
+    elif os.path.isfile(_KEY_PATH):
+        from google.oauth2 import service_account
+        creds = service_account.Credentials.from_service_account_file(_KEY_PATH)
+        _storage_client = gcs.Client(credentials=creds, project=creds.project_id)
+    else:
+        _storage_client = gcs.Client()
+    return _storage_client
+
+
+def subir_foto_aviso(datos, content_type, extension):
+    """Sube la foto de un aviso al bucket publico y devuelve su URL."""
+    nombre = f"avisos/{secrets.token_hex(12)}.{extension}"
+    blob = _storage().bucket(_FOTOS_BUCKET).blob(nombre)
+    blob.upload_from_string(datos, content_type=content_type)
+    return f"https://storage.googleapis.com/{_FOTOS_BUCKET}/{nombre}"
 
 
 def now():
@@ -265,12 +295,14 @@ def get_comunas_activas():
     return sorted(comunas)
 
 
-def crear_aviso(negocio_id, titulo, descripcion, categoria_slug, comuna, horario, color, estado="pendiente"):
+def crear_aviso(negocio_id, titulo, descripcion, categoria_slug, comuna, horario, color, estado="pendiente",
+                 foto_url=None):
     aid = _next_id("avisos")
     _fs().collection("avisos").document(aid).set({
         "negocio_id": negocio_id, "titulo": titulo, "descripcion": descripcion,
         "categoria_slug": categoria_slug, "comuna": comuna, "horario": horario,
         "color": color, "estado": estado, "vistas_total": 0, "contactos_total": 0,
+        "foto_url": foto_url,
         "publicado_en": now() if estado == "activo" else None, "creado_en": now(),
     })
     return aid

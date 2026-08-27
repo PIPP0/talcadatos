@@ -44,9 +44,13 @@
   <h1>Publica tu negocio en Talcadatos</h1>
   <p class="lede">Es gratis. Completa el formulario y tu aviso queda listo para revisión — normalmente se aprueba el mismo día.</p>
 
-  <form method="post" action="/talcadatos/publicar" class="form">
+  <form method="post" action="/talcadatos/publicar" class="form" enctype="multipart/form-data">
     <label>Nombre del negocio
       <input name="nombre_negocio" required maxlength="120" value="">
+    </label>
+    <label>Foto de tu negocio o trabajo (opcional)
+      <input name="foto" type="file" accept="image/jpeg,image/png,image/webp">
+      <span class="hint">JPG, PNG o WebP, máximo 5 MB. Si no subes una, usamos un ícono del rubro.</span>
     </label>
     <label>WhatsApp de contacto
       <input name="whatsapp" required placeholder="+56 9 1234 5678" value="">

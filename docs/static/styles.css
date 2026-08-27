@@ -182,8 +182,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 /* ---- card ---- */
 .card{position:relative; background:var(--paper-raised); border:1px solid rgba(210,210,215,.6); border-radius:22px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column; transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;}
 .card:hover{transform:translateY(-6px); box-shadow:0 2px 6px rgba(0,0,0,.05), 0 34px 56px -22px rgba(0,0,0,.34);}
-.card-photo{position:relative; display:flex; align-items:center; justify-content:center; height:188px;
+.card-photo{position:relative; display:flex; align-items:center; justify-content:center; height:188px; overflow:hidden;
   background:linear-gradient(160deg, color-mix(in srgb, var(--card-accent) 72%, white) 0%, color-mix(in srgb, var(--card-accent) 40%, white) 100%);}
+.card-photo.has-foto img, .detalle-photo.has-foto img{width:100%; height:100%; object-fit:cover; display:block;}
 .icon-tile{width:80px; height:80px; border-radius:22px; background:var(--paper-raised); display:flex; align-items:center; justify-content:center;
   box-shadow:0 4px 10px -2px color-mix(in srgb, var(--card-accent) 55%, transparent), 0 16px 30px -10px color-mix(in srgb, var(--card-accent) 65%, transparent);}
 .icon-tile.big{width:104px; height:104px; border-radius:26px;}
@@ -215,7 +216,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 
 /* ---- detalle ---- */
 .detalle{display:grid; grid-template-columns:360px 1fr; gap:36px; margin:32px 0; align-items:start;}
-.detalle-photo{position:relative; display:flex; align-items:center; justify-content:center; height:300px; border-radius:24px;
+.detalle-photo{position:relative; display:flex; align-items:center; justify-content:center; height:300px; border-radius:24px; overflow:hidden;
   background:linear-gradient(160deg, color-mix(in srgb, var(--card-accent) 68%, white) 0%, color-mix(in srgb, var(--card-accent) 38%, white) 100%);}
 .detalle-photo .badge{position:absolute; top:16px; right:16px;}
 .detalle-cat{color:var(--ink-faint); margin-bottom:6px;}

@@ -543,10 +543,13 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
         "url": canonical,
     }, ensure_ascii=False)
 
+    foto_url = aviso.get("foto_url")
+    foto_html = (f'<img src="{t.esc(foto_url)}" alt="{t.esc(aviso["titulo"])}" loading="eager">'
+                 if foto_url else f'<span class="icon-tile big"><span class="card-icon big">{aviso["icono"]}</span></span>')
     body = f"""
 <div class="detalle">
-  <div class="detalle-photo" style="--card-accent:{t.esc(aviso['color'])}">
-    <span class="icon-tile big"><span class="card-icon big">{aviso['icono']}</span></span>
+  <div class="detalle-photo{' has-foto' if foto_url else ''}" style="--card-accent:{t.esc(aviso['color'])}">
+    {foto_html}
     {destacado_html}
     <button class="fav-btn" type="button" data-fav-id="{aviso['id']}" data-titulo="{t.esc(aviso['titulo'])}"
        data-negocio="{t.esc(aviso['negocio_nombre'])}" data-comuna="{t.esc(aviso['comuna'])}"
@@ -606,9 +609,13 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
   <h1>{t.esc(sitio['publicar_titulo'])}</h1>
   <p class="lede">{t.esc(sitio['publicar_bajada'])}</p>
   {errores_html}
-  <form method="post" action="/publicar" class="form">
+  <form method="post" action="/publicar" class="form" enctype="multipart/form-data">
     <label>Nombre del negocio
       <input name="nombre_negocio" required maxlength="120" value="{v('nombre_negocio')}">
+    </label>
+    <label>Foto de tu negocio o trabajo (opcional)
+      <input name="foto" type="file" accept="image/jpeg,image/png,image/webp">
+      <span class="hint">JPG, PNG o WebP, máximo 5 MB. Si no subes una, usamos un ícono del rubro.</span>
     </label>
     <label>WhatsApp de contacto
       <input name="whatsapp" required placeholder="+56 9 1234 5678" value="{v('whatsapp')}">
@@ -676,12 +683,22 @@ def _validar_publicar(form, categoria_ids):
     return errores
 
 
-def publicar_submit(handler, form):
+_EXT_POR_TIPO = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+
+
+def publicar_submit(handler, form, foto=None):
     categorias = db.get_categorias()
     categoria_ids = {c["id"] for c in categorias}
     errores = _validar_publicar(form, categoria_ids)
+    if foto and foto["content_type"] not in _EXT_POR_TIPO:
+        errores.append("La foto debe ser JPG, PNG o WebP.")
     if errores:
         return publicar_form(handler, form=form, errores=errores)
+
+    foto_url = None
+    if foto:
+        ext = _EXT_POR_TIPO[foto["content_type"]]
+        foto_url = db.subir_foto_aviso(foto["data"], foto["content_type"], ext)
 
     slug = form["categoria_id"]
     color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
@@ -689,7 +706,8 @@ def publicar_submit(handler, form):
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip())
     db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
-        slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente")
+        slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
+        foto_url=foto_url)
     redirect(handler, f"/publicar?ok=1&token={token_acceso}")
 
 
@@ -1668,6 +1686,26 @@ class Handler(BaseHTTPRequestHandler):
     def _form(self):
         return {k: v for k, v in parse_qsl(self._body())}
 
+    def _form_multipart(self):
+        """Parsea multipart/form-data: devuelve (campos_de_texto, foto_o_None).
+        foto es {"filename", "content_type", "data"} cuando se subio un archivo."""
+        import cgi
+        ctype = self.headers.get("Content-Type", "")
+        if not ctype.startswith("multipart/form-data"):
+            return self._form(), None
+        fs = cgi.FieldStorage(
+            fp=self.rfile, headers=self.headers,
+            environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": ctype,
+                     "CONTENT_LENGTH": self.headers.get("Content-Length", "0")})
+        form, foto = {}, None
+        for key in fs.keys():
+            item = fs[key]
+            if key == "foto" and getattr(item, "filename", ""):
+                foto = {"filename": item.filename, "content_type": item.type, "data": item.value}
+            elif not getattr(item, "filename", None):
+                form[key] = item.value
+        return form, foto
+
     def do_GET(self):
         parts = urlsplit(self.path)
         path, query = parts.path, parts.query
@@ -1761,7 +1799,10 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             if path == "/publicar":
-                return publicar_submit(self, self._form())
+                if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
+                    return publicar_form(self, errores=["La foto es muy pesada (máximo 5 MB)."])
+                form, foto = self._form_multipart()
+                return publicar_submit(self, form, foto)
             if path == "/necesito":
                 return necesito_submit(self, self._form())
             if path == "/api/buscar":

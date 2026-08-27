@@ -171,10 +171,13 @@ def aviso_card(aviso, termino_busqueda=None, show_badge=True):
         f'data-color="{esc(aviso["color"])}" data-whatsapp="{esc(aviso["whatsapp"])}" '
         f'data-verificado="{"1" if aviso["verificado"] else ""}" data-plan="{esc(aviso["plan_nombre"])}"'
     )
+    foto_url = aviso.get("foto_url")
+    foto_html = (f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}" loading="lazy">'
+                 if foto_url else f'<span class="icon-tile"><span class="card-icon">{aviso["icono"]}</span></span>')
     return f"""
 <article class="card" style="--card-accent:{esc(aviso['color'])}"{click_attr} data-aviso-id="{aviso['id']}">
-  <a class="card-photo" href="/avisos/{aviso['id']}">
-    <span class="icon-tile"><span class="card-icon">{aviso['icono']}</span></span>
+  <a class="card-photo{' has-foto' if foto_url else ''}" href="/avisos/{aviso['id']}">
+    {foto_html}
     {badge_html}
   </a>
   <button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
