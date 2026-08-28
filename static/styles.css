@@ -339,9 +339,10 @@ td a:hover{color:var(--accent);}
 tr:last-child td{border-bottom:none;}
 .inline-form{display:inline-flex; gap:6px; align-items:center;}
 .admin-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start;}
+.admin-actions-row{display:flex; gap:8px; align-items:flex-start;}
 .admin-actions-icons{display:flex; gap:6px; flex:0 0 auto;}
-.admin-actions-stack{display:flex; flex-direction:column; gap:6px;}
-.admin-actions-stack .btn{width:100%;}
+.admin-actions-stack{display:flex; flex-direction:column; gap:6px; flex:0 0 auto;}
+.admin-actions-stack .btn{width:100%; white-space:nowrap;}
 
 .mod-row{display:flex; justify-content:space-between; gap:20px; background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px; flex-wrap:wrap; transition:transform .18s ease, box-shadow .18s ease;}
 .mod-row:hover{transform:translateY(-2px); box-shadow:var(--shadow);}
