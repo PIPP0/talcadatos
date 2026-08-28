@@ -14,8 +14,34 @@ document.addEventListener("change", function (e) {
 });
 
 document.addEventListener("submit", function (e) {
-  var msg = e.target.getAttribute("data-confirm");
-  if (msg && !window.confirm(msg)) e.preventDefault();
+  var form = e.target;
+  var msg = form.getAttribute("data-confirm");
+  if (msg && !window.confirm(msg)) {
+    e.preventDefault();
+    return;
+  }
+  if (!form.matches("[data-ajax-delete]")) return;
+  e.preventDefault();
+  var fila = form.closest("tr");
+  var boton = form.querySelector("button");
+  if (boton) boton.disabled = true;
+  fetch(form.action, { method: "POST", headers: { "X-Requested-With": "fetch" } })
+    .then(function (res) {
+      if (res.ok) {
+        if (fila) {
+          fila.style.transition = "opacity .25s ease, transform .25s ease";
+          fila.style.opacity = "0";
+          fila.style.transform = "translateX(10px)";
+          setTimeout(function () { fila.remove(); }, 250);
+        }
+        return;
+      }
+      return res.text().then(function (txt) { throw new Error(txt); });
+    })
+    .catch(function (err) {
+      if (boton) boton.disabled = false;
+      window.alert((err && err.message) || "No se pudo eliminar. Intenta de nuevo.");
+    });
 });
 
 document.addEventListener("click", function (e) {

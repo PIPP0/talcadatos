@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260828-2">
+<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260828-9">
 </head>
 <body data-active="avisos">
 
@@ -44,9 +44,9 @@
   <h1 id="listado-titulo">Avisos en Talca</h1>
   <form class="filters" id="listado-filtros" method="get" action="/talcadatos/avisos">
 
-    <select name="categoria" onchange="this.form.submit()"><option value="" selected>Todas las categorías</option><option value="aluminios">🏗️ Aluminios y estructuras</option><option value="clases">📚 Clases particulares</option><option value="contabilidad">📊 Contabilidad y trámites</option><option value="electricidad">💡 Electricidad</option><option value="gasfiteria">🔧 Gásfitería y plomería</option><option value="jardineria">🌿 Jardinería</option><option value="panaderia">🥖 Panadería y pastelería</option><option value="belleza">💇 Peluquería y belleza</option><option value="tecnologia">💻 Tecnología y notebooks</option><option value="vidrieria">🪟 Vidriería y ventanas</option></select>
-    <select name="comuna" onchange="this.form.submit()"><option value="" selected>Todas las comunas</option><option value="Maule">Maule</option><option value="Talca">Talca</option></select>
-    <select name="orden" onchange="this.form.submit()"><option value="relevancia" selected>Relevancia</option><option value="recientes">Más recientes</option><option value="populares">Más contactados</option></select>
+    <select name="categoria" data-autosubmit><option value="" selected>Todas las categorías</option><option value="aluminios">🏗️ Aluminios y estructuras</option><option value="clases">📚 Clases particulares</option><option value="contabilidad">📊 Contabilidad y trámites</option><option value="electricidad">💡 Electricidad</option><option value="gasfiteria">🔧 Gásfitería y plomería</option><option value="jardineria">🌿 Jardinería</option><option value="panaderia">🥖 Panadería y pastelería</option><option value="belleza">💇 Peluquería y belleza</option><option value="tecnologia">💻 Tecnología y notebooks</option><option value="vidrieria">🪟 Vidriería y ventanas</option></select>
+    <select name="comuna" data-autosubmit><option value="" selected>Todas las comunas</option><option value="Maule">Maule</option><option value="Talca">Talca</option></select>
+    <select name="orden" data-autosubmit><option value="relevancia" selected>Relevancia</option><option value="recientes">Más recientes</option><option value="populares">Más contactados</option></select>
   </form>
 </div>
 <div id="listado-resultados">
@@ -287,6 +287,6 @@
   <a href="/talcadatos/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
 </nav>
 
-<script src="/talcadatos/static/app.js?v=20260826-2"></script>
+<script src="/talcadatos/static/app.js?v=20260828-5"></script>
 </body>
 </html>

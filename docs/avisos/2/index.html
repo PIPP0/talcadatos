@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260828-2">
+<link rel="stylesheet" href="/talcadatos/static/styles.css?v=20260828-9">
 </head>
 <body data-active="avisos">
 
@@ -63,7 +63,7 @@
        💬 Escribir por WhatsApp
     </a>
     <div class="detalle-share">
-      <button class="btn btn-ghost" type="button" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='¡Link copiado!'">Compartir aviso</button>
+      <button class="btn btn-ghost" type="button" data-share-btn>Compartir aviso</button>
       <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&query=Aluminios%20del%20Sur%20Talca%20Chile" target="_blank" rel="noopener">📍 Ver en el mapa</a>
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
@@ -75,7 +75,7 @@
       </details>
     </div>
     <div class="qr-block">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A//pipp0.github.io/talcadatos/avisos/2/" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
+      <img src="/talcadatos/avisos/2/qr.png" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
       <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
   </div>
@@ -96,6 +96,6 @@
   <a href="/talcadatos/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
 </nav>
 
-<script src="/talcadatos/static/app.js?v=20260826-2"></script>
+<script src="/talcadatos/static/app.js?v=20260828-5"></script>
 </body>
 </html>

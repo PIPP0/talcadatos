@@ -261,6 +261,10 @@ def _client_ip(handler):
     return handler.client_address[0]
 
 
+def _es_ajax(handler):
+    return handler.headers.get("X-Requested-With") == "fetch"
+
+
 def _es_bot(form):
     return bool(form.get(HONEYPOT_FIELD, "").strip())
 
@@ -1108,7 +1112,7 @@ def admin_avisos_lista(handler, query):
     <div class="admin-actions-row">
       <div class="admin-actions-icons">
         <a class="btn btn-icon btn-ghost" href="/admin/avisos/{a['id']}" title="Editar" aria-label="Editar">✎</a>
-        <form method="post" action="/admin/avisos/{a['id']}/eliminar"
+        <form method="post" action="/admin/avisos/{a['id']}/eliminar" data-ajax-delete
           data-confirm="¿Eliminar este aviso? No se puede deshacer.">
           <button class="btn btn-icon btn-bad" title="Eliminar" aria-label="Eliminar">🗑️</button>
         </form>
@@ -1147,7 +1151,7 @@ def admin_avisos_lista(handler, query):
     render(handler, t.layout("Avisos", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
 
 
-def admin_aviso_editar_form(handler, aviso_id):
+def admin_aviso_editar_form(handler, aviso_id, errores=None):
     aviso = db.get_aviso(aviso_id)
     categorias = db.get_categorias()
     if not aviso:
@@ -1165,10 +1169,13 @@ def admin_aviso_editar_form(handler, aviso_id):
         '<p class="hint">Este aviso no tiene foto — se muestra el ícono del rubro.</p>'
     foto_quitar = ('<label class="check-label"><input type="checkbox" name="quitar_foto">'
                    '<span>Quitar la foto actual (vuelve a mostrar el ícono del rubro)</span></label>') if foto_url else ""
+    errores_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
+                     "</ul></div>") if errores else ""
     body = f"""
 <div class="panel">
   <h1>Editar aviso</h1>
   <p class="lede">{t.esc(aviso['negocio_nombre'])} · {t.esc(aviso['whatsapp'])}</p>
+  {errores_html}
   <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data">
     <label>Título <input name="titulo" required value="{t.esc(aviso['titulo'])}"></label>
     <label>Descripción <textarea name="descripcion" rows="4" required>{t.esc(aviso['descripcion'])}</textarea></label>
@@ -1197,7 +1204,8 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     foto_url = None
     if archivo_foto:
         if archivo_foto["content_type"] not in _EXT_POR_TIPO:
-            return admin_aviso_editar_form(handler, aviso_id)
+            return admin_aviso_editar_form(handler, aviso_id,
+                                            errores=["La foto debe ser JPG, PNG o WebP."])
         ext = _EXT_POR_TIPO[archivo_foto["content_type"]]
         foto_url = db.subir_imagen(archivo_foto["data"], archivo_foto["content_type"], ext, carpeta="avisos")
     elif form.get("quitar_foto"):
@@ -1232,8 +1240,12 @@ def admin_aviso_eliminar(handler, aviso_id):
     db.eliminar_aviso(aviso_id)
     _og_cache_evict(aviso_id)
     auditar(handler, "eliminar_aviso", f"aviso {aviso_id}")
-    redirect(handler, "/admin/avisos",
-             flash=mensaje_sincronizacion("Aviso eliminado.", sincronizar_sitio_estatico()))
+    actualizado = sincronizar_sitio_estatico()
+    if _es_ajax(handler):
+        handler.send_response(204)
+        handler.end_headers()
+        return
+    redirect(handler, "/admin/avisos", flash=mensaje_sincronizacion("Aviso eliminado.", actualizado))
 
 
 def admin_anunciantes(handler):
@@ -1752,7 +1764,7 @@ def admin_usuarios(handler):
   <td>{t.esc(u['usuario'])}</td>
   <td>{t.badge(u['rol'], 'gold' if u['rol'] == 'super_admin' else 'muted')}</td>
   <td class="admin-actions">
-    <form method="post" action="/admin/usuarios/{u['id']}/eliminar"
+    <form method="post" action="/admin/usuarios/{u['id']}/eliminar" data-ajax-delete
       data-confirm="¿Eliminar este usuario admin?">
       <button class="btn btn-icon btn-bad" title="Eliminar" aria-label="Eliminar">🗑️</button>
     </form>
@@ -1800,6 +1812,18 @@ def admin_usuario_eliminar(handler, usuario):
         mensaje = f"Usuario {usuario} eliminado."
     else:
         mensaje = "No puedes eliminar el único usuario administrador que queda."
+    if _es_ajax(handler):
+        if eliminado:
+            handler.send_response(204)
+            handler.end_headers()
+        else:
+            data = mensaje.encode("utf-8")
+            handler.send_response(409)
+            handler.send_header("Content-Type", "text/plain; charset=utf-8")
+            handler.send_header("Content-Length", str(len(data)))
+            handler.end_headers()
+            handler.wfile.write(data)
+        return
     redirect(handler, "/admin/usuarios", flash=mensaje)
 
 
@@ -2382,7 +2406,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not require_role(self, {"super_admin"}):
                     return None
                 if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
-                    return admin_aviso_editar_form(self, int(segs[2]))
+                    return admin_aviso_editar_form(self, int(segs[2]),
+                                                    errores=["La foto es muy pesada (máximo 5 MB)."])
                 form, archivos = self._form_multipart()
                 return admin_aviso_editar_submit(self, int(segs[2]), form, archivos)
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
