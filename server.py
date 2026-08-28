@@ -1005,6 +1005,9 @@ def admin_avisos_lista(handler, query):
   <td class="mono">{a['contactos_total']}</td>
   <td>
     <a class="btn btn-ghost btn-sm" href="/admin/avisos/{a['id']}">Editar</a>
+    {f'''<form method="post" action="/admin/avisos/{a['id']}/aprobar" style="display:inline">
+      <button class="btn btn-ok btn-sm">Aprobar</button>
+    </form>''' if a['estado'] == 'pendiente' else ''}
     <form method="post" action="/admin/avisos/{a['id']}/eliminar" style="display:inline"
       data-confirm="¿Eliminar este aviso? No se puede deshacer.">
       <button class="btn btn-bad btn-sm">Eliminar</button>
@@ -1099,6 +1102,13 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     auditar(handler, "editar_aviso", f"aviso {aviso_id}")
     redirect(handler, "/admin/avisos",
              flash=mensaje_sincronizacion("Cambios guardados.", sincronizar_sitio_estatico()))
+
+
+def admin_aviso_aprobar(handler, aviso_id):
+    db.cambiar_estado_aviso(aviso_id, "activo")
+    auditar(handler, "aprobar", f"aviso {aviso_id}")
+    redirect(handler, "/admin/avisos",
+             flash=mensaje_sincronizacion("Aviso aprobado y publicado.", sincronizar_sitio_estatico()))
 
 
 def admin_aviso_eliminar(handler, aviso_id):
@@ -2260,6 +2270,8 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_aviso_editar_submit(self, int(segs[2]), form, archivos)
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
                 return admin_aviso_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "aprobar":
+                return admin_aviso_aprobar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "plan":
                 return admin_anunciante_plan(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "verificar":
