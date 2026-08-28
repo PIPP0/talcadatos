@@ -881,6 +881,63 @@ def admin_logout(handler):
     redirect(handler, "/admin/login", clear_cookie=True)
 
 
+def _svg_serie_chart(serie, w=640, h=190):
+    if not serie or not any(f["vistas"] or f["contactos"] for f in serie):
+        return '<p class="empty-state">Sin datos suficientes en este período.</p>'
+    pad_l, pad_r, pad_t, pad_b = 4, 4, 10, 6
+    plot_w, plot_h = w - pad_l - pad_r, h - pad_t - pad_b
+    n = len(serie)
+    max_v = max(max(f["vistas"] for f in serie), max(f["contactos"] for f in serie), 1)
+
+    def puntos(campo):
+        return [
+            (pad_l + (plot_w * i / (n - 1) if n > 1 else plot_w / 2),
+             pad_t + plot_h - (plot_h * f[campo] / max_v))
+            for i, f in enumerate(serie)
+        ]
+
+    def largo(pts):
+        return sum(((pts[i + 1][0] - pts[i][0]) ** 2 + (pts[i + 1][1] - pts[i][1]) ** 2) ** 0.5
+                    for i in range(len(pts) - 1)) or 1
+
+    def path_d(pts):
+        return "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+
+    def area_d(pts):
+        base = pad_t + plot_h
+        return f"{path_d(pts)} L {pts[-1][0]:.1f},{base:.1f} L {pts[0][0]:.1f},{base:.1f} Z"
+
+    pv, pc = puntos("vistas"), puntos("contactos")
+    body = f"""
+<div class="chart-line" data-reveal>
+  <svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" role="img" aria-label="Vistas y contactos por día">
+    <path d="{area_d(pv)}" class="chart-area chart-area-vistas"></path>
+    <path d="{area_d(pc)}" class="chart-area chart-area-contactos"></path>
+    <path d="{path_d(pv)}" class="chart-line-path chart-line-vistas" vector-effect="non-scaling-stroke" style="--len:{largo(pv):.1f}"></path>
+    <path d="{path_d(pc)}" class="chart-line-path chart-line-contactos" vector-effect="non-scaling-stroke" style="--len:{largo(pc):.1f}"></path>
+  </svg>
+  <div class="chart-axis"><span>{t.esc(serie[0]['fecha'][5:])}</span><span>{t.esc(serie[-1]['fecha'][5:])}</span></div>
+</div>
+<div class="chart-legend">
+  <span class="chart-legend-item"><i class="chart-dot chart-dot-vistas"></i>Vistas</span>
+  <span class="chart-legend-item"><i class="chart-dot chart-dot-contactos"></i>Contactos WhatsApp</span>
+</div>"""
+    return body
+
+
+def _svg_categoria_chart(categorias):
+    if not categorias:
+        return '<p class="empty-state">Aún no hay avisos activos para graficar.</p>'
+    max_n = max(c["n"] for c in categorias) or 1
+    filas = "".join(f"""
+<div class="chart-bar-row" style="--i:{i}">
+  <span class="chart-bar-label">{c['icono']} {t.esc(c['nombre'])}</span>
+  <div class="chart-bar-track"><div class="chart-bar-fill" style="--w:{round(100 * c['n'] / max_n)}%; background:{c['color']}"></div></div>
+  <span class="chart-bar-value mono">{c['n']}</span>
+</div>""" for i, c in enumerate(categorias[:8]))
+    return f'<div class="chart-bars" data-reveal>{filas}</div>'
+
+
 def admin_dashboard(handler, query):
     dias = int(qs(query).get("dias", "30"))
     stats = db.get_dashboard_stats(dias)
@@ -911,6 +968,21 @@ def admin_dashboard(handler, query):
         )
         return f'<ol class="top-list">{items}</ol>'
 
+    def kpi(icon, kind, valor, label, i):
+        return (f'<div class="kpi kpi-{kind}" data-reveal style="--i:{i}">'
+                f'<span class="kpi-icon">{icon}</span>'
+                f'<div><div class="n">{valor}</div><div class="l">{label}</div></div></div>')
+
+    kpis = "".join([
+        kpi("◈", "accent", avisos_activos, "avisos activos", 0),
+        kpi("◔", "warn", pendientes, "pendientes de moderación", 1),
+        kpi("↗", "accent", vistas, "vistas en el período", 2),
+        kpi("✓", "ok", contactos, "contactos WhatsApp en el período", 3),
+        kpi("⌁", "accent", f"{tasa}%", "tasa de conversión vista → contacto", 4),
+        kpi("⌂", "gold", anunciantes_pagando, "anunciantes en plan pagado", 5),
+        kpi("✦", "gold", f"${mrr_fmt} CLP", "ingreso mensual recurrente (MRR)", 6),
+    ])
+
     body = f"""
 <div class="listado-head">
   <h1>Dashboard</h1>
@@ -921,15 +993,19 @@ def admin_dashboard(handler, query):
   </form>
 </div>
 <div class="kpi-grid">
-  <div class="kpi"><div class="n">{avisos_activos}</div><div class="l">avisos activos</div></div>
-  <div class="kpi"><div class="n">{pendientes}</div><div class="l">pendientes de moderación</div></div>
-  <div class="kpi"><div class="n">{vistas}</div><div class="l">vistas en el período</div></div>
-  <div class="kpi"><div class="n">{contactos}</div><div class="l">contactos WhatsApp en el período</div></div>
-  <div class="kpi"><div class="n">{tasa}%</div><div class="l">tasa de conversión vista → contacto</div></div>
-  <div class="kpi"><div class="n">{anunciantes_pagando}</div><div class="l">anunciantes en plan pagado</div></div>
-  <div class="kpi"><div class="n">${mrr_fmt} CLP</div><div class="l">ingreso mensual recurrente (MRR)</div></div>
+  {kpis}
 </div>
-<section class="admin-quick">
+<div class="two-col">
+  <section class="panel">
+    <h2>Vistas y contactos por día</h2>
+    {_svg_serie_chart(stats["serie_diaria"])}
+  </section>
+  <section class="panel">
+    <h2>Avisos activos por rubro</h2>
+    {_svg_categoria_chart(stats["por_categoria"])}
+  </section>
+</div>
+<section class="admin-quick" data-reveal>
   <div class="admin-quick-copy"><span class="eyebrow">Control del sitio</span><h2>¿Qué quieres administrar?</h2></div>
   <div class="admin-quick-grid">
     <a href="/admin/contenido"><span>✦</span><strong>Contenido</strong><small>Portada, textos y CTA</small></a>
@@ -949,7 +1025,7 @@ def admin_dashboard(handler, query):
   </section>
 </div>
 """
-    render(handler, t.layout("Dashboard", body, active="admin", admin=True))
+    render(handler, t.layout("Dashboard", body, active="dashboard", admin=True))
 
 
 def admin_moderacion(handler):
@@ -959,7 +1035,7 @@ def admin_moderacion(handler):
         rows = '<p class="empty-state">No hay avisos pendientes de moderación. 🎉</p>'
     else:
         rows = "".join(f"""
-<div class="mod-row">
+<div class="mod-row" data-reveal style="--i:{i}">
   <div class="mod-info">
     <div class="mono">{a['icono']} {t.esc(a['categoria_nombre'])} · {t.esc(a['comuna'])}</div>
     <h3>{t.esc(a['titulo'])}</h3>
@@ -970,11 +1046,11 @@ def admin_moderacion(handler):
     <form method="post" action="/admin/moderacion/{a['id']}/aprobar"><button class="btn btn-ok">Aprobar</button></form>
     <form method="post" action="/admin/moderacion/{a['id']}/rechazar"><button class="btn btn-bad">Rechazar</button></form>
   </div>
-</div>""" for a in pendientes)
+</div>""" for i, a in enumerate(pendientes))
 
     flash = get_flash(handler)
     body = f"<h1>Moderación</h1><p class='lede'>Avisos nuevos esperando revisión.</p>{rows}"
-    render(handler, t.layout("Moderación", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Moderación", body, active="moderacion", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1028,13 +1104,13 @@ def admin_avisos_lista(handler, query):
     <a class="btn btn-ghost" href="/admin/avisos.csv">Exportar CSV</a>
   </div>
 </div>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Título</th><th>Negocio</th><th>Categoría</th><th>Estado</th><th>Vistas</th><th>Contactos</th><th>Acciones</th></tr>
   {filas or "<tr><td colspan='7' class='empty-state'>Sin avisos.</td></tr>"}
 </table></div>
 """
     flash = get_flash(handler)
-    render(handler, t.layout("Avisos", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+    render(handler, t.layout("Avisos", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
 
 
 def admin_aviso_editar_form(handler, aviso_id):
@@ -1076,7 +1152,7 @@ def admin_aviso_editar_form(handler, aviso_id):
   </form>
 </div>
 """
-    render(handler, t.layout("Editar aviso", body, active="admin", admin=True))
+    render(handler, t.layout("Editar aviso", body, active="avisos", admin=True))
 
 
 def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
@@ -1161,13 +1237,13 @@ def admin_anunciantes(handler):
   <a class="btn btn-ghost" href="/admin/anunciantes.csv">Exportar CSV</a>
 </div>
 <p class="lede">Activa manualmente un plan pagado (transferencia confirmada) o marca un negocio como verificado.</p>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Negocio</th><th>Plan actual</th><th>Vence</th><th>Avisos</th><th>Verificado</th><th>Acciones</th></tr>
   {filas}
 </table></div>
 """
     flash = get_flash(handler)
-    render(handler, t.layout("Anunciantes y planes", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Anunciantes y planes", body, active="anunciantes", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1228,13 +1304,13 @@ def admin_analitica(handler):
 </div>
 <section class="panel">
   <h2>Métricas por aviso</h2>
-  <div class="tbl-wrap"><table>
+  <div class="tbl-wrap" data-reveal><table>
     <tr><th>Aviso</th><th>Vistas</th><th>Contactos</th><th>Conversión</th><th>Plan</th></tr>
     {filas}
   </table></div>
 </section>
 """
-    render(handler, t.layout("Analítica", body, active="admin", admin=True))
+    render(handler, t.layout("Analítica", body, active="analitica", admin=True))
 
 
 def admin_avisos_csv(handler):
@@ -1265,7 +1341,7 @@ def admin_reportes(handler):
         filas = '<p class="empty-state">No hay reportes pendientes. 🎉</p>'
     else:
         filas = "".join(f"""
-<div class="mod-row">
+<div class="mod-row" data-reveal style="--i:{i}">
   <div class="mod-info">
     <h3><a href="/avisos/{r['aviso_id']}">{t.esc(r['aviso_titulo'])}</a></h3>
     <p class="mod-desc">Motivo: {t.esc(r['motivo'])}</p>
@@ -1274,10 +1350,10 @@ def admin_reportes(handler):
   <div class="mod-actions">
     <form method="post" action="/admin/reportes/{r['id']}/descartar"><button class="btn btn-ghost">Descartar</button></form>
   </div>
-</div>""" for r in reportes)
+</div>""" for i, r in enumerate(reportes))
     flash = get_flash(handler)
     body = f"<h1>Reportes</h1><p class='lede'>Avisos que algún visitante marcó como sospechosos o desactualizados.</p>{filas}"
-    render(handler, t.layout("Reportes", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+    render(handler, t.layout("Reportes", body, active="reportes", admin=True, flash=flash), clear_flash=bool(flash))
 
 
 def admin_reporte_descartar(handler, reporte_id):
@@ -1327,7 +1403,7 @@ asociada (ej: "ventana" muestra vidriería y aluminios). Es la tabla de respaldo
 </div>
 {bloques}
 """
-    render(handler, t.layout("Sinónimos", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+    render(handler, t.layout("Sinónimos", body, active="sinonimos", admin=True, flash=flash), clear_flash=bool(flash))
 
 
 def admin_sinonimo_agregar(handler, form):
@@ -1360,12 +1436,12 @@ def admin_auditoria(handler):
     body = f"""
 <h1>Auditoría</h1>
 <p class="lede">Últimas 200 acciones de administradores: quién aprobó, rechazó, editó o cambió un plan, y cuándo.</p>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr>
   {filas or "<tr><td colspan='4' class='empty-state'>Sin registros todavía.</td></tr>"}
 </table></div>
 """
-    render(handler, t.layout("Auditoría", body, active="admin", admin=True))
+    render(handler, t.layout("Auditoría", body, active="auditoria", admin=True))
 
 
 def admin_pagos(handler):
@@ -1384,12 +1460,12 @@ def admin_pagos(handler):
   <a class="btn btn-ghost" href="/admin/pagos.csv">Exportar CSV</a>
 </div>
 <div class="kpi-grid"><div class="kpi"><div class="n">${money(total)} CLP</div><div class="l">total histórico activado</div></div></div>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Fecha</th><th>Negocio</th><th>Plan</th><th>Monto</th></tr>
   {filas or "<tr><td colspan='4' class='empty-state'>Sin pagos registrados todavía.</td></tr>"}
 </table></div>
 """
-    render(handler, t.layout("Pagos", body, active="admin", admin=True))
+    render(handler, t.layout("Pagos", body, active="pagos", admin=True))
 
 
 def admin_alertas(handler):
@@ -1405,12 +1481,12 @@ def admin_alertas(handler):
 <h1>Alertas de demanda</h1>
 <p class="lede">Personas que buscaron algo que nadie ofrece todavía y dejaron su WhatsApp para que las contactemos
 apenas exista un negocio de ese rubro — son prospectos de venta directa (PRD §17).</p>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Buscaban</th><th>WhatsApp</th><th>Fecha</th><th></th></tr>
   {filas or "<tr><td colspan='4' class='empty-state'>Sin alertas pendientes.</td></tr>"}
 </table></div>
 """
-    render(handler, t.layout("Alertas de demanda", body, active="admin", admin=True))
+    render(handler, t.layout("Alertas de demanda", body, active="alertas", admin=True))
 
 
 def admin_alerta_atendida(handler, alerta_id):
@@ -1432,12 +1508,12 @@ def admin_necesidades(handler):
     body = f"""
 <h1>Lo que Talca quiere ver</h1>
 <p class="lede">Negocios y servicios que la gente recomendó — úsalas para invitar nuevos comercios o avisarles a los que ya están.</p>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Rubro</th><th>Recomendación</th><th>WhatsApp</th><th>Fecha</th><th></th></tr>
   {filas or "<tr><td colspan='5' class='empty-state'>No hay recomendaciones nuevas.</td></tr>"}
 </table></div>
 """
-    render(handler, t.layout("Lo que Talca quiere ver", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Lo que Talca quiere ver", body, active="necesidades", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1508,7 +1584,7 @@ def admin_contenido(handler):
   <div class="cms-save"><span class="hint">Los cambios se aplican al instante en la versión con servidor.</span><button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button></div>
 </form>
 """
-    render(handler, t.layout("Contenido del sitio", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Contenido del sitio", body, active="contenido", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1583,7 +1659,7 @@ def admin_editor(handler):
   </div>
 </div>
 """
-    render(handler, t.layout("Editor visual", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Editor visual", body, active="editor", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1607,7 +1683,7 @@ def admin_cuenta(handler, error=None):
   </form>
 </div>
 """
-    render(handler, t.layout("Mi cuenta", body, active="admin", admin=True, flash=flash), clear_flash=bool(flash))
+    render(handler, t.layout("Mi cuenta", body, active="cuenta", admin=True, flash=flash), clear_flash=bool(flash))
 
 
 def admin_cuenta_submit(handler, form):
@@ -1654,12 +1730,12 @@ avisos y revisar reportes (PRD §7.5).</p>
     <button class="btn btn-primary" type="submit">Crear</button>
   </form>
 </div>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Usuario</th><th>Rol</th><th></th></tr>
   {filas}
 </table></div>
 """
-    render(handler, t.layout("Usuarios administradores", body, active="admin", admin=True, flash=flash),
+    render(handler, t.layout("Usuarios administradores", body, active="usuarios", admin=True, flash=flash),
            clear_flash=bool(flash))
 
 
@@ -1957,7 +2033,7 @@ def mi_negocio(handler, token):
     body = f"""
 <h1>Hola, {t.esc(negocio['nombre'])} 👋</h1>
 <p class="lede">Este es tu panel de estadísticas. Guarda este link — es tu acceso personal, no lo compartas.</p>
-<div class="tbl-wrap"><table>
+<div class="tbl-wrap" data-reveal><table>
   <tr><th>Aviso</th><th>Estado</th><th>Vistas</th><th>Contactos</th><th>Conversión</th></tr>
   {filas or "<tr><td colspan='5' class='empty-state'>Todavía no tienes avisos.</td></tr>"}
 </table></div>

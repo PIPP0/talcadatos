@@ -701,10 +701,44 @@ def get_dashboard_stats(dias):
         filas.sort(key=lambda f: f["n"], reverse=True)
         return filas[:10]
 
+    dias_mostrados = min(dias, 30)
+    por_dia = {}
+    for i in range(dias_mostrados):
+        fecha = (datetime.date.today() - datetime.timedelta(days=dias_mostrados - 1 - i)).isoformat()
+        por_dia[fecha] = {"fecha": fecha, "vistas": 0, "contactos": 0}
+    serie_cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=dias_mostrados)).isoformat()
+    for e in eventos:
+        creado = e.get("creado_en", "")
+        if creado < serie_cutoff:
+            continue
+        fecha = creado[:10]
+        fila = por_dia.get(fecha)
+        if not fila:
+            continue
+        if e.get("tipo") == "vista":
+            fila["vistas"] += 1
+        elif e.get("tipo") == "click_whatsapp":
+            fila["contactos"] += 1
+    serie_diaria = [por_dia[f] for f in sorted(por_dia)]
+
+    categorias = {slug: _categoria_con_slug(c, slug) for slug, c in _all("categorias").items()}
+    conteo_cat = {}
+    for a in avisos.values():
+        if a.get("estado") != "activo":
+            continue
+        conteo_cat[a["categoria_slug"]] = conteo_cat.get(a["categoria_slug"], 0) + 1
+    por_categoria = [
+        {"slug": slug, "nombre": categorias[slug]["nombre"], "icono": categorias[slug]["icono"],
+         "color": COLOR_POR_CATEGORIA.get(slug, "#8E93A1"), "n": n}
+        for slug, n in conteo_cat.items() if slug in categorias
+    ]
+    por_categoria.sort(key=lambda c: c["n"], reverse=True)
+
     return {
         "avisos_activos": avisos_activos, "pendientes": pendientes,
         "vistas": vistas, "contactos": contactos,
         "anunciantes_pagando": anunciantes_pagando, "mrr": mrr,
+        "serie_diaria": serie_diaria, "por_categoria": por_categoria,
         "top_vistos": top("vista"), "top_contactados": top("click_whatsapp"),
     }
 

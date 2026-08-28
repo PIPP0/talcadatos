@@ -28,7 +28,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
     site = site or {}
     marca = esc(site.get("marca", "Talcadatos"))
     pie = esc(site.get("pie", "Talcadatos — directorio de pymes y emprendedores de Talca"))
-    nav = ADMIN_NAV if admin else PUBLIC_NAV.replace("{{marca}}", marca)
+    nav = admin_nav(active) if admin else PUBLIC_NAV.replace("{{marca}}", marca)
     mobile_nav = ADMIN_MOBILE_NAV if admin else MOBILE_NAV
     active_attr = f' data-active="{active}"'
     desc = description or site.get("descripcion") or SITE_DESCRIPTION
@@ -58,7 +58,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260828-2">
+<link rel="stylesheet" href="/static/styles.css?v=20260828-3">
 </head>
 <body{active_attr}>
 {nav}
@@ -111,26 +111,36 @@ PUBLIC_NAV = """
 </header>
 """
 
-ADMIN_NAV = """
+ADMIN_NAV_LINKS = [
+    ("dashboard", "/admin", "Dashboard"),
+    ("moderacion", "/admin/moderacion", "Moderación"),
+    ("reportes", "/admin/reportes", "Reportes"),
+    ("avisos", "/admin/avisos", "Avisos"),
+    ("anunciantes", "/admin/anunciantes", "Anunciantes"),
+    ("pagos", "/admin/pagos", "Pagos"),
+    ("sinonimos", "/admin/sinonimos", "Sinónimos"),
+    ("alertas", "/admin/alertas", "Alertas"),
+    ("necesidades", "/admin/necesidades", "Necesidades"),
+    ("analitica", "/admin/analitica", "Analítica"),
+    ("auditoria", "/admin/auditoria", "Auditoría"),
+    ("usuarios", "/admin/usuarios", "Usuarios"),
+    ("editor", "/admin/editor", "Editor visual"),
+    ("contenido", "/admin/contenido", "Contenido"),
+    ("cuenta", "/admin/cuenta", "Mi cuenta"),
+]
+
+
+def admin_nav(active):
+    def link(slug, href, label):
+        cls = ' class="is-active"' if slug == active else ""
+        return f'<a href="{href}"{cls}>{label}</a>'
+    links = "".join(link(slug, href, label) for slug, href, label in ADMIN_NAV_LINKS)
+    return f"""
 <header class="topbar topbar-admin">
   <div class="wrap topbar-inner">
     <a href="/admin" class="brand">📌 Talcadatos <span class="tag-admin">admin</span></a>
     <nav class="topnav">
-      <a href="/admin">Dashboard</a>
-      <a href="/admin/moderacion">Moderación</a>
-      <a href="/admin/reportes">Reportes</a>
-      <a href="/admin/avisos">Avisos</a>
-      <a href="/admin/anunciantes">Anunciantes</a>
-      <a href="/admin/pagos">Pagos</a>
-      <a href="/admin/sinonimos">Sinónimos</a>
-      <a href="/admin/alertas">Alertas</a>
-      <a href="/admin/necesidades">Necesidades</a>
-      <a href="/admin/analitica">Analítica</a>
-      <a href="/admin/auditoria">Auditoría</a>
-      <a href="/admin/usuarios">Usuarios</a>
-      <a href="/admin/editor">Editor visual</a>
-      <a href="/admin/contenido">Contenido</a>
-      <a href="/admin/cuenta">Mi cuenta</a>
+      {links}
       <a href="/" class="btn btn-ghost">Ver sitio</a>
       <a href="/admin/logout" class="btn btn-ghost">Salir</a>
     </nav>
