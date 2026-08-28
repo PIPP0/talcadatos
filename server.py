@@ -1708,9 +1708,42 @@ def terminos(handler):
   <p>{t.esc(sitio['marca'])} solo conecta: cuando alguien te escribe por WhatsApp desde un aviso, esa conversación
   y cualquier acuerdo comercial es entre esa persona y tu negocio. No somos parte de esa transacción ni
   respondemos por la calidad, precio o resultado del servicio.</p>
+  <h2>Exactitud de la información</h2>
+  <p>Toda la información de cada aviso (descripción, horarios, WhatsApp, fotos) la ingresa directamente el
+  negocio que publica, no {t.esc(sitio['marca'])}. No verificamos de forma exhaustiva cada dato ni garantizamos
+  que esté siempre actualizado. La insignia <strong>✔ verificado</strong> indica una revisión adicional de
+  nuestro equipo, pero tampoco es una garantía absoluta. Recomendamos siempre confirmar directamente con el
+  negocio antes de acordar o pagar por un servicio.</p>
+  <h2>Responsabilidad de quien publica</h2>
+  <p>Si publicas un negocio, eres el único responsable de que la información que ingresas sea veraz, esté
+  actualizada y no infrinja derechos de terceros (por ejemplo, usar el nombre, logo o fotos de otro negocio sin
+  autorización). Te comprometes a responder por cualquier reclamo que se origine por información falsa,
+  engañosa o que infrinja derechos de terceros que hayas publicado, incluyendo los costos razonables en que
+  {t.esc(sitio['marca'])} pueda incurrir por ese motivo.</p>
+  <h2>Contenido que subes (fotos y textos)</h2>
+  <p>Las fotos y textos que subes siguen siendo tuyos. Al publicarlos, nos das permiso para mostrarlos en el
+  sitio y usarlos con fines de promoción del directorio (por ejemplo, en redes sociales), siempre relacionados
+  con tu propio aviso. Puedes pedir que se elimine tu contenido en cualquier momento.</p>
+  <h2>Uso permitido de la información publicada</h2>
+  <p>El contenido del sitio (avisos, datos de contacto, etc.) es para uso personal de quien busca un servicio en
+  Talca. No está permitido extraer, copiar o recopilar de forma masiva y automatizada ("scraping") los avisos o
+  los datos de contacto publicados, ni usarlos para enviar publicidad no solicitada o para fines distintos a
+  contactar al negocio por el servicio que ofrece.</p>
+  <h2>Limitación de responsabilidad</h2>
+  <p>{t.esc(sitio['marca'])} es una plataforma de intermediación: pone en contacto a personas con negocios
+  locales, pero no participa, garantiza ni supervisa los acuerdos, pagos o servicios que resulten de ese
+  contacto. En la máxima medida permitida por la ley, no somos responsables por daños, pérdidas o perjuicios
+  derivados del uso del sitio, de la información publicada por terceros, o de tratos comerciales entre usuarios
+  y negocios.</p>
+  <h2>Suspensión de avisos y cuentas</h2>
+  <p>Podemos suspender, pausar o eliminar cualquier aviso o cuenta de administrador, sin previo aviso, ante
+  incumplimiento de estos términos, uso indebido de la plataforma, o a solicitud de una autoridad competente.</p>
   <h2>Reportes y moderación</h2>
   <p>Cualquier persona puede reportar un aviso que le parezca incorrecto o engañoso. Revisamos los reportes y
   podemos pausar o eliminar avisos según corresponda.</p>
+  <h2>Ley aplicable</h2>
+  <p>Estos términos se rigen por las leyes de la República de Chile. Cualquier controversia se somete a los
+  tribunales ordinarios de justicia de Talca.</p>
   <h2>Cambios</h2>
   <p>Podemos actualizar estos términos en cualquier momento; los cambios importantes se reflejan en la fecha de
   arriba. Seguir usando el sitio después de un cambio implica que lo aceptas.</p>
@@ -1739,12 +1772,25 @@ def privacidad(handler):
   <p>Los favoritos (☆) no se guardan en nuestros servidores — quedan solo en el navegador que estás usando
   (<code>localStorage</code>). Si borras los datos del sitio, cambias de navegador o de celular, se pierden. No
   tenemos forma de verlos ni de saber qué marcaste como favorito.</p>
+  <h2>Dirección IP y datos técnicos</h2>
+  <p>Cuando publicas un negocio, recomiendas uno o reportas un aviso, registramos también la dirección IP y la
+  fecha de ese envío. Lo usamos únicamente para prevenir spam y abuso de los formularios, y como respaldo de que
+  quien publicó un negocio aceptó los <a href="/terminos">Términos de uso</a> en esa fecha.</p>
+  <h2>Dónde se guardan tus datos</h2>
+  <p>La información se almacena en servidores de Google Cloud (infraestructura con cifrado en tránsito y en
+  reposo). No compartimos acceso a esta base de datos con nadie fuera del equipo que administra Talcadatos.</p>
+  <h2>Cuánto tiempo guardamos tus datos</h2>
+  <p>Mientras tu aviso esté activo o pendiente de revisión. Si pides que eliminemos tu aviso, borramos la
+  información asociada, salvo lo mínimo que debamos conservar por un tiempo razonable para efectos de seguridad
+  o para responder ante un reclamo (por ejemplo, el registro de aceptación de términos).</p>
   <h2>Qué no hacemos</h2>
   <p>No vendemos tus datos a terceros ni los usamos para enviarte publicidad de otras empresas. No pedimos
   contraseña ni creamos una cuenta para navegar el sitio o publicar un aviso.</p>
   <h2>Tus derechos</h2>
-  <p>Puedes pedirnos en cualquier momento que corrijamos o eliminemos la información de un aviso — escríbenos por
-  WhatsApp desde el mismo aviso, o repórtalo indicando el motivo.</p>
+  <p>De acuerdo a la ley chilena de protección de datos personales, puedes pedirnos en cualquier momento
+  <strong>acceder</strong> a los datos que tenemos sobre tu negocio, <strong>rectificarlos</strong> si están
+  desactualizados o son incorrectos, o <strong>eliminarlos</strong> (dar de baja tu aviso y su información).
+  Escríbenos por WhatsApp desde el mismo aviso, o repórtalo indicando el motivo, y lo resolvemos a la brevedad.</p>
 </div>
 """
     render(handler, t.layout("Privacidad", body, active="privacidad", site=sitio))
