@@ -123,16 +123,59 @@ def now():
 
 
 def hash_password(password, salt=None):
-    salt = salt or secrets.token_hex(8)
-    digest = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
-    return f"{salt}${digest}"
+    """Formato nuevo: scrypt$<salt_hex>$<hash_hex>. Más lento de fuerza bruta
+    que el sha256+salt anterior, sin depender de ninguna libreria externa."""
+    salt = salt or secrets.token_hex(16)
+    derivado = hashlib.scrypt(password.encode("utf-8"), salt=salt.encode("utf-8"), n=2**14, r=8, p=1)
+    return f"scrypt${salt}${derivado.hex()}"
+
+
+def _hash_password_legacy(password, salt):
+    return f"{salt}${hashlib.sha256((salt + password).encode('utf-8')).hexdigest()}"
 
 
 def verify_password(password, stored):
-    if "$" not in stored:
-        return False
-    salt, _ = stored.split("$", 1)
-    return hash_password(password, salt) == stored
+    partes = stored.split("$")
+    if len(partes) == 3 and partes[0] == "scrypt":
+        _, salt, _ = partes
+        return hash_password(password, salt) == stored
+    if len(partes) == 2:
+        salt, _ = partes
+        return _hash_password_legacy(password, salt) == stored
+    return False
+
+
+def necesita_rehash(stored):
+    """Contraseñas guardadas con el formato viejo (sha256) se re-hashean con
+    scrypt la próxima vez que ese usuario inicia sesión con éxito."""
+    return not stored.startswith("scrypt$")
+
+
+def verificar_limite(ip, ruta, maximo=5, ventana_minutos=60):
+    """Limite simple de envios por IP+ruta en una ventana de tiempo, para
+    frenar flood/spam en los formularios publicos. Devuelve True si se
+    permite el envio (y lo registra), False si ya se supero el limite.
+    La coleccion `_rate_limits` tiene TTL configurado por fuera de este
+    codigo (gcloud) para que los documentos viejos se autolimpien."""
+    if not ip:
+        return True
+    bucket = datetime.datetime.utcnow().strftime("%Y%m%d%H")
+    doc_id = f"{ruta}_{ip.replace(':', '_').replace('.', '_')}_{bucket}"
+    fs = _fs()
+    ref = fs.collection("_rate_limits").document(doc_id)
+    transaction = fs.transaction()
+
+    @firestore.transactional
+    def _incrementar(tx):
+        snap = ref.get(transaction=tx)
+        actual = snap.get("conteo") if snap.exists else 0
+        if actual and actual >= maximo:
+            return False
+        expira = datetime.datetime.utcnow() + datetime.timedelta(minutes=ventana_minutos + 10)
+        tx.set(ref, {"conteo": (actual or 0) + 1, "expira_en": expira})
+        return True
+
+    return _incrementar(transaction)
 
 
 def _next_id(coleccion):

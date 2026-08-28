@@ -68,6 +68,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 </main>
 <footer class="site-footer">
   <span>{pie}</span>
+  <span><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></span>
   <span>Panel de administración: <a href="/admin">/admin</a></span>
 </footer>
 {mobile_nav}

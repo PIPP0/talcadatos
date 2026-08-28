@@ -174,6 +174,22 @@ def _origin(handler):
     return f"http://{host}"
 
 
+HONEYPOT_FIELD = "pagina_web"
+HONEYPOT_HTML = (f'<input type="text" name="{HONEYPOT_FIELD}" class="hp-field" tabindex="-1" '
+                  'autocomplete="off" aria-hidden="true">')
+
+
+def _client_ip(handler):
+    xff = handler.headers.get("X-Forwarded-For")
+    if xff:
+        return xff.split(",")[0].strip()
+    return handler.client_address[0]
+
+
+def _es_bot(form):
+    return bool(form.get(HONEYPOT_FIELD, "").strip())
+
+
 def require_admin(handler):
     if not is_admin(handler):
         redirect(handler, "/admin/login")
@@ -440,6 +456,7 @@ def _necesito_body(categorias, sitio, form=None, errores=None):
     <h2>Cuéntanos qué te gustaría ver</h2>
     {errors_html}
     <form method="post" action="/necesito" class="form" id="necesito-form">
+      {HONEYPOT_HTML}
       <label>¿En qué rubro?
         <select name="categoria_id" required><option value="">Selecciona una categoría</option>{options}</select>
       </label>
@@ -476,6 +493,11 @@ def necesito_form(handler, ok=False, form=None, errores=None):
 
 
 def necesito_submit(handler, form):
+    if _es_bot(form):
+        return redirect(handler, "/necesito?ok=1")
+    if not db.verificar_limite(_client_ip(handler), "necesito"):
+        return necesito_form(handler, form=form,
+                              errores=["Ya enviaste varias recomendaciones seguidas. Espera un poco antes de volver a intentar."])
     categorias = db.get_categorias()
     categoria_ids = {c["id"] for c in categorias}
     descripcion = form.get("descripcion", "").strip()
@@ -565,6 +587,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
         <form method="post" action="/avisos/{aviso_id}/reportar" class="form report-form">
+          {HONEYPOT_HTML}
           <textarea name="motivo" rows="2" required placeholder="¿Qué está mal con este aviso? Ej: negocio cerrado, información falsa..."></textarea>
           <button class="btn btn-bad btn-sm" type="submit">Enviar reporte</button>
         </form>
@@ -600,6 +623,7 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
   <p class="lede">{t.esc(sitio['publicar_bajada'])}</p>
   {errores_html}
   <form method="post" action="/publicar" class="form" enctype="multipart/form-data">
+    {HONEYPOT_HTML}
     <label>Nombre del negocio
       <input name="nombre_negocio" required maxlength="120" value="{v('nombre_negocio')}">
     </label>
@@ -677,6 +701,11 @@ _EXT_POR_TIPO = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 
 
 def publicar_submit(handler, form, foto=None):
+    if _es_bot(form):
+        return redirect(handler, "/publicar?ok=1")
+    if not db.verificar_limite(_client_ip(handler), "publicar"):
+        return publicar_form(handler, form=form,
+                              errores=["Ya enviaste varios avisos seguidos. Espera un poco antes de volver a intentar."])
     categorias = db.get_categorias()
     categoria_ids = {c["id"] for c in categorias}
     errores = _validar_publicar(form, categoria_ids)
@@ -750,9 +779,12 @@ def admin_login_form(handler, error=False):
 
 
 def admin_login_submit(handler, form):
+    password = form.get("password", "")
     row = db.get_admin_usuario(form.get("usuario", ""))
-    if not row or not db.verify_password(form.get("password", ""), row["password"]):
+    if not row or not db.verify_password(password, row["password"]):
         return admin_login_form(handler, error=True)
+    if db.necesita_rehash(row["password"]):
+        db.actualizar_password_admin(row["usuario"], db.hash_password(password))
     token = secrets.token_urlsafe(24)
     SESSIONS[token] = {"usuario": row["usuario"], "rol": row["rol"]}
     redirect(handler, "/admin", set_cookie=token)
@@ -1513,6 +1545,90 @@ def admin_usuario_eliminar(handler, usuario):
     redirect(handler, "/admin/usuarios", flash=mensaje)
 
 
+GUIAS = {
+    "como-elegir-gasfiter-en-talca": {
+        "titulo": "Cómo elegir un gásfiter en Talca: 5 señales de confianza",
+        "descripcion": "Qué revisar antes de contratar un gásfiter en Talca, para evitar sorpresas y malos arreglos.",
+        "categoria": "gasfiteria",
+        "cuerpo": """
+<p class="lede">Una fuga o una cañería rota no da tiempo para investigar mucho — pero unos minutos de más
+al elegir a quién llamar pueden evitarte un segundo arreglo la semana siguiente. Estas son cinco cosas que vale
+la pena revisar.</p>
+<h2>1. Que atienda en tu comuna, no "en toda la región"</h2>
+<p>Un gásfiter que realmente trabaja en tu sector suele llegar más rápido y conoce mejor los problemas típicos
+de las instalaciones del barrio (presión de agua, antigüedad de las cañerías, etc.).</p>
+<h2>2. Que te dé un precio antes de empezar</h2>
+<p>Para trabajos que no son una emergencia, pide una estimación por WhatsApp antes de que llegue — foto o video
+del problema ayuda a que la cotización sea más precisa.</p>
+<h2>3. Que explique qué encontró, no solo que "ya quedó"</h2>
+<p>Un buen profesional te cuenta qué causó el problema, no solo lo soluciona. Eso también te dice si el arreglo
+es definitivo o parche.</p>
+<h2>4. Urgencias 24/7 vs. horario de oficina</h2>
+<p>No todos atienden de noche o fin de semana — si es algo que puede esperar, preguntar el horario de atención
+te ahorra cobros de urgencia innecesarios.</p>
+<h2>5. Referencias o negocio verificado</h2>
+<p>En Talcadatos, los negocios con la marca <strong>✔ verificado</strong> pasaron una revisión adicional del
+equipo — es una señal más, aunque no reemplaza tu propio criterio.</p>
+<p><a class="btn btn-whatsapp" href="/avisos?categoria=gasfiteria">Ver gásfiteres en Talca →</a></p>
+""",
+    },
+    "a-quien-llamar-en-talca": {
+        "titulo": "Guía rápida: a quién llamar en Talca según lo que necesites",
+        "descripcion": "Un mapa rápido de rubros y cuándo conviene llamar a cada uno, para no perder tiempo buscando.",
+        "categoria": None,
+        "cuerpo": """
+<p class="lede">Cuando algo se rompe o necesitas resolver algo puntual, lo difícil no es encontrar un número —
+es saber a quién exactamente llamar primero. Esta guía junta los rubros más buscados en Talca con una idea
+rápida de cuándo corresponde cada uno.</p>
+<h2>🔧 Gásfitería</h2>
+<p>Fugas, baja presión de agua, instalación de artefactos sanitarios, calefont. Casi siempre vale la pena
+preguntar si atienden urgencias.</p>
+<h2>💡 Electricidad</h2>
+<p>Cortes de luz en un sector de la casa, instalación de enchufes o luminarias, certificación SEC para
+trámites. Un electricista certificado es clave si necesitas el certificado para notificar la conexión.</p>
+<h2>🪟 Vidriería y ventanas</h2>
+<p>Vidrios rotos, termopaneles, cambio de sellos. Mientras más rápido lo resuelvas, menos filtraciones de
+agua o aire vas a tener.</p>
+<h2>🏗️ Aluminios y estructuras</h2>
+<p>Estructuras metálicas, cierres, ampliaciones livianas — normalmente conviene pedir una visita para medir
+antes de cotizar.</p>
+<h2>📚 Clases particulares</h2>
+<p>Reforzamiento escolar, idiomas, preparación de pruebas — revisa nuestra <a href="/guias/clases-particulares-talca">guía
+específica</a> para elegir bien.</p>
+<h2>📊 Contabilidad y trámites</h2>
+<p>Iniciar actividades, declaraciones de impuestos, boletas — útil tenerlo resuelto antes de que se acerque
+la fecha límite, no el mismo día.</p>
+<p><a class="btn btn-whatsapp" href="/avisos">Explorar todos los rubros →</a></p>
+""",
+    },
+    "clases-particulares-talca": {
+        "titulo": "Qué preguntar antes de contratar una clase particular en Talca",
+        "descripcion": "Preguntas clave antes de elegir profesor particular en Talca, para colegio, idiomas o preparación de pruebas.",
+        "categoria": "clases",
+        "cuerpo": """
+<p class="lede">Ya sea para reforzar una materia, aprender un idioma o preparar una prueba, elegir bien al
+profesor particular hace la diferencia entre avanzar rápido o dar vueltas en círculo. Antes de agendar la
+primera clase, vale la pena preguntar esto.</p>
+<h2>¿Clases presenciales, online, o ambas?</h2>
+<p>Define esto primero — cambia bastante la logística y a veces también el precio.</p>
+<h2>¿Tiene experiencia con el nivel o la edad específica?</h2>
+<p>No es lo mismo enseñar inglés conversacional a un adulto que preparar a un niño para una prueba del colegio.
+Pregunta directamente si ha trabajado con casos parecidos al tuyo.</p>
+<h2>¿Cómo mide el avance?</h2>
+<p>Un buen profesor particular puede contarte, aunque sea de forma simple, cómo va a saber si las clases están
+funcionando — no solo "vamos viendo".</p>
+<h2>¿Qué pasa si necesitas cancelar una clase?</h2>
+<p>Pregunta la política de cancelación antes de la primera clase, no después de la primera vez que la
+necesites.</p>
+<h2>Empieza con una clase de prueba</h2>
+<p>Si es posible, pide una primera clase para ver si hay buena conexión antes de comprometerte a un paquete
+completo.</p>
+<p><a class="btn btn-whatsapp" href="/avisos?categoria=clases">Ver clases particulares en Talca →</a></p>
+""",
+    },
+}
+
+
 FAQ = [
     ("¿Cómo publico mi negocio?", "Ve a \"Publicar mi negocio\", completa el formulario y tu aviso queda en "
      "revisión. Normalmente se aprueba el mismo día."),
@@ -1535,15 +1651,94 @@ def ayuda(handler):
   <summary>{t.esc(pregunta)}</summary>
   <p>{t.esc(respuesta)}</p>
 </details>""" for pregunta, respuesta in FAQ)
+    guias_links = "".join(
+        f'<li><a href="/guias/{slug}">{t.esc(g["titulo"])}</a></li>' for slug, g in GUIAS.items())
     body = f"""
 <div class="panel panel-narrow">
   <h1>Preguntas frecuentes</h1>
   <div class="faq">{items}</div>
   <p class="lede">¿Tu pregunta no está aquí? Escríbenos por WhatsApp desde cualquier aviso, o publica tu negocio
   y te contactamos nosotros.</p>
+  <h2>Guías</h2>
+  <ul>{guias_links}</ul>
 </div>
 """
     render(handler, t.layout("Ayuda", body, active="ayuda", site=sitio))
+
+
+def guia_detalle(handler, slug):
+    guia = GUIAS.get(slug)
+    if not guia:
+        return not_found(handler)
+    sitio = db.get_contenido_sitio()
+    canonical = f"{_origin(handler)}/guias/{slug}"
+    body = f"""
+<div class="panel panel-narrow">
+  <span class="eyebrow">Guía</span>
+  <h1>{t.esc(guia['titulo'])}</h1>
+  {guia['cuerpo']}
+</div>
+"""
+    render(handler, t.layout(guia["titulo"], body, active="ayuda", description=guia["descripcion"],
+                              canonical=canonical, site=sitio))
+
+
+def terminos(handler):
+    sitio = db.get_contenido_sitio()
+    body = f"""
+<div class="panel panel-narrow">
+  <h1>Términos de uso</h1>
+  <p class="lede">Última actualización: {datetime.date.today().isoformat()}</p>
+  <p>{t.esc(sitio['marca'])} es un directorio que conecta a personas de Talca con pymes y emprendedores locales.
+  Publicar un aviso es gratuito y queda sujeto a revisión antes de aparecer en el sitio.</p>
+  <h2>Qué puedes publicar</h2>
+  <p>La información de tu negocio debe ser real, propia y estar vigente. No se permite publicar contenido falso,
+  ofensivo, ilegal, ni suplantar a otro negocio o persona. Nos reservamos el derecho de rechazar o dar de baja
+  cualquier aviso que no cumpla con esto, sin necesidad de previo aviso.</p>
+  <h2>El contacto es directo</h2>
+  <p>{t.esc(sitio['marca'])} solo conecta: cuando alguien te escribe por WhatsApp desde un aviso, esa conversación
+  y cualquier acuerdo comercial es entre esa persona y tu negocio. No somos parte de esa transacción ni
+  respondemos por la calidad, precio o resultado del servicio.</p>
+  <h2>Reportes y moderación</h2>
+  <p>Cualquier persona puede reportar un aviso que le parezca incorrecto o engañoso. Revisamos los reportes y
+  podemos pausar o eliminar avisos según corresponda.</p>
+  <h2>Cambios</h2>
+  <p>Podemos actualizar estos términos en cualquier momento; los cambios importantes se reflejan en la fecha de
+  arriba. Seguir usando el sitio después de un cambio implica que lo aceptas.</p>
+  <p class="hint">¿Dudas sobre estos términos? Escríbenos desde el WhatsApp de cualquier aviso publicado, o desde
+  <a href="/publicar">el formulario de publicar</a> si quieres que te contactemos.</p>
+</div>
+"""
+    render(handler, t.layout("Términos de uso", body, active="terminos", site=sitio))
+
+
+def privacidad(handler):
+    sitio = db.get_contenido_sitio()
+    body = f"""
+<div class="panel panel-narrow">
+  <h1>Privacidad</h1>
+  <p class="lede">Última actualización: {datetime.date.today().isoformat()}</p>
+  <p>Acá explicamos, en simple, qué datos guarda {t.esc(sitio['marca'])} y para qué.</p>
+  <h2>Cuando publicas un negocio</h2>
+  <p>Guardamos el nombre de tu negocio, tu WhatsApp, la descripción del aviso, la comuna y, si subes una, la foto
+  que elegiste. Esa información se muestra públicamente en tu aviso una vez aprobado — es lo esperable para que
+  la gente pueda encontrarte y contactarte.</p>
+  <h2>Cuando recomiendas un negocio o reportas un aviso</h2>
+  <p>Guardamos lo que escribes y, si lo dejas, tu WhatsApp — solo para poder avisarte si aparece algo que calza, o
+  para dar seguimiento al reporte. No publicamos esa información en el sitio.</p>
+  <h2>Favoritos</h2>
+  <p>Los favoritos (☆) no se guardan en nuestros servidores — quedan solo en el navegador que estás usando
+  (<code>localStorage</code>). Si borras los datos del sitio, cambias de navegador o de celular, se pierden. No
+  tenemos forma de verlos ni de saber qué marcaste como favorito.</p>
+  <h2>Qué no hacemos</h2>
+  <p>No vendemos tus datos a terceros ni los usamos para enviarte publicidad de otras empresas. No pedimos
+  contraseña ni creamos una cuenta para navegar el sitio o publicar un aviso.</p>
+  <h2>Tus derechos</h2>
+  <p>Puedes pedirnos en cualquier momento que corrijamos o eliminemos la información de un aviso — escríbenos por
+  WhatsApp desde el mismo aviso, o repórtalo indicando el motivo.</p>
+</div>
+"""
+    render(handler, t.layout("Privacidad", body, active="privacidad", site=sitio))
 
 
 def favoritos(handler):
@@ -1596,6 +1791,8 @@ def api_alerta(handler, body):
 
 
 def aviso_reportar(handler, aviso_id, form):
+    if _es_bot(form) or not db.verificar_limite(_client_ip(handler), "reportar", maximo=10):
+        return redirect(handler, f"/avisos/{aviso_id}?reportado=1")
     motivo = form.get("motivo", "").strip()[:300] or "Sin motivo especificado"
     if db.get_aviso(aviso_id):
         db.crear_reporte(aviso_id, motivo)
@@ -1652,7 +1849,10 @@ def robots_txt(handler):
 def sitemap_xml(handler):
     origin = _origin(handler)
     ids = [a["id"] for a in db.get_avisos(estado="activo")]
-    urls = [f"{origin}/", f"{origin}/explorar", f"{origin}/avisos", f"{origin}/publicar", f"{origin}/necesito"] + [f"{origin}/avisos/{i}" for i in ids]
+    urls = ([f"{origin}/", f"{origin}/explorar", f"{origin}/avisos", f"{origin}/publicar", f"{origin}/necesito",
+             f"{origin}/ayuda", f"{origin}/terminos", f"{origin}/privacidad"]
+            + [f"{origin}/guias/{slug}" for slug in GUIAS]
+            + [f"{origin}/avisos/{i}" for i in ids])
     body = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")
     data = body.encode("utf-8")
@@ -1695,6 +1895,25 @@ class Handler(BaseHTTPRequestHandler):
             elif not getattr(item, "filename", None):
                 form[key] = item.value
         return form, foto
+
+    def end_headers(self):
+        """Cabeceras de seguridad estandar para toda respuesta, en un solo
+        lugar en vez de repetirlas en cada funcion de ruta."""
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src https://fonts.gstatic.com; "
+            "img-src 'self' data: https://storage.googleapis.com; "
+            "script-src 'self'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'self'"
+        )
+        super().end_headers()
 
     def do_GET(self):
         parts = urlsplit(self.path)
@@ -1771,6 +1990,12 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_usuarios(self) if require_role(self, {"super_admin"}) else None
             if path == "/ayuda":
                 return ayuda(self)
+            if len(segs) == 2 and segs[0] == "guias":
+                return guia_detalle(self, segs[1])
+            if path == "/terminos":
+                return terminos(self)
+            if path == "/privacidad":
+                return privacidad(self)
             if path == "/favoritos":
                 return favoritos(self)
             if len(segs) == 2 and segs[0] == "mi-negocio":

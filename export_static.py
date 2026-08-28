@@ -196,6 +196,20 @@ def exportar(offline=False):
     server.favoritos(h)
     _write(os.path.join(DOCS_DIR, "favoritos", "index.html"), _postprocess(h.html()).encode("utf-8"))
 
+    # Legales y guias (contenido estatico, sin formularios que dependan de servidor)
+    h = FakeHandler()
+    server.terminos(h)
+    _write(os.path.join(DOCS_DIR, "terminos", "index.html"), _postprocess(h.html()).encode("utf-8"))
+
+    h = FakeHandler()
+    server.privacidad(h)
+    _write(os.path.join(DOCS_DIR, "privacidad", "index.html"), _postprocess(h.html()).encode("utf-8"))
+
+    for slug in server.GUIAS:
+        h = FakeHandler()
+        server.guia_detalle(h, slug)
+        _write(os.path.join(DOCS_DIR, "guias", slug, "index.html"), _postprocess(h.html()).encode("utf-8"))
+
     # Detalle de cada aviso activo
     for aviso_id in aviso_ids:
         h = FakeHandler()
@@ -242,7 +256,9 @@ def exportar(offline=False):
            json.dumps(sinonimos_json, ensure_ascii=False).encode("utf-8"))
 
     # robots.txt / sitemap.xml estaticos
-    urls = ([f"{PAGES_BASE}/", f"{PAGES_BASE}/explorar/", f"{PAGES_BASE}/avisos/", f"{PAGES_BASE}/necesito/", f"{PAGES_BASE}/ayuda/"]
+    urls = ([f"{PAGES_BASE}/", f"{PAGES_BASE}/explorar/", f"{PAGES_BASE}/avisos/", f"{PAGES_BASE}/necesito/",
+             f"{PAGES_BASE}/ayuda/", f"{PAGES_BASE}/terminos/", f"{PAGES_BASE}/privacidad/"]
+            + [f"{PAGES_BASE}/guias/{slug}/" for slug in server.GUIAS]
             + [f"{PAGES_BASE}/avisos/{i}/" for i in aviso_ids])
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "".join(f"  <url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n")

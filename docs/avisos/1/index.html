@@ -68,6 +68,7 @@
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
         <form method="post" action="/talcadatos/avisos/1/reportar" class="form report-form">
+          <input type="text" name="pagina_web" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
           <textarea name="motivo" rows="2" required placeholder="¿Qué está mal con este aviso? Ej: negocio cerrado, información falsa..."></textarea>
           <button class="btn btn-bad btn-sm" type="submit">Enviar reporte</button>
         </form>
@@ -104,6 +105,7 @@
 </main>
 <footer class="site-footer">
   <span>Talcadatos — directorio de pymes y emprendedores de Talca</span>
+  <span><a href="/talcadatos/terminos">Términos</a> · <a href="/talcadatos/privacidad">Privacidad</a></span>
 </footer>
 
 <nav class="mobile-nav" aria-label="Navegación principal">
