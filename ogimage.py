@@ -10,6 +10,7 @@ que la imagen se vea igual en cualquier servidor.
 """
 import os
 import io
+import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
 W, H = 1200, 630
@@ -105,6 +106,15 @@ def generar(aviso):
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def generar_qr(texto):
+    """QR propio (sin depender de un servicio externo, para que cumpla el
+    Content-Security-Policy y no filtre el link del aviso a terceros)."""
+    img = qrcode.make(texto, box_size=6, border=2)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
     return buf.getvalue()
 
 

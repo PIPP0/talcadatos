@@ -7,6 +7,24 @@ document.addEventListener("click", function (e) {
   track.scrollBy({ left: paso, behavior: "smooth" });
 });
 
+/* Reemplaza atributos onchange/onclick/onsubmit inline, bloqueados por la
+   Content-Security-Policy (script-src 'self' no permite inline handlers). */
+document.addEventListener("change", function (e) {
+  if (e.target.matches("select[data-autosubmit]")) e.target.form.submit();
+});
+
+document.addEventListener("submit", function (e) {
+  var msg = e.target.getAttribute("data-confirm");
+  if (msg && !window.confirm(msg)) e.preventDefault();
+});
+
+document.addEventListener("click", function (e) {
+  var share = e.target.closest("[data-share-btn]");
+  if (!share) return;
+  navigator.clipboard.writeText(window.location.href);
+  share.textContent = "¡Link copiado!";
+});
+
 function initReveals() {
   var blocks = document.querySelectorAll("[data-reveal]");
   if (!blocks.length) return;

@@ -495,9 +495,9 @@ def listado(handler, query):
   <h1 id="listado-titulo">{t.esc(titulo_pagina)}</h1>
   <form class="filters" id="listado-filtros" method="get" action="/avisos">
     {f'<input type="hidden" name="q" value="{t.esc(q)}">' if q else ""}
-    <select name="categoria" onchange="this.form.submit()">{cat_options}</select>
-    <select name="comuna" onchange="this.form.submit()">{comuna_options}</select>
-    <select name="orden" onchange="this.form.submit()">{orden_options}</select>
+    <select name="categoria" data-autosubmit>{cat_options}</select>
+    <select name="comuna" data-autosubmit>{comuna_options}</select>
+    <select name="orden" data-autosubmit>{orden_options}</select>
   </form>
 </div>
 <div id="listado-resultados">
@@ -616,7 +616,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     canonical = f"{_origin(handler)}/avisos/{aviso_id}"
     mapa_url = ("https://www.google.com/maps/search/?api=1&query=" +
                 quote(f"{aviso['negocio_nombre']} {aviso['comuna']} Chile"))
-    qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + quote(canonical)
+    qr_url = f"/avisos/{aviso_id}/qr.png"
     reportado_html = ('<p class="flash" style="margin-top:16px">Gracias, tu reporte quedó registrado para revisión.'
                        '</p>') if reportado else ""
     json_ld = json.dumps({
@@ -657,7 +657,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
        💬 Escribir por WhatsApp
     </a>
     <div class="detalle-share">
-      <button class="btn btn-ghost" type="button" onclick="navigator.clipboard.writeText(window.location.href); this.textContent='¡Link copiado!'">Compartir aviso</button>
+      <button class="btn btn-ghost" type="button" data-share-btn>Compartir aviso</button>
       <a class="btn btn-ghost" href="{mapa_url}" target="_blank" rel="noopener">📍 Ver en el mapa</a>
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
@@ -915,7 +915,7 @@ def admin_dashboard(handler, query):
 <div class="listado-head">
   <h1>Dashboard</h1>
   <form method="get" class="filters">
-    <select name="dias" onchange="this.form.submit()">
+    <select name="dias" data-autosubmit>
       {periodo_opt(7, "Últimos 7 días")}{periodo_opt(30, "Últimos 30 días")}{periodo_opt(90, "Últimos 90 días")}
     </select>
   </form>
@@ -1006,7 +1006,7 @@ def admin_avisos_lista(handler, query):
   <td>
     <a class="btn btn-ghost btn-sm" href="/admin/avisos/{a['id']}">Editar</a>
     <form method="post" action="/admin/avisos/{a['id']}/eliminar" style="display:inline"
-      onsubmit="return confirm('¿Eliminar este aviso? No se puede deshacer.')">
+      data-confirm="¿Eliminar este aviso? No se puede deshacer.">
       <button class="btn btn-bad btn-sm">Eliminar</button>
     </form>
   </td>
@@ -1017,7 +1017,7 @@ def admin_avisos_lista(handler, query):
   <h1>Avisos</h1>
   <div class="listado-head-actions">
     <form method="get" class="filters">
-      <select name="estado" onchange="this.form.submit()">
+      <select name="estado" data-autosubmit>
         {opt('', 'Todos los estados')}{opt('activo', 'Activo')}{opt('pendiente', 'Pendiente')}
         {opt('pausado', 'Pausado')}{opt('rechazado', 'Rechazado')}
       </select>
@@ -1626,7 +1626,7 @@ def admin_usuarios(handler):
   <td>{t.badge(u['rol'], 'gold' if u['rol'] == 'super_admin' else 'muted')}</td>
   <td>
     <form method="post" action="/admin/usuarios/{u['id']}/eliminar" style="display:inline"
-      onsubmit="return confirm('¿Eliminar este usuario admin?')">
+      data-confirm="¿Eliminar este usuario admin?">
       <button class="btn btn-bad btn-sm">Eliminar</button>
     </form>
   </td>
@@ -2013,6 +2013,21 @@ def og_default(handler):
         render_png(handler, f.read())
 
 
+def qr_aviso(handler, aviso_id):
+    path = os.path.join(OG_CACHE_DIR, f"qr_{aviso_id}.png")
+    if not os.path.isfile(path):
+        aviso = db.get_aviso(aviso_id)
+        if not aviso:
+            handler.send_response(404)
+            handler.end_headers()
+            return
+        canonical = f"{_origin(handler)}/avisos/{aviso_id}"
+        with open(path, "wb") as f:
+            f.write(ogimage.generar_qr(canonical))
+    with open(path, "rb") as f:
+        render_png(handler, f.read())
+
+
 def robots_txt(handler):
     body = f"User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: {_origin(handler)}/sitemap.xml\n"
     data = body.encode("utf-8")
@@ -2131,6 +2146,8 @@ class Handler(BaseHTTPRequestHandler):
                 return og_default(self)
             if len(segs) == 2 and segs[0] == "og" and segs[1].endswith(".png") and segs[1][:-4].isdigit():
                 return og_aviso(self, int(segs[1][:-4]))
+            if len(segs) == 3 and segs[0] == "avisos" and segs[1].isdigit() and segs[2] == "qr.png":
+                return qr_aviso(self, int(segs[1]))
 
             if path == "/admin/login":
                 return admin_login_form(self)
