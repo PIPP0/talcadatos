@@ -1105,17 +1105,21 @@ def admin_avisos_lista(handler, query):
   <td class="mono">{a['vistas_total']}</td>
   <td class="mono">{a['contactos_total']}</td>
   <td class="admin-actions">
-    <a class="btn btn-icon btn-ghost" href="/admin/avisos/{a['id']}" title="Editar" aria-label="Editar">✎</a>
-    {f'''<form method="post" action="/admin/avisos/{a['id']}/aprobar">
-      <button class="btn btn-ok btn-sm">Aprobar</button>
-    </form>
-    <form method="post" action="/admin/avisos/{a['id']}/rechazar">
-      <button class="btn btn-ghost btn-sm">Rechazar</button>
-    </form>''' if a['estado'] == 'pendiente' else ''}
-    <form method="post" action="/admin/avisos/{a['id']}/eliminar"
-      data-confirm="¿Eliminar este aviso? No se puede deshacer.">
-      <button class="btn btn-icon btn-bad" title="Eliminar" aria-label="Eliminar">🗑️</button>
-    </form>
+    <div class="admin-actions-icons">
+      <a class="btn btn-icon btn-ghost" href="/admin/avisos/{a['id']}" title="Editar" aria-label="Editar">✎</a>
+      <form method="post" action="/admin/avisos/{a['id']}/eliminar"
+        data-confirm="¿Eliminar este aviso? No se puede deshacer.">
+        <button class="btn btn-icon btn-bad" title="Eliminar" aria-label="Eliminar">🗑️</button>
+      </form>
+    </div>
+    {f'''<div class="admin-actions-stack">
+      <form method="post" action="/admin/avisos/{a['id']}/aprobar">
+        <button class="btn btn-ok btn-sm">Aprobar</button>
+      </form>
+      <form method="post" action="/admin/avisos/{a['id']}/rechazar">
+        <button class="btn btn-ghost btn-sm">Rechazar</button>
+      </form>
+    </div>''' if a['estado'] == 'pendiente' else ''}
   </td>
 </tr>""" for a in avisos)
 
