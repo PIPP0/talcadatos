@@ -426,11 +426,6 @@ def _necesito_body(categorias, sitio, form=None, errores=None):
         f'{c["icono"]} {t.esc(c["nombre"])}</option>'
         for c in categorias
     )
-    cuando = form.get("cuando", "Esta semana")
-    cuando_options = "".join(
-        f'<option value="{opcion}"{" selected" if opcion == cuando else ""}>{opcion}</option>'
-        for opcion in ("Hoy", "Esta semana", "Este mes", "Flexible")
-    )
     errors_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
                    "</ul></div>") if errores else ""
     return f"""
@@ -451,14 +446,9 @@ def _necesito_body(categorias, sitio, form=None, errores=None):
       <label>¿Qué te gustaría ver?
         <textarea name="descripcion" required maxlength="500" rows="4" placeholder="Ej: Una veterinaria de urgencia cerca del centro.">{value("descripcion")}</textarea>
       </label>
-      <div class="form-split">
-        <label>Sector o comuna
-          <input name="sector" required maxlength="120" value="{value("sector", "Talca")}" placeholder="Ej: Las Rastras, Talca">
-        </label>
-        <label>¿Cuándo lo necesitas?
-          <select name="cuando">{cuando_options}</select>
-        </label>
-      </div>
+      <label>Sector o comuna
+        <input name="sector" required maxlength="120" value="{value("sector", "Talca")}" placeholder="Ej: Las Rastras, Talca">
+      </label>
       <label>WhatsApp para responderte
         <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
       </label>
@@ -1286,7 +1276,7 @@ def admin_necesidades(handler):
     necesidades = db.get_necesidades_pendientes()
     filas = "".join(f"""
 <tr>
-  <td><strong>{n['icono']} {t.esc(n['categoria_nombre'])}</strong><div class="small mono">{t.esc(n['cuando'])}</div></td>
+  <td><strong>{n['icono']} {t.esc(n['categoria_nombre'])}</strong></td>
   <td>{t.esc(n['descripcion'])}<div class="small">📍 {t.esc(n['sector'])}</div></td>
   <td class="mono">{t.esc(n['whatsapp'])}</td>
   <td class="mono small">{n['creado_en'][:10]}</td>
