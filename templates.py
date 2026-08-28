@@ -72,7 +72,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
   <span>Panel de administración: <a href="/admin">/admin</a></span>
 </footer>
 {mobile_nav}
-<script src="/static/app.js?v=20260826-2"></script>
+<script src="/static/app.js?v=20260828-3"></script>
 </body>
 </html>"""
 
