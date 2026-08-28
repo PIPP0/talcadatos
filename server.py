@@ -171,7 +171,8 @@ def server_error(handler, exc):
 
 def _origin(handler):
     host = handler.headers.get("Host", "localhost")
-    return f"http://{host}"
+    proto = handler.headers.get("X-Forwarded-Proto", "http")
+    return f"{proto}://{host}"
 
 
 # ------------------------------------------------------- modo "en construcción"
