@@ -1105,13 +1105,16 @@ def admin_avisos_lista(handler, query):
   <td class="mono">{a['vistas_total']}</td>
   <td class="mono">{a['contactos_total']}</td>
   <td class="admin-actions">
-    <a class="btn btn-ghost btn-sm" href="/admin/avisos/{a['id']}">Editar</a>
+    <a class="btn btn-icon btn-ghost" href="/admin/avisos/{a['id']}" title="Editar" aria-label="Editar">✎</a>
     {f'''<form method="post" action="/admin/avisos/{a['id']}/aprobar">
       <button class="btn btn-ok btn-sm">Aprobar</button>
+    </form>
+    <form method="post" action="/admin/avisos/{a['id']}/rechazar">
+      <button class="btn btn-ghost btn-sm">Rechazar</button>
     </form>''' if a['estado'] == 'pendiente' else ''}
     <form method="post" action="/admin/avisos/{a['id']}/eliminar"
       data-confirm="¿Eliminar este aviso? No se puede deshacer.">
-      <button class="btn btn-bad btn-sm">Eliminar</button>
+      <button class="btn btn-icon btn-bad" title="Eliminar" aria-label="Eliminar">🗑️</button>
     </form>
   </td>
 </tr>""" for a in avisos)
@@ -1210,6 +1213,13 @@ def admin_aviso_aprobar(handler, aviso_id):
     auditar(handler, "aprobar", f"aviso {aviso_id}")
     redirect(handler, "/admin/avisos",
              flash=mensaje_sincronizacion("Aviso aprobado y publicado.", sincronizar_sitio_estatico()))
+
+
+def admin_aviso_rechazar(handler, aviso_id):
+    db.cambiar_estado_aviso(aviso_id, "rechazado")
+    auditar(handler, "rechazar", f"aviso {aviso_id}")
+    redirect(handler, "/admin/avisos",
+             flash=mensaje_sincronizacion("Aviso rechazado.", sincronizar_sitio_estatico()))
 
 
 def admin_aviso_eliminar(handler, aviso_id):
@@ -1738,7 +1748,7 @@ def admin_usuarios(handler):
   <td class="admin-actions">
     <form method="post" action="/admin/usuarios/{u['id']}/eliminar"
       data-confirm="¿Eliminar este usuario admin?">
-      <button class="btn btn-bad btn-sm">Eliminar</button>
+      <button class="btn btn-icon btn-bad" title="Eliminar" aria-label="Eliminar">🗑️</button>
     </form>
   </td>
 </tr>""" for u in usuarios)
@@ -2373,6 +2383,8 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_aviso_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "aprobar":
                 return admin_aviso_aprobar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "rechazar":
+                return admin_aviso_rechazar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "plan":
                 return admin_anunciante_plan(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "verificar":

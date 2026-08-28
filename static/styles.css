@@ -79,6 +79,10 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .btn-ok{background:var(--teal); color:#fff;}
 .btn-bad{background:var(--brick-soft); color:var(--brick);}
 .btn-bad:hover{background:var(--brick); color:#fff;}
+.btn-icon{width:34px; height:34px; padding:0; font-size:1rem; border-radius:10px; flex:0 0 auto;}
+.btn-icon.btn-ghost{color:var(--ink-soft);}
+.btn-icon.btn-bad{background:transparent; color:var(--ink-faint); border-color:var(--line);}
+.btn-icon.btn-bad:hover{background:var(--brick); color:#fff; border-color:var(--brick);}
 
 /* ---- hero ---- */
 .hero{
