@@ -36,6 +36,22 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
     ld_tag = f'<script type="application/ld+json">{json_ld}</script>' if json_ld else ""
     flash_html = f'<div class="flash">{esc(flash)}</div>' if flash else ""
     robots = '<meta name="robots" content="noindex">' if admin else ""
+    footer = f"""<footer class="site-footer">
+  <span>{pie}</span>
+  <span><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></span>
+  <span>Panel de administración: <a href="/admin">/admin</a></span>
+</footer>"""
+    main = f"""<main class="wrap">
+{flash_html}
+{body}
+</main>
+{footer}"""
+    contenido = f"""<div class="admin-shell">
+{nav}
+<div class="admin-main">
+{main}
+</div>
+</div>""" if admin else f"{nav}\n{main}"
     return f"""<!doctype html>
 <html lang="es-CL">
 <head>
@@ -58,19 +74,10 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260828-3">
+<link rel="stylesheet" href="/static/styles.css?v=20260828-4">
 </head>
-<body{active_attr}>
-{nav}
-<main class="wrap">
-{flash_html}
-{body}
-</main>
-<footer class="site-footer">
-  <span>{pie}</span>
-  <span><a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a></span>
-  <span>Panel de administración: <a href="/admin">/admin</a></span>
-</footer>
+<body{active_attr}{' class="admin-body"' if admin else ''}>
+{contenido}
 {mobile_nav}
 <script src="/static/app.js?v=20260828-3"></script>
 </body>
@@ -111,41 +118,52 @@ PUBLIC_NAV = """
 </header>
 """
 
-ADMIN_NAV_LINKS = [
-    ("dashboard", "/admin", "Dashboard"),
-    ("moderacion", "/admin/moderacion", "Moderación"),
-    ("reportes", "/admin/reportes", "Reportes"),
-    ("avisos", "/admin/avisos", "Avisos"),
-    ("anunciantes", "/admin/anunciantes", "Anunciantes"),
-    ("pagos", "/admin/pagos", "Pagos"),
-    ("sinonimos", "/admin/sinonimos", "Sinónimos"),
-    ("alertas", "/admin/alertas", "Alertas"),
-    ("necesidades", "/admin/necesidades", "Necesidades"),
-    ("analitica", "/admin/analitica", "Analítica"),
-    ("auditoria", "/admin/auditoria", "Auditoría"),
-    ("usuarios", "/admin/usuarios", "Usuarios"),
-    ("editor", "/admin/editor", "Editor visual"),
-    ("contenido", "/admin/contenido", "Contenido"),
-    ("cuenta", "/admin/cuenta", "Mi cuenta"),
+ADMIN_NAV_GROUPS = [
+    ("General", [
+        ("dashboard", "/admin", "Dashboard", "◈"),
+        ("analitica", "/admin/analitica", "Analítica", "⌁"),
+        ("auditoria", "/admin/auditoria", "Auditoría", "◷"),
+    ]),
+    ("Contenido", [
+        ("avisos", "/admin/avisos", "Avisos", "▦"),
+        ("moderacion", "/admin/moderacion", "Moderación", "✓"),
+        ("reportes", "/admin/reportes", "Reportes", "⚑"),
+        ("contenido", "/admin/contenido", "Contenido", "✦"),
+        ("editor", "/admin/editor", "Editor visual", "✎"),
+    ]),
+    ("Negocio", [
+        ("anunciantes", "/admin/anunciantes", "Anunciantes", "⌂"),
+        ("pagos", "/admin/pagos", "Pagos", "¤"),
+        ("necesidades", "/admin/necesidades", "Necesidades", "↗"),
+        ("alertas", "/admin/alertas", "Alertas", "◉"),
+        ("sinonimos", "/admin/sinonimos", "Sinónimos", "≈"),
+    ]),
+    ("Cuenta", [
+        ("usuarios", "/admin/usuarios", "Usuarios", "◍"),
+        ("cuenta", "/admin/cuenta", "Mi cuenta", "⚙"),
+    ]),
 ]
 
 
 def admin_nav(active):
-    def link(slug, href, label):
-        cls = ' class="is-active"' if slug == active else ""
-        return f'<a href="{href}"{cls}>{label}</a>'
-    links = "".join(link(slug, href, label) for slug, href, label in ADMIN_NAV_LINKS)
+    def link(slug, href, label, icon):
+        cls = " is-active" if slug == active else ""
+        return f'<a href="{href}" class="admin-sidelink{cls}"><span class="admin-sideicon">{icon}</span>{label}</a>'
+
+    def group(titulo, items):
+        links = "".join(link(*item) for item in items)
+        return f'<div class="admin-sidegroup"><span class="admin-sidegroup-title">{titulo}</span>{links}</div>'
+
+    groups = "".join(group(titulo, items) for titulo, items in ADMIN_NAV_GROUPS)
     return f"""
-<header class="topbar topbar-admin">
-  <div class="wrap topbar-inner">
-    <a href="/admin" class="brand">📌 Talcadatos <span class="tag-admin">admin</span></a>
-    <nav class="topnav">
-      {links}
-      <a href="/" class="btn btn-ghost">Ver sitio</a>
-      <a href="/admin/logout" class="btn btn-ghost">Salir</a>
-    </nav>
+<aside class="admin-sidebar">
+  <a href="/admin" class="brand">📌 Talcadatos <span class="tag-admin">admin</span></a>
+  <nav class="admin-sidenav">{groups}</nav>
+  <div class="admin-sidebar-foot">
+    <a href="/" class="btn btn-ghost btn-sm">Ver sitio</a>
+    <a href="/admin/logout" class="btn btn-ghost btn-sm">Salir</a>
   </div>
-</header>
+</aside>
 """
 
 
