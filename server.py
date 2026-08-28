@@ -649,6 +649,12 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
     <label>Horario de atención (opcional)
       <input name="horario" placeholder="Lun a Vie 9:00-18:00" value="{v('horario')}">
     </label>
+    <label class="check-label">
+      <input type="checkbox" name="acepto_terminos" required{' checked' if form.get('acepto_terminos') else ''}>
+      <span>Declaro que la información de mi negocio es real y acepto los
+      <a href="/terminos" target="_blank" rel="noopener">Términos de uso</a> y la
+      <a href="/privacidad" target="_blank" rel="noopener">Política de privacidad</a> de Talcadatos.</span>
+    </label>
     <button class="btn btn-primary btn-lg" type="submit">Enviar aviso</button>
   </form>
 </div>
@@ -694,6 +700,8 @@ def _validar_publicar(form, categoria_ids):
         errores.append("Cuéntanos brevemente en qué consiste tu servicio.")
     if not form.get("comuna", "").strip():
         errores.append("Ingresa la comuna donde atiendes.")
+    if not form.get("acepto_terminos"):
+        errores.append("Debes aceptar los términos de uso para publicar tu negocio.")
     return errores
 
 
@@ -722,7 +730,8 @@ def publicar_submit(handler, form, foto=None):
     slug = form["categoria_id"]
     color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
     negocio_id, token_acceso = db.crear_negocio(
-        form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip())
+        form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
+        terminos_ip=_client_ip(handler))
     db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",

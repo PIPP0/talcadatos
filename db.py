@@ -409,13 +409,14 @@ def get_negocio_por_token(token):
     return _con_id(docs[0].to_dict(), docs[0].id) if docs else None
 
 
-def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None):
+def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None, terminos_ip=None):
     nid = _next_id("negocios")
     token = secrets.token_urlsafe(12)
     _fs().collection("negocios").document(nid).set({
         "nombre": nombre, "whatsapp": whatsapp, "verificado": False,
         "plan_id": plan_id, "plan_vencimiento": plan_vencimiento,
         "token_acceso": token, "creado_en": now(),
+        "terminos_aceptados_en": now(), "terminos_aceptados_ip": terminos_ip,
     })
     return nid, token
 
