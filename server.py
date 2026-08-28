@@ -174,6 +174,80 @@ def _origin(handler):
     return f"http://{host}"
 
 
+# ------------------------------------------------------- modo "en construcción"
+# El sitio publico muestra una portada generica mientras se sigue afinando.
+# La ruta secreta PREVIEW_PATH deja una cookie de larga duracion en el
+# navegador que la visita y de ahi en adelante ese navegador ve el sitio
+# real y completo, en las mismas URLs de siempre (sin prefijos ni reescritura
+# de enlaces, para no arriesgar romper nada de lo ya construido).
+PREVIEW_PATH = "/esteeselsitiodeprueba"
+PREVIEW_COOKIE = "talca_preview"
+_RUTAS_LIBRES_EXACTAS = ("/static", "/sw.js")
+_RUTAS_LIBRES_PREFIJOS = ("/static/", "/og/")
+
+
+def _ruta_libre(path):
+    """Rutas que siguen respondiendo igual sin importar el modo construccion
+    (assets compartidos que el propio sitio necesita para funcionar)."""
+    return path in _RUTAS_LIBRES_EXACTAS or any(path.startswith(p) for p in _RUTAS_LIBRES_PREFIJOS)
+
+
+def _tiene_acceso_preview(handler):
+    cookie = SimpleCookie(handler.headers.get("Cookie", ""))
+    return PREVIEW_COOKIE in cookie and cookie[PREVIEW_COOKIE].value == "ok"
+
+
+def _otorgar_preview(handler):
+    handler.send_response(302)
+    handler.send_header("Location", "/")
+    handler.send_header("Set-Cookie", f"{PREVIEW_COOKIE}=ok; Path=/; Max-Age=15552000; HttpOnly; SameSite=Lax")
+    handler.end_headers()
+
+
+def pagina_en_construccion(handler):
+    html = """<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Talcadatos — Volvemos pronto</title>
+<style>
+  :root{color-scheme:light}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:#FBF6F1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
+       color:#2A2622;padding:24px;text-align:center}
+  .card{max-width:420px}
+  svg{width:120px;height:120px;margin:0 auto 20px}
+  h1{font-size:1.5rem;margin:0 0 10px}
+  p{font-size:1rem;line-height:1.5;color:#6B6259;margin:0}
+  .brand{font-weight:800;color:#E85D5D}
+</style>
+</head>
+<body>
+  <div class="card">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="48" fill="#F4E3DC"/>
+      <g stroke="#E85D5D" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 62 L52 42 a6 6 0 0 1 8 8 L40 70 a6 6 0 0 1 -8 -8Z"/>
+        <path d="M58 30 a10 10 0 1 0 12 12 l-6 -2 -4 -4 -2 -6Z" fill="#E85D5D" stroke="none"/>
+      </g>
+      <circle cx="50" cy="50" r="48" fill="none" stroke="#E8A05D" stroke-width="2" stroke-dasharray="4 6"/>
+    </svg>
+    <h1><span class="brand">📌 Talcadatos</span></h1>
+    <p>Estamos preparando cosas nuevas. Vuelve a visitarnos pronto.</p>
+  </div>
+</body>
+</html>"""
+    body = html.encode("utf-8")
+    handler.send_response(200)
+    handler.send_header("Content-Type", "text/html; charset=utf-8")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 HONEYPOT_FIELD = "pagina_web"
 HONEYPOT_HTML = (f'<input type="text" name="{HONEYPOT_FIELD}" class="hp-field" tabindex="-1" '
                   'autocomplete="off" aria-hidden="true">')
@@ -2023,6 +2097,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parts = urlsplit(self.path)
         path, query = parts.path, parts.query
+
+        if path in (PREVIEW_PATH, PREVIEW_PATH + "/"):
+            return _otorgar_preview(self)
+        if not _ruta_libre(path) and not _tiene_acceso_preview(self):
+            return pagina_en_construccion(self)
+
         segs = [s for s in path.split("/") if s != ""]
 
         try:
@@ -2115,6 +2195,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parts = urlsplit(self.path)
         path = parts.path
+
+        if not _ruta_libre(path) and not _tiene_acceso_preview(self):
+            return pagina_en_construccion(self)
+
         segs = [s for s in path.split("/") if s != ""]
 
         try:
