@@ -69,6 +69,9 @@ CONTENIDO_SITIO_POR_DEFECTO = {
     "necesito_bajada": "Cuéntanos qué negocio o servicio te gustaría encontrar en tu barrio. Con estas recomendaciones destacamos lo que Talca está pidiendo.",
     "publicar_titulo": "Publica tu negocio en Talcadatos",
     "publicar_bajada": "Es gratis. Completa el formulario y tu aviso queda listo para revisión — normalmente se aprueba el mismo día.",
+    "hero_imagen_url": "/static/img/hero-talca.jpg",
+    "explorar_imagen_url": "/static/img/feria-local-editorial.jpg",
+    "pymes_imagen_url": "/static/img/comercio-local-editorial.jpg",
 }
 
 
@@ -110,12 +113,17 @@ def _storage():
     return _storage_client
 
 
-def subir_foto_aviso(datos, content_type, extension):
-    """Sube la foto de un aviso al bucket publico y devuelve su URL."""
-    nombre = f"avisos/{secrets.token_hex(12)}.{extension}"
+def subir_imagen(datos, content_type, extension, carpeta="avisos"):
+    """Sube una imagen al bucket publico y devuelve su URL. `carpeta` separa
+    fotos de avisos ("avisos") de imagenes del sitio ("sitio")."""
+    nombre = f"{carpeta}/{secrets.token_hex(12)}.{extension}"
     blob = _storage().bucket(_FOTOS_BUCKET).blob(nombre)
     blob.upload_from_string(datos, content_type=content_type)
     return f"https://storage.googleapis.com/{_FOTOS_BUCKET}/{nombre}"
+
+
+def subir_foto_aviso(datos, content_type, extension):
+    return subir_imagen(datos, content_type, extension, carpeta="avisos")
 
 
 def now():

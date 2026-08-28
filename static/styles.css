@@ -415,6 +415,8 @@ tr:last-child td{border-bottom:none;}
 .cms-section h2{font-size:1.18rem; margin-bottom:18px;}
 .form-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;}
 .form-grid label:has(textarea){grid-column:span 2;}
+.form-grid label:has(.campo-imagen-preview),.form-grid label.campo-imagen{grid-column:span 2;}
+.campo-imagen-preview{width:100%; max-width:320px; height:140px; object-fit:cover; border-radius:12px; border:1px solid var(--line); margin:2px 0 4px; display:block;}
 .cms-save{position:sticky; bottom:16px; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 16px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.93); box-shadow:var(--shadow); backdrop-filter:blur(10px);}
 
 /* ---- editor visual del sitio ---- */

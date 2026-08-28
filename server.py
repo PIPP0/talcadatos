@@ -242,7 +242,7 @@ def home(handler):
     )
 
     body = f"""
-<section class="hero">
+<section class="hero" style="background-image: linear-gradient(180deg, rgba(10,12,18,.28) 0%, rgba(10,12,18,.46) 100%), url('{t.esc(sitio['hero_imagen_url'])}')">
   <p class="hero-location">📍 {t.esc(sitio['hero_ubicacion'])}</p>
   <h1>{t.esc(sitio['hero_titulo'])}</h1>
   <p class="hero-sub">{t.esc(sitio['hero_bajada'])}</p>
@@ -297,7 +297,7 @@ def home(handler):
 
 <section class="section local-story" data-reveal>
   <figure class="local-story-visual">
-    <img src="/static/img/feria-local-editorial.jpg" alt="Emprendedores atendiendo una feria de comercio local" loading="lazy">
+    <img src="{t.esc(sitio['explorar_imagen_url'])}" alt="Emprendedores atendiendo una feria de comercio local" loading="lazy">
     <figcaption><span></span> Cerca, útil y hecho por personas</figcaption>
   </figure>
   <div class="local-story-copy">
@@ -344,7 +344,7 @@ def home(handler):
 <section class="business-cta" data-reveal>
   <div class="business-cta-copy"><span class="eyebrow">{t.esc(sitio['pymes_eyebrow'])}</span><h2>{t.esc(sitio['pymes_titulo'])}</h2>
   <p>{t.esc(sitio['pymes_bajada'])}</p><a class="btn btn-ghost btn-lg" href="/publicar">{t.esc(sitio['pymes_boton'])} <span aria-hidden="true">→</span></a></div>
-  <figure class="business-cta-visual"><img src="/static/img/comercio-local-editorial.jpg" alt="Emprendedora preparando productos en su negocio local" loading="lazy"><figcaption>Tu vitrina también puede estar aquí.</figcaption></figure>
+  <figure class="business-cta-visual"><img src="{t.esc(sitio['pymes_imagen_url'])}" alt="Emprendedora preparando productos en su negocio local" loading="lazy"><figcaption>Tu vitrina también puede estar aquí.</figcaption></figure>
 </section>
 """
     render(handler, t.layout("Avisos de pymes y emprendedores de Talca", body, active="home",
@@ -1350,9 +1350,21 @@ def contenido_grupos(sitio):
             return f'<label>{etiqueta}<textarea name="{clave}" rows="3" maxlength="600">{valor}</textarea></label>'
         return f'<label>{etiqueta}<input name="{clave}" required maxlength="600" value="{valor}"></label>'
 
+    def campo_imagen(clave, etiqueta):
+        url_actual = sitio.get(clave, "")
+        preview = f'<img src="{t.esc(url_actual)}" alt="" class="campo-imagen-preview">' if url_actual else ""
+        return f'''<label class="campo-imagen">{etiqueta}
+      {preview}
+      <input type="file" name="{clave}" accept="image/jpeg,image/png,image/webp">
+      <span class="hint">JPG, PNG o WebP, máx. 5 MB. Deja vacío para no cambiarla.</span>
+    </label>'''
+
     return [
         ("Marca y pie de página", campo("marca", "Nombre de la marca") + campo("pie", "Texto del pie de página") +
          campo("descripcion", "Descripción para buscadores y redes", True)),
+        ("Imágenes del sitio", campo_imagen("hero_imagen_url", "Foto de portada (hero)") +
+         campo_imagen("explorar_imagen_url", "Imagen de la sección \"Comercio que se siente cerca\"") +
+         campo_imagen("pymes_imagen_url", "Imagen del llamado a publicar negocio")),
         ("Portada", campo("hero_ubicacion", "Ubicación") + campo("hero_titulo", "Título principal", True) +
          campo("hero_bajada", "Bajada", True) + campo("hero_placeholder", "Texto del buscador") +
          campo("hero_ayuda", "Ayuda bajo el buscador")),
@@ -1386,7 +1398,7 @@ def admin_contenido(handler):
   <p class="lede">Edita textos, llamados a la acción y la identidad de las páginas públicas. Los avisos, negocios y usuarios se gestionan desde sus secciones propias.</p></div>
   <a class="btn btn-ghost" href="/admin/editor">Abrir editor visual</a>
 </div>
-<form method="post" action="/admin/contenido" class="form cms-form">
+<form method="post" action="/admin/contenido" class="form cms-form" enctype="multipart/form-data">
   {grupos}
   <div class="cms-save"><span class="hint">Los cambios se aplican al instante en la versión con servidor.</span><button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button></div>
 </form>
@@ -1395,12 +1407,27 @@ def admin_contenido(handler):
            clear_flash=bool(flash))
 
 
-def admin_contenido_submit(handler, form):
+CAMPOS_IMAGEN_SITIO = ("hero_imagen_url", "explorar_imagen_url", "pymes_imagen_url")
+
+
+def admin_contenido_submit(handler, form, archivos=None):
+    archivos = archivos or {}
+    errores_imagen = []
+    for campo in CAMPOS_IMAGEN_SITIO:
+        archivo = archivos.get(campo)
+        if not archivo:
+            continue
+        if archivo["content_type"] not in _EXT_POR_TIPO:
+            errores_imagen.append(f"La imagen de \"{campo}\" debe ser JPG, PNG o WebP.")
+            continue
+        ext = _EXT_POR_TIPO[archivo["content_type"]]
+        form[campo] = db.subir_imagen(archivo["data"], archivo["content_type"], ext, carpeta="sitio")
     db.actualizar_contenido_sitio(form)
     auditar(handler, "actualizar_contenido_sitio", "portada y páginas públicas")
     destino = "/admin/editor" if form.get("volver") == "editor" else "/admin/contenido"
-    redirect(handler, destino,
-             flash=mensaje_sincronizacion("Contenido actualizado.", sincronizar_sitio_estatico()))
+    flash = "Algunas imágenes no se pudieron guardar: " + " ".join(errores_imagen) if errores_imagen \
+        else mensaje_sincronizacion("Contenido actualizado.", sincronizar_sitio_estatico())
+    redirect(handler, destino, flash=flash)
 
 
 def admin_editor(handler):
@@ -1430,7 +1457,7 @@ def admin_editor(handler):
           <option value="/necesito">Recomendar negocio</option><option value="/publicar">Publicar negocio</option><option value="/ayuda">Ayuda</option>
         </select>
       </label>
-      <form method="post" action="/admin/contenido" class="form editor-form">
+      <form method="post" action="/admin/contenido" class="form editor-form" enctype="multipart/form-data">
         <input type="hidden" name="volver" value="editor">
         {grupos}
         <button class="btn btn-primary editor-save" type="submit">Guardar y actualizar vista</button>
@@ -1932,24 +1959,27 @@ class Handler(BaseHTTPRequestHandler):
         return {k: v for k, v in parse_qsl(self._body())}
 
     def _form_multipart(self):
-        """Parsea multipart/form-data: devuelve (campos_de_texto, foto_o_None).
-        foto es {"filename", "content_type", "data"} cuando se subio un archivo."""
+        """Parsea multipart/form-data: devuelve (campos_de_texto, archivos).
+        archivos es {nombre_campo: {"filename", "content_type", "data"}} para
+        cada input de tipo file que realmente traiga un archivo seleccionado."""
         import cgi
         ctype = self.headers.get("Content-Type", "")
         if not ctype.startswith("multipart/form-data"):
-            return self._form(), None
+            return self._form(), {}
         fs = cgi.FieldStorage(
             fp=self.rfile, headers=self.headers,
             environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": ctype,
                      "CONTENT_LENGTH": self.headers.get("Content-Length", "0")})
-        form, foto = {}, None
+        form, archivos = {}, {}
         for key in fs.keys():
             item = fs[key]
-            if key == "foto" and getattr(item, "filename", ""):
-                foto = {"filename": item.filename, "content_type": item.type, "data": item.value}
-            elif not getattr(item, "filename", None):
+            filename = getattr(item, "filename", None)
+            if filename:
+                if filename.strip():
+                    archivos[key] = {"filename": filename, "content_type": item.type, "data": item.value}
+            else:
                 form[key] = item.value
-        return form, foto
+        return form, archivos
 
     def end_headers(self):
         """Cabeceras de seguridad estandar para toda respuesta, en un solo
@@ -2071,8 +2101,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/publicar":
                 if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
                     return publicar_form(self, errores=["La foto es muy pesada (máximo 5 MB)."])
-                form, foto = self._form_multipart()
-                return publicar_submit(self, form, foto)
+                form, archivos = self._form_multipart()
+                return publicar_submit(self, form, archivos.get("foto"))
             if path == "/necesito":
                 return necesito_submit(self, self._form())
             if path == "/api/buscar":
@@ -2086,7 +2116,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/admin/login":
                 return admin_login_submit(self, self._form())
             if path == "/admin/contenido":
-                return admin_contenido_submit(self, self._form()) if require_role(self, {"super_admin"}) else None
+                if not require_role(self, {"super_admin"}):
+                    return None
+                if int(self.headers.get("Content-Length", 0) or 0) > 18 * 1024 * 1024:
+                    return admin_contenido(self)
+                form, archivos = self._form_multipart()
+                return admin_contenido_submit(self, form, archivos)
             if path == "/admin/cuenta":
                 return admin_cuenta_submit(self, self._form()) if require_admin(self) else None
 
