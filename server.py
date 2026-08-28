@@ -972,17 +972,28 @@ def admin_aviso_editar_form(handler, aviso_id):
         f'<option value="{e}"{" selected" if e == aviso["estado"] else ""}>{e}</option>'
         for e in ("pendiente", "activo", "pausado", "rechazado"))
 
+    foto_url = aviso.get("foto_url")
+    foto_preview = f'<img src="{t.esc(foto_url)}" alt="" class="campo-imagen-preview">' if foto_url else \
+        '<p class="hint">Este aviso no tiene foto — se muestra el ícono del rubro.</p>'
+    foto_quitar = ('<label class="check-label"><input type="checkbox" name="quitar_foto">'
+                   '<span>Quitar la foto actual (vuelve a mostrar el ícono del rubro)</span></label>') if foto_url else ""
     body = f"""
 <div class="panel">
   <h1>Editar aviso</h1>
   <p class="lede">{t.esc(aviso['negocio_nombre'])} · {t.esc(aviso['whatsapp'])}</p>
-  <form method="post" action="/admin/avisos/{aviso_id}" class="form">
+  <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data">
     <label>Título <input name="titulo" required value="{t.esc(aviso['titulo'])}"></label>
     <label>Descripción <textarea name="descripcion" rows="4" required>{t.esc(aviso['descripcion'])}</textarea></label>
     <label>Categoría <select name="categoria_id">{cat_options}</select></label>
     <label>Comuna <input name="comuna" value="{t.esc(aviso['comuna'])}"></label>
     <label>Horario <input name="horario" value="{t.esc(aviso['horario'] or '')}"></label>
     <label>Estado <select name="estado">{estado_options}</select></label>
+    <label class="campo-imagen">Foto del aviso
+      {foto_preview}
+      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
+      <span class="hint">JPG, PNG o WebP, máx. 5 MB. Deja vacío para no cambiarla.</span>
+    </label>
+    {foto_quitar}
     <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>
   </form>
 </div>
@@ -990,14 +1001,23 @@ def admin_aviso_editar_form(handler, aviso_id):
     render(handler, t.layout("Editar aviso", body, active="admin", admin=True))
 
 
-def admin_aviso_editar_submit(handler, aviso_id, form):
+def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     actual = db.get_aviso(aviso_id)
     if not actual:
         return not_found(handler)
+    archivo_foto = (archivos or {}).get("foto")
+    foto_url = None
+    if archivo_foto:
+        if archivo_foto["content_type"] not in _EXT_POR_TIPO:
+            return admin_aviso_editar_form(handler, aviso_id)
+        ext = _EXT_POR_TIPO[archivo_foto["content_type"]]
+        foto_url = db.subir_imagen(archivo_foto["data"], archivo_foto["content_type"], ext, carpeta="avisos")
+    elif form.get("quitar_foto"):
+        foto_url = ""
     nuevo_estado = form.get("estado", actual["estado"])
     ok = db.editar_aviso(
         aviso_id, form.get("titulo", ""), form.get("descripcion", ""), form.get("categoria_id"),
-        form.get("comuna", ""), form.get("horario", ""), nuevo_estado)
+        form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url)
     if not ok:
         return not_found(handler)
     _og_cache_evict(aviso_id)
@@ -2130,7 +2150,12 @@ class Handler(BaseHTTPRequestHandler):
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "reportes" and segs[3] == "descartar":
                 return admin_reporte_descartar(self, int(segs[2])) if require_admin(self) else None
             if len(segs) == 3 and segs[0] == "admin" and segs[1] == "avisos" and segs[2].isdigit():
-                return admin_aviso_editar_submit(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
+                if not require_role(self, {"super_admin"}):
+                    return None
+                if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
+                    return admin_aviso_editar_form(self, int(segs[2]))
+                form, archivos = self._form_multipart()
+                return admin_aviso_editar_submit(self, int(segs[2]), form, archivos)
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
                 return admin_aviso_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "plan":

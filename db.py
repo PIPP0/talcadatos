@@ -359,7 +359,7 @@ def crear_aviso(negocio_id, titulo, descripcion, categoria_slug, comuna, horario
     return aid
 
 
-def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario, estado):
+def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario, estado, foto_url=None):
     ref = _fs().collection("avisos").document(str(aviso_id))
     actual = ref.get().to_dict()
     if not actual:
@@ -367,10 +367,13 @@ def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario,
     publicado_en = actual.get("publicado_en")
     if estado == "activo" and not publicado_en:
         publicado_en = now()
-    ref.update({
+    datos = {
         "titulo": titulo, "descripcion": descripcion, "categoria_slug": categoria_slug,
         "comuna": comuna, "horario": horario, "estado": estado, "publicado_en": publicado_en,
-    })
+    }
+    if foto_url is not None:
+        datos["foto_url"] = foto_url
+    ref.update(datos)
     return True
 
 
