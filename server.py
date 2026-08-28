@@ -1104,12 +1104,12 @@ def admin_avisos_lista(handler, query):
   <td>{t.estado_badge(a['estado'])}</td>
   <td class="mono">{a['vistas_total']}</td>
   <td class="mono">{a['contactos_total']}</td>
-  <td>
+  <td class="admin-actions">
     <a class="btn btn-ghost btn-sm" href="/admin/avisos/{a['id']}">Editar</a>
-    {f'''<form method="post" action="/admin/avisos/{a['id']}/aprobar" style="display:inline">
+    {f'''<form method="post" action="/admin/avisos/{a['id']}/aprobar">
       <button class="btn btn-ok btn-sm">Aprobar</button>
     </form>''' if a['estado'] == 'pendiente' else ''}
-    <form method="post" action="/admin/avisos/{a['id']}/eliminar" style="display:inline"
+    <form method="post" action="/admin/avisos/{a['id']}/eliminar"
       data-confirm="¿Eliminar este aviso? No se puede deshacer.">
       <button class="btn btn-bad btn-sm">Eliminar</button>
     </form>
@@ -1735,8 +1735,8 @@ def admin_usuarios(handler):
 <tr>
   <td>{t.esc(u['usuario'])}</td>
   <td>{t.badge(u['rol'], 'gold' if u['rol'] == 'super_admin' else 'muted')}</td>
-  <td>
-    <form method="post" action="/admin/usuarios/{u['id']}/eliminar" style="display:inline"
+  <td class="admin-actions">
+    <form method="post" action="/admin/usuarios/{u['id']}/eliminar"
       data-confirm="¿Eliminar este usuario admin?">
       <button class="btn btn-bad btn-sm">Eliminar</button>
     </form>

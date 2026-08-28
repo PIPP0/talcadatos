@@ -77,7 +77,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .btn-sm{padding:6px 14px; font-size:.82rem;}
 .btn-block{width:100%; margin-top:10px;}
 .btn-ok{background:var(--teal); color:#fff;}
-.btn-bad{background:var(--brick); color:#fff;}
+.btn-bad{background:var(--brick-soft); color:var(--brick);}
+.btn-bad:hover{background:var(--brick); color:#fff;}
 
 /* ---- hero ---- */
 .hero{
@@ -329,6 +330,8 @@ th,td{text-align:left; padding:10px 14px; font-size:.87rem; border-bottom:1px so
 th{font-family:"IBM Plex Mono"; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); background:var(--paper);}
 tbody tr{transition:background-color .12s ease;}
 tbody tr:hover{background:color-mix(in srgb, var(--accent) 4%, var(--paper-raised));}
+td a{color:var(--ink); font-weight:600;}
+td a:hover{color:var(--accent);}
 tr:last-child td{border-bottom:none;}
 .inline-form{display:inline-flex; gap:6px; align-items:center;}
 .admin-actions{display:flex; gap:6px; flex-wrap:wrap;}
