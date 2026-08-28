@@ -25,6 +25,91 @@ document.addEventListener("click", function (e) {
   share.textContent = "¡Link copiado!";
 });
 
+function animarConteo(span) {
+  var target = parseFloat(span.getAttribute("data-target"));
+  if (!isFinite(target) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    span.textContent = target;
+    return;
+  }
+  var duracion = 900;
+  var inicio = null;
+  function paso(ts) {
+    if (inicio === null) inicio = ts;
+    var p = Math.min(1, (ts - inicio) / duracion);
+    var facil = 1 - Math.pow(1 - p, 3);
+    span.textContent = Math.round(target * facil).toLocaleString("es-CL");
+    if (p < 1) requestAnimationFrame(paso);
+  }
+  requestAnimationFrame(paso);
+}
+
+/* Tooltip interactivo sobre los gráficos SVG del dashboard: al mover el
+   mouse busca el punto más cercano y muestra fecha/valores exactos. */
+function initChartHover() {
+  document.querySelectorAll(".chart-line[data-serie]").forEach(function (wrap) {
+    var serie;
+    try {
+      serie = JSON.parse(wrap.getAttribute("data-serie"));
+    } catch (e) {
+      return;
+    }
+    if (!serie || serie.length < 2) return;
+    var svg = wrap.querySelector("svg");
+    var hoverLine = wrap.querySelector(".chart-hover-line");
+    var tooltip = wrap.querySelector(".chart-tooltip");
+    var ptsV = wrap.querySelectorAll(".chart-pt-vistas");
+    var ptsC = wrap.querySelectorAll(".chart-pt-contactos");
+    var xs = Array.prototype.map.call(ptsV, function (c) { return parseFloat(c.getAttribute("cx")); });
+
+    function indiceCercano(vbX) {
+      var mejor = 0, dist = Infinity;
+      xs.forEach(function (x, i) {
+        var d = Math.abs(x - vbX);
+        if (d < dist) { dist = d; mejor = i; }
+      });
+      return mejor;
+    }
+
+    function mover(e) {
+      var rect = svg.getBoundingClientRect();
+      var vb = svg.viewBox.baseVal;
+      var relX = (e.clientX - rect.left) / rect.width;
+      var vbX = vb.x + relX * vb.width;
+      var i = indiceCercano(vbX);
+
+      hoverLine.setAttribute("x1", xs[i]);
+      hoverLine.setAttribute("x2", xs[i]);
+      hoverLine.classList.add("is-active");
+      ptsV.forEach(function (c, j) { c.classList.toggle("is-active", j === i); });
+      ptsC.forEach(function (c, j) { c.classList.toggle("is-active", j === i); });
+
+      var f = serie[i];
+      tooltip.innerHTML = "<strong>" + f.fecha.slice(5) + "</strong><br>" +
+        "<span class=\"tt-v\">" + f.vistas + " vistas</span><br>" +
+        "<span class=\"tt-c\">" + f.contactos + " contactos</span>";
+      var pxX = (xs[i] - vb.x) / vb.width * rect.width;
+      var clamped = Math.min(Math.max(pxX, 46), rect.width - 46);
+      tooltip.style.left = clamped + "px";
+      tooltip.classList.add("is-active");
+    }
+
+    function salir() {
+      hoverLine.classList.remove("is-active");
+      tooltip.classList.remove("is-active");
+      ptsV.forEach(function (c) { c.classList.remove("is-active"); });
+      ptsC.forEach(function (c) { c.classList.remove("is-active"); });
+    }
+
+    svg.addEventListener("mousemove", mover);
+    svg.addEventListener("mouseleave", salir);
+    svg.addEventListener("touchmove", function (e) {
+      if (e.touches[0]) mover(e.touches[0]);
+    }, { passive: true });
+  });
+}
+
+initChartHover();
+
 function initReveals() {
   var blocks = document.querySelectorAll("[data-reveal]");
   if (!blocks.length) return;
@@ -36,6 +121,7 @@ function initReveals() {
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
       entry.target.classList.add("is-visible");
+      entry.target.querySelectorAll(".count-up").forEach(animarConteo);
       observer.unobserve(entry.target);
     });
   }, { threshold: 0.12 });

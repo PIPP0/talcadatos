@@ -900,22 +900,46 @@ def _svg_serie_chart(serie, w=640, h=190):
         return sum(((pts[i + 1][0] - pts[i][0]) ** 2 + (pts[i + 1][1] - pts[i][1]) ** 2) ** 0.5
                     for i in range(len(pts) - 1)) or 1
 
-    def path_d(pts):
-        return "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    def suave(pts):
+        """Curva Catmull-Rom -> Bezier: mismos puntos, trazo redondeado en vez
+        de segmentos rectos, se lee mucho mejor con series de 7-30 días."""
+        if len(pts) < 3:
+            return "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        d = f"M {pts[0][0]:.1f},{pts[0][1]:.1f} "
+        total = len(pts)
+        for i in range(total - 1):
+            p0 = pts[i - 1] if i > 0 else pts[i]
+            p1, p2 = pts[i], pts[i + 1]
+            p3 = pts[i + 2] if i + 2 < total else p2
+            c1x, c1y = p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6
+            c2x, c2y = p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6
+            d += f"C {c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {p2[0]:.1f},{p2[1]:.1f} "
+        return d.strip()
 
     def area_d(pts):
         base = pad_t + plot_h
-        return f"{path_d(pts)} L {pts[-1][0]:.1f},{base:.1f} L {pts[0][0]:.1f},{base:.1f} Z"
+        return f"{suave(pts)} L {pts[-1][0]:.1f},{base:.1f} L {pts[0][0]:.1f},{base:.1f} Z"
+
+    def puntos_svg(pts, clase):
+        return "".join(
+            f'<circle class="chart-pt {clase}" cx="{x:.1f}" cy="{y:.1f}" r="3.5"></circle>'
+            for x, y in pts
+        )
 
     pv, pc = puntos("vistas"), puntos("contactos")
+    serie_json = t.esc(json.dumps(serie, ensure_ascii=False))
     body = f"""
-<div class="chart-line" data-reveal>
+<div class="chart-line" data-reveal data-serie="{serie_json}">
   <svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" role="img" aria-label="Vistas y contactos por día">
     <path d="{area_d(pv)}" class="chart-area chart-area-vistas"></path>
     <path d="{area_d(pc)}" class="chart-area chart-area-contactos"></path>
-    <path d="{path_d(pv)}" class="chart-line-path chart-line-vistas" vector-effect="non-scaling-stroke" style="--len:{largo(pv):.1f}"></path>
-    <path d="{path_d(pc)}" class="chart-line-path chart-line-contactos" vector-effect="non-scaling-stroke" style="--len:{largo(pc):.1f}"></path>
+    <path d="{suave(pv)}" class="chart-line-path chart-line-vistas" vector-effect="non-scaling-stroke" style="--len:{largo(pv):.1f}"></path>
+    <path d="{suave(pc)}" class="chart-line-path chart-line-contactos" vector-effect="non-scaling-stroke" style="--len:{largo(pc):.1f}"></path>
+    <line class="chart-hover-line" x1="0" y1="{pad_t}" x2="0" y2="{pad_t + plot_h}" vector-effect="non-scaling-stroke"></line>
+    {puntos_svg(pv, "chart-pt-vistas")}
+    {puntos_svg(pc, "chart-pt-contactos")}
   </svg>
+  <div class="chart-tooltip"></div>
   <div class="chart-axis"><span>{t.esc(serie[0]['fecha'][5:])}</span><span>{t.esc(serie[-1]['fecha'][5:])}</span></div>
 </div>
 <div class="chart-legend">
@@ -968,18 +992,19 @@ def admin_dashboard(handler, query):
         )
         return f'<ol class="top-list">{items}</ol>'
 
-    def kpi(icon, kind, valor, label, i):
+    def kpi(icon, kind, valor, label, i, contar=None):
+        valor_html = f'<span class="count-up" data-target="{contar}">0</span>' if contar is not None else str(valor)
         return (f'<div class="kpi kpi-{kind}" data-reveal style="--i:{i}">'
                 f'<span class="kpi-icon">{icon}</span>'
-                f'<div><div class="n">{valor}</div><div class="l">{label}</div></div></div>')
+                f'<div><div class="n">{valor_html}</div><div class="l">{label}</div></div></div>')
 
     kpis = "".join([
-        kpi("◈", "accent", avisos_activos, "avisos activos", 0),
-        kpi("◔", "warn", pendientes, "pendientes de moderación", 1),
-        kpi("↗", "accent", vistas, "vistas en el período", 2),
-        kpi("✓", "ok", contactos, "contactos WhatsApp en el período", 3),
+        kpi("◈", "accent", avisos_activos, "avisos activos", 0, contar=avisos_activos),
+        kpi("◔", "warn", pendientes, "pendientes de moderación", 1, contar=pendientes),
+        kpi("↗", "accent", vistas, "vistas en el período", 2, contar=vistas),
+        kpi("✓", "ok", contactos, "contactos WhatsApp en el período", 3, contar=contactos),
         kpi("⌁", "accent", f"{tasa}%", "tasa de conversión vista → contacto", 4),
-        kpi("⌂", "gold", anunciantes_pagando, "anunciantes en plan pagado", 5),
+        kpi("⌂", "gold", anunciantes_pagando, "anunciantes en plan pagado", 5, contar=anunciantes_pagando),
         kpi("✦", "gold", f"${mrr_fmt} CLP", "ingreso mensual recurrente (MRR)", 6),
     ])
 

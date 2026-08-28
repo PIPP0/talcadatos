@@ -340,13 +340,26 @@ tr:last-child td{border-bottom:none;}
 .mod-actions{display:flex; flex-direction:column; gap:8px; justify-content:center;}
 
 /* ---- gráficos del dashboard ---- */
-.chart-line svg{display:block; width:100%; height:150px;}
+.chart-line{position:relative;}
+.chart-line svg{display:block; width:100%; height:150px; cursor:crosshair;}
 .chart-area{opacity:.14;}
 .chart-area-vistas{fill:var(--accent);}
 .chart-area-contactos{fill:var(--teal);}
 .chart-line-path{fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round;}
 .chart-line-vistas{stroke:var(--accent);}
 .chart-line-contactos{stroke:var(--teal);}
+.chart-pt{fill:var(--paper-raised); stroke-width:2; opacity:0; transition:opacity .1s ease;}
+.chart-pt-vistas{stroke:var(--accent);}
+.chart-pt-contactos{stroke:var(--teal);}
+.chart-pt.is-active{opacity:1;}
+.chart-hover-line{stroke:var(--ink-faint); stroke-width:1.2; stroke-dasharray:3 3; opacity:0; pointer-events:none; transition:opacity .1s ease;}
+.chart-hover-line.is-active{opacity:1;}
+.chart-tooltip{position:absolute; top:2px; z-index:5; padding:8px 11px; border-radius:10px; background:rgba(23,23,23,.94);
+  color:#fff; font-size:.74rem; line-height:1.55; white-space:nowrap; pointer-events:none; opacity:0; transform:translate(-50%,0);
+  transition:opacity .12s ease; box-shadow:var(--shadow);}
+.chart-tooltip.is-active{opacity:1;}
+.chart-tooltip .tt-v{color:#F4A59E;}
+.chart-tooltip .tt-c{color:#7CE0AC;}
 .chart-axis{display:flex; justify-content:space-between; margin-top:4px; font-family:"IBM Plex Mono"; font-size:.66rem; color:var(--ink-faint);}
 .chart-legend{display:flex; gap:16px; margin-top:14px;}
 .chart-legend-item{display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--ink-soft);}
@@ -354,11 +367,14 @@ tr:last-child td{border-bottom:none;}
 .chart-dot-vistas{background:var(--accent);}
 .chart-dot-contactos{background:var(--teal);}
 .chart-bars{display:flex; flex-direction:column; gap:12px;}
-.chart-bar-row{display:grid; grid-template-columns:minmax(120px,.4fr) 1fr auto; align-items:center; gap:12px;}
+.chart-bar-row{display:grid; grid-template-columns:minmax(120px,.4fr) 1fr auto; align-items:center; gap:12px; padding:5px 8px; margin:0 -8px; border-radius:10px; transition:background-color .15s ease;}
+.chart-bar-row:hover{background:var(--paper);}
 .chart-bar-label{font-size:.85rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .chart-bar-track{height:10px; border-radius:999px; background:var(--paper);}
-.chart-bar-fill{height:100%; border-radius:999px;}
-.chart-bar-value{font-size:.82rem; color:var(--ink-faint); min-width:1.4em; text-align:right;}
+.chart-bar-fill{height:100%; border-radius:999px; transition:filter .15s ease;}
+.chart-bar-row:hover .chart-bar-fill{filter:brightness(1.08);}
+.chart-bar-value{font-size:.82rem; color:var(--ink-faint); min-width:1.4em; text-align:right; transition:color .15s ease, transform .15s ease;}
+.chart-bar-row:hover .chart-bar-value{color:var(--ink); transform:scale(1.08);}
 /* estado inicial (antes de entrar en pantalla): se anima al ganar .is-visible */
 [data-reveal].reveal .chart-line-path{stroke-dasharray:var(--len); stroke-dashoffset:var(--len);}
 [data-reveal].reveal .chart-area{opacity:0;}
