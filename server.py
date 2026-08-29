@@ -342,9 +342,18 @@ def home(handler):
 </section>
 
 <section class="trust-strip" data-reveal aria-label="Beneficios de Talcadatos">
-  <div><span class="trust-icon">⌁</span><p><strong>Hecho en Talca</strong><small>Datos y negocios de tu ciudad.</small></p></div>
-  <div><span class="trust-icon">✓</span><p><strong>Contacto directo</strong><small>Habla por WhatsApp, sin intermediarios.</small></p></div>
-  <div><span class="trust-icon">↗</span><p><strong>Oportunidades reales</strong><small>Encuentra o publica lo que hace falta.</small></p></div>
+  <div style="--trust-accent:#E85D5D">
+    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/></svg></span>
+    <p><strong>Hecho en Talca</strong><small>Datos y negocios de tu ciudad.</small></p>
+  </div>
+  <div style="--trust-accent:#0AA39A">
+    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"/></svg></span>
+    <p><strong>Contacto directo</strong><small>Habla por WhatsApp, sin intermediarios.</small></p>
+  </div>
+  <div style="--trust-accent:#2B80D8">
+    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16l6-6 4 4 6-8"/><path d="M15 6h5v5"/></svg></span>
+    <p><strong>Oportunidades reales</strong><small>Encuentra o publica lo que hace falta.</small></p>
+  </div>
 </section>
 
 <section class="section section-featured" data-reveal>
