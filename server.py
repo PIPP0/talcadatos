@@ -2219,6 +2219,19 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0) or 0)
         return self.rfile.read(length).decode("utf-8") if length else ""
 
+    def _descartar_body(self):
+        """Vacia el cuerpo de la peticion sin procesarlo. Necesario antes de
+        responder temprano (ej. archivo demasiado grande): si el proxy de
+        Cloud Run sigue enviando bytes que nadie lee, corta la conexion y
+        el navegador recibe un 502 en vez de la pagina con el error."""
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        restante = length
+        while restante > 0:
+            trozo = self.rfile.read(min(restante, 65536))
+            if not trozo:
+                break
+            restante -= len(trozo)
+
     def _form(self):
         return {k: v for k, v in parse_qsl(self._body())}
 
@@ -2376,6 +2389,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/publicar":
                 if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
+                    self._descartar_body()
                     return publicar_form(self, errores=["La foto es muy pesada (máximo 5 MB)."])
                 form, archivos = self._form_multipart()
                 return publicar_submit(self, form, archivos.get("foto"))
@@ -2395,6 +2409,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not require_role(self, {"super_admin"}):
                     return None
                 if int(self.headers.get("Content-Length", 0) or 0) > 18 * 1024 * 1024:
+                    self._descartar_body()
                     return admin_contenido(self)
                 form, archivos = self._form_multipart()
                 return admin_contenido_submit(self, form, archivos)
@@ -2409,6 +2424,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not require_role(self, {"super_admin"}):
                     return None
                 if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
+                    self._descartar_body()
                     return admin_aviso_editar_form(self, int(segs[2]),
                                                     errores=["La foto es muy pesada (máximo 5 MB)."])
                 form, archivos = self._form_multipart()
