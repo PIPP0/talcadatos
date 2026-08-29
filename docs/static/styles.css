@@ -273,6 +273,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .check-label a{color:var(--accent-deep); text-decoration:underline;}
 .form input, .form textarea, .form select{font-family:inherit; font-size:.95rem; padding:11px 14px; border-radius:12px; border:1px solid var(--line); background:var(--paper); color:var(--ink);}
 .form input:focus, .form textarea:focus, .form select:focus{outline:2px solid var(--accent); outline-offset:1px;}
+.form-actions{display:flex; gap:10px;}
+.form-actions .btn{flex:1;}
 .form-error{color:var(--brick); font-weight:600; font-size:.88rem;}
 .form-errors{background:var(--brick-soft); border-radius:12px; padding:12px 16px; margin:14px 0;}
 .form-errors ul{margin:0; padding-left:18px;}
@@ -558,6 +560,7 @@ tr:last-child td{border-bottom:none;}
   .topbar-inner{padding:13px 20px;}
   .topnav{display:none;}
   .panel{padding:22px;}
+  .form-actions{flex-direction:column-reverse;}
   .category-grid{grid-template-columns:1fr 1fr; gap:10px;}
   .category-card{min-height:72px; grid-template-columns:auto 1fr; gap:9px; padding:11px; font-size:.84rem;}
   .category-arrow{display:none;}

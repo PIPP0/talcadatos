@@ -1189,7 +1189,10 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
       <span class="hint">JPG, PNG o WebP, máx. 5 MB. Deja vacío para no cambiarla.</span>
     </label>
     {foto_quitar}
-    <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>
+    <div class="form-actions">
+      <a class="btn btn-ghost btn-lg" href="/admin/avisos">Cancelar</a>
+      <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>
+    </div>
   </form>
 </div>
 """
