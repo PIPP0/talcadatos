@@ -120,6 +120,34 @@ function ejecutarAjaxDelete(form) {
     });
 }
 
+function ejecutarAjaxForm(form) {
+  var boton = form.querySelector('button[type=submit]');
+  var textoOriginal = boton ? boton.textContent : "";
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "Guardando…";
+  }
+  var datos = new FormData(form);
+  fetch(form.action, { method: form.method || "POST", body: datos, headers: { "X-Requested-With": "fetch" } })
+    .then(function (res) {
+      if (res.ok) {
+        mostrarAviso("Cambios guardados.", "ok");
+        var destino = form.getAttribute("data-ajax-redirect");
+        if (destino) setTimeout(function () { window.location.href = destino; }, 700);
+        else if (boton) { boton.disabled = false; boton.textContent = textoOriginal; }
+        return;
+      }
+      return res.text().then(function (txt) { throw new Error(txt); });
+    })
+    .catch(function (err) {
+      if (boton) {
+        boton.disabled = false;
+        boton.textContent = textoOriginal;
+      }
+      mostrarAviso((err && err.message) || "No se pudo guardar. Intenta de nuevo.", "warn");
+    });
+}
+
 document.addEventListener("submit", function (e) {
   var form = e.target;
   var msg = form.getAttribute("data-confirm");
@@ -133,6 +161,11 @@ document.addEventListener("submit", function (e) {
         form.submit();
       }
     });
+    return;
+  }
+  if (form.matches("[data-ajax-form]")) {
+    e.preventDefault();
+    ejecutarAjaxForm(form);
     return;
   }
   if (!form.matches("[data-ajax-delete]")) return;

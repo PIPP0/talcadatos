@@ -271,7 +271,10 @@ def _es_bot(form):
 
 def require_admin(handler):
     if not is_admin(handler):
-        redirect(handler, "/admin/login", flash="Tu sesión expiró. Inicia sesión de nuevo.")
+        if _es_ajax(handler):
+            _responder_error_ajax(handler, "Tu sesión expiró. Recarga la página e inicia sesión de nuevo.", 401)
+        else:
+            redirect(handler, "/admin/login", flash="Tu sesión expiró. Inicia sesión de nuevo.")
         return False
     return True
 
@@ -279,7 +282,10 @@ def require_admin(handler):
 def require_role(handler, roles):
     admin = current_admin(handler)
     if not admin:
-        redirect(handler, "/admin/login", flash="Tu sesión expiró. Inicia sesión de nuevo.")
+        if _es_ajax(handler):
+            _responder_error_ajax(handler, "Tu sesión expiró. Recarga la página e inicia sesión de nuevo.", 401)
+        else:
+            redirect(handler, "/admin/login", flash="Tu sesión expiró. Inicia sesión de nuevo.")
         return False
     if admin["rol"] not in roles:
         render(handler, t.layout(
@@ -1179,7 +1185,8 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
   <h1>Editar aviso</h1>
   <p class="lede">{t.esc(aviso['negocio_nombre'])} · {t.esc(aviso['whatsapp'])}</p>
   {errores_html}
-  <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data">
+  <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data"
+    data-ajax-form data-ajax-redirect="/admin/avisos">
     <label>Título <input name="titulo" required value="{t.esc(aviso['titulo'])}"></label>
     <label>Descripción <textarea name="descripcion" rows="4" required>{t.esc(aviso['descripcion'])}</textarea></label>
     <label>Categoría <select name="categoria_id">{cat_options}</select></label>
@@ -1202,17 +1209,33 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     render(handler, t.layout("Editar aviso", body, active="avisos", admin=True))
 
 
+def _responder_error_ajax(handler, mensaje, status=422):
+    data = mensaje.encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-Type", "text/plain; charset=utf-8")
+    handler.send_header("Content-Length", str(len(data)))
+    handler.end_headers()
+    handler.wfile.write(data)
+
+
 def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
+    ajax = _es_ajax(handler)
     actual = db.get_aviso(aviso_id)
     if not actual:
+        if ajax:
+            return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
         return not_found(handler)
     archivo_foto = (archivos or {}).get("foto")
     foto_url = None
     if archivo_foto:
         if archivo_foto["content_type"] not in _EXT_POR_TIPO:
+            if ajax:
+                return _responder_error_ajax(handler, "La foto debe ser JPG, PNG o WebP.")
             return admin_aviso_editar_form(handler, aviso_id,
                                             errores=["La foto debe ser JPG, PNG o WebP."])
         if len(archivo_foto["data"]) > 5 * 1024 * 1024:
+            if ajax:
+                return _responder_error_ajax(handler, "La foto es muy pesada (máximo 5 MB).")
             return admin_aviso_editar_form(handler, aviso_id,
                                             errores=["La foto es muy pesada (máximo 5 MB)."])
         ext = _EXT_POR_TIPO[archivo_foto["content_type"]]
@@ -1224,11 +1247,17 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
         aviso_id, form.get("titulo", ""), form.get("descripcion", ""), form.get("categoria_id"),
         form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url)
     if not ok:
+        if ajax:
+            return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
         return not_found(handler)
     _og_cache_evict(aviso_id)
     auditar(handler, "editar_aviso", f"aviso {aviso_id}")
-    redirect(handler, "/admin/avisos",
-             flash=mensaje_sincronizacion("Cambios guardados.", sincronizar_sitio_estatico()))
+    actualizado = sincronizar_sitio_estatico()
+    if ajax:
+        handler.send_response(204)
+        handler.end_headers()
+        return
+    redirect(handler, "/admin/avisos", flash=mensaje_sincronizacion("Cambios guardados.", actualizado))
 
 
 def admin_aviso_aprobar(handler, aviso_id):
