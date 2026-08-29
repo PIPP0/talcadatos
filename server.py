@@ -271,7 +271,7 @@ def _es_bot(form):
 
 def require_admin(handler):
     if not is_admin(handler):
-        redirect(handler, "/admin/login")
+        redirect(handler, "/admin/login", flash="Tu sesión expiró. Inicia sesión de nuevo.")
         return False
     return True
 
@@ -279,7 +279,7 @@ def require_admin(handler):
 def require_role(handler, roles):
     admin = current_admin(handler)
     if not admin:
-        redirect(handler, "/admin/login")
+        redirect(handler, "/admin/login", flash="Tu sesión expiró. Inicia sesión de nuevo.")
         return False
     if admin["rol"] not in roles:
         render(handler, t.layout(
@@ -853,6 +853,7 @@ def api_evento(handler, body):
 
 def admin_login_form(handler, error=False):
     msg = '<p class="form-error">Usuario o contraseña incorrectos.</p>' if error else ""
+    flash = get_flash(handler)
     body = f"""
 <div class="panel panel-narrow">
   <h1>Ingreso administrador</h1>
@@ -865,7 +866,7 @@ def admin_login_form(handler, error=False):
   <p class="hint">Usa las credenciales entregadas por el administrador del sitio.</p>
 </div>
 """
-    render(handler, t.layout("Ingreso admin", body))
+    render(handler, t.layout("Ingreso admin", body, flash=flash), clear_flash=bool(flash))
 
 
 def admin_login_submit(handler, form):
@@ -2251,7 +2252,6 @@ class Handler(BaseHTTPRequestHandler):
                     archivos[key] = {"filename": filename, "content_type": item.type, "data": item.value}
             else:
                 form[key] = item.value
-        print("DEBUG_MULTIPART_MARK", list(fs.keys()), list(archivos.keys()), flush=True)
         return form, archivos
 
     def end_headers(self):
