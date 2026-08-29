@@ -337,7 +337,16 @@ def get_aviso(aviso_id):
     doc = _fs().collection("avisos").document(str(aviso_id)).get()
     if not doc.exists:
         return None
-    filas = _denormalizar_avisos({doc.id: doc.to_dict()})
+    a = doc.to_dict()
+    negocio = get_negocio(a.get("negocio_id")) or {}
+    categoria = get_categoria(a.get("categoria_slug")) or {}
+    plan = get_plan(negocio.get("plan_id", "gratis")) or {}
+    filas = _denormalizar_avisos(
+        {doc.id: a},
+        negocios={a.get("negocio_id"): negocio},
+        categorias={a.get("categoria_slug"): categoria},
+        planes={negocio.get("plan_id", "gratis"): plan},
+    )
     return filas[0] if filas else None
 
 

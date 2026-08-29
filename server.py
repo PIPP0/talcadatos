@@ -61,18 +61,20 @@ def auditar(handler, accion, detalle=""):
 def sincronizar_sitio_estatico():
     """Publica en docs/ los datos que se cambiaron en el admin.
 
-    La vista dinámica lee Firestore en cada petición. La estática es una copia
-    para Pages, por eso se regenera después de cada cambio que pueda verla.
-    Un fallo de exportación no revierte el cambio ya guardado en Firestore.
+    La vista dinámica (talcadatos.cl) lee Firestore en cada petición; docs/
+    es solo el espejo para GitHub Pages, así que regenerarlo no debe demorar
+    la respuesta al administrador -- corre en un hilo aparte. Un fallo de
+    exportación no revierte el cambio ya guardado en Firestore.
     """
-    with STATIC_EXPORT_LOCK:
-        try:
-            import export_static
-            export_static.exportar()
-            return True
-        except Exception as exc:
-            sys.stderr.write(f"No se pudo sincronizar la versión estática: {exc!r}\n")
-            return False
+    def _tarea():
+        with STATIC_EXPORT_LOCK:
+            try:
+                import export_static
+                export_static.exportar()
+            except Exception as exc:
+                sys.stderr.write(f"No se pudo sincronizar la versión estática: {exc!r}\n")
+    threading.Thread(target=_tarea, daemon=True).start()
+    return True
 
 
 def mensaje_sincronizacion(mensaje, actualizado):
