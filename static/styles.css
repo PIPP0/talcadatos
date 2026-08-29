@@ -125,7 +125,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .pill:hover, .pill.active{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
 
 /* Señales de confianza: se leen en un vistazo antes de empezar a explorar. */
-.trust-strip{display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin:22px 0 8px; overflow:hidden; border:1px solid var(--line); border-radius:20px; background:var(--paper-raised); box-shadow:0 1px 3px rgba(23,23,23,.05);}
+.trust-strip{display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin:22px 0 28px; overflow:hidden; border:1px solid var(--line); border-radius:20px; background:var(--paper-raised); box-shadow:0 1px 3px rgba(23,23,23,.05);}
 .trust-strip>div{display:flex; align-items:center; gap:14px; min-height:88px; padding:18px 22px; border-right:1px solid var(--line); transition:background-color .2s ease;}
 .trust-strip>div:hover{background:color-mix(in srgb, var(--trust-accent) 6%, var(--paper-raised));}
 .trust-strip>div:last-child{border-right:0;}
