@@ -307,7 +307,6 @@ def home(handler):
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
     recientes = db.get_avisos(estado="activo", orden="recientes", limit=8)
-    categorias = db.get_categorias()
     tendencias = db.get_terminos_mas_buscados(4)
     if not tendencias:
         tendencias = [
@@ -354,14 +353,6 @@ def home(handler):
     <a href="/avisos">Ver todos →</a>
   </div>
   {t.carousel(destacados)}
-</section>
-
-<section class="section" data-reveal>
-  <div class="section-head">
-    <div><span class="eyebrow">{t.esc(sitio['rubros_eyebrow'])}</span><h2>{t.esc(sitio['rubros_titulo'])}</h2></div>
-    <a href="/avisos">Ver todos →</a>
-  </div>
-  {t.categorias_grid(categorias)}
 </section>
 
 <section class="section local-now" data-reveal>
