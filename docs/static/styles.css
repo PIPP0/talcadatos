@@ -278,7 +278,24 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .form-errors ul{margin:0; padding-left:18px;}
 .form-errors li{color:var(--brick); font-size:.88rem; font-weight:600;}
 
-.flash{background:var(--teal-soft); color:var(--teal); border-radius:12px; padding:11px 16px; margin:24px 0 -8px; font-weight:600; font-size:.9rem;}
+.flash{display:none;}
+
+/* ---- modal de confirmacion / aviso ---- */
+.app-modal-backdrop{position:fixed; inset:0; z-index:100; background:rgba(23,23,23,.45); backdrop-filter:blur(2px);
+  display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .18s ease;}
+.app-modal-backdrop.is-open{opacity:1; pointer-events:auto;}
+.app-modal{background:var(--paper-raised); border-radius:20px; padding:30px 28px; max-width:360px; width:100%; text-align:center;
+  box-shadow:var(--shadow); transform:translateY(10px) scale(.97); transition:transform .18s cubic-bezier(.2,.8,.2,1);}
+.app-modal-backdrop.is-open .app-modal{transform:translateY(0) scale(1);}
+.app-modal-icon{width:52px; height:52px; margin:0 auto 16px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:1.5rem; font-weight:800;}
+.app-modal-icon.ok{background:var(--teal-soft); color:var(--teal);}
+.app-modal-icon.warn{background:var(--brick-soft); color:var(--brick);}
+.app-modal-text{font-size:.98rem; font-weight:600; color:var(--ink); margin:0;}
+.app-modal-actions{display:flex; gap:10px; margin-top:22px;}
+.app-modal-actions .btn{flex:1;}
+.app-modal-actions.single{justify-content:center;}
+.app-modal-actions.single .btn{flex:none; min-width:120px;}
 
 /* ---- badges ---- */
 .badge{display:inline-flex; align-items:center; font-family:"IBM Plex Mono"; font-size:.66rem; text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:6px; font-weight:600;}

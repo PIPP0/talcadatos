@@ -13,21 +13,79 @@ document.addEventListener("change", function (e) {
   if (e.target.matches("select[data-autosubmit]")) e.target.form.submit();
 });
 
-document.addEventListener("submit", function (e) {
-  var form = e.target;
-  var msg = form.getAttribute("data-confirm");
-  if (msg && !window.confirm(msg)) {
-    e.preventDefault();
-    return;
-  }
-  if (!form.matches("[data-ajax-delete]")) return;
-  e.preventDefault();
+/* ---- modal de confirmacion / aviso, reemplaza confirm() nativo y el
+   banner .flash silencioso por un popup que la persona no se pierde ---- */
+var appModalEl = null;
+function getAppModal() {
+  if (appModalEl) return appModalEl;
+  var back = document.createElement("div");
+  back.className = "app-modal-backdrop";
+  back.innerHTML =
+    '<div class="app-modal" role="alertdialog" aria-modal="true">' +
+    '<div class="app-modal-icon"></div>' +
+    '<p class="app-modal-text"></p>' +
+    '<div class="app-modal-actions"></div>' +
+    "</div>";
+  document.body.appendChild(back);
+  appModalEl = back;
+  return back;
+}
+
+function mostrarAviso(mensaje, tipo) {
+  var modal = getAppModal();
+  var icono = modal.querySelector(".app-modal-icon");
+  icono.className = "app-modal-icon " + (tipo || "ok");
+  icono.textContent = tipo === "warn" ? "!" : "✓";
+  modal.querySelector(".app-modal-text").textContent = mensaje;
+  var acciones = modal.querySelector(".app-modal-actions");
+  acciones.className = "app-modal-actions single";
+  acciones.innerHTML = '<button class="btn btn-ghost btn-sm" type="button">Aceptar</button>';
+  modal.classList.add("is-open");
+  function cerrar() { modal.classList.remove("is-open"); }
+  acciones.querySelector("button").onclick = cerrar;
+  modal.onclick = function (e) { if (e.target === modal) cerrar(); };
+  clearTimeout(modal._timer);
+  modal._timer = setTimeout(cerrar, 3200);
+}
+
+function pedirConfirmacion(mensaje) {
+  return new Promise(function (resolve) {
+    var modal = getAppModal();
+    clearTimeout(modal._timer);
+    var icono = modal.querySelector(".app-modal-icon");
+    icono.className = "app-modal-icon warn";
+    icono.textContent = "!";
+    modal.querySelector(".app-modal-text").textContent = mensaje;
+    var acciones = modal.querySelector(".app-modal-actions");
+    acciones.className = "app-modal-actions";
+    acciones.innerHTML =
+      '<button class="btn btn-ghost" type="button" data-r="0">Cancelar</button>' +
+      '<button class="btn btn-bad" type="button" data-r="1">Eliminar</button>';
+    function resolver(valor) {
+      modal.classList.remove("is-open");
+      acciones.removeEventListener("click", onClick);
+      modal.onclick = null;
+      resolve(valor);
+    }
+    function onClick(e) {
+      var btn = e.target.closest("button[data-r]");
+      if (!btn) return;
+      resolver(btn.getAttribute("data-r") === "1");
+    }
+    acciones.addEventListener("click", onClick);
+    modal.onclick = function (e) { if (e.target === modal) resolver(false); };
+    modal.classList.add("is-open");
+  });
+}
+
+function ejecutarAjaxDelete(form) {
   var fila = form.closest("tr");
   var boton = form.querySelector("button");
   if (boton) boton.disabled = true;
   fetch(form.action, { method: "POST", headers: { "X-Requested-With": "fetch" } })
     .then(function (res) {
       if (res.ok) {
+        mostrarAviso("Eliminado correctamente.", "ok");
         if (fila) {
           fila.style.transition = "opacity .25s ease, transform .25s ease";
           fila.style.opacity = "0";
@@ -40,8 +98,34 @@ document.addEventListener("submit", function (e) {
     })
     .catch(function (err) {
       if (boton) boton.disabled = false;
-      window.alert((err && err.message) || "No se pudo eliminar. Intenta de nuevo.");
+      mostrarAviso((err && err.message) || "No se pudo eliminar. Intenta de nuevo.", "warn");
     });
+}
+
+document.addEventListener("submit", function (e) {
+  var form = e.target;
+  var msg = form.getAttribute("data-confirm");
+  if (msg) {
+    e.preventDefault();
+    pedirConfirmacion(msg).then(function (ok) {
+      if (!ok) return;
+      if (form.matches("[data-ajax-delete]")) {
+        ejecutarAjaxDelete(form);
+      } else {
+        form.submit();
+      }
+    });
+    return;
+  }
+  if (!form.matches("[data-ajax-delete]")) return;
+  e.preventDefault();
+  ejecutarAjaxDelete(form);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  var flash = document.querySelector(".flash");
+  var texto = flash ? flash.textContent.trim() : "";
+  if (texto) mostrarAviso(texto, "ok");
 });
 
 document.addEventListener("click", function (e) {
