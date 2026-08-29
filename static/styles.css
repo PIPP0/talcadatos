@@ -421,7 +421,13 @@ tr:last-child td{border-bottom:none;}
 .category-card{position:relative; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; min-height:78px; padding:14px; color:var(--ink); background:var(--paper-raised); border:1px solid var(--line); border-radius:16px; font-weight:700; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; overflow:hidden;}
 .category-card::before{content:""; position:absolute; inset:0 auto 0 0; width:4px; background:var(--category-accent);}
 .category-card:hover{transform:translateY(-3px); color:var(--ink); border-color:var(--category-accent); box-shadow:var(--shadow);}
-.category-icon{display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:12px; background:color-mix(in srgb, var(--category-accent) 14%, white); font-size:1.38rem;}
+.category-icon{display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:12px; background:color-mix(in srgb, var(--category-accent) 14%, white); font-size:1.38rem; color:var(--category-accent);}
+.category-icon svg{width:22px; height:22px; transition:transform .3s cubic-bezier(.2,.8,.2,1);}
+.category-icon-emoji{font-size:1.38rem;}
+.category-card:hover .category-icon svg{transform:scale(1.15) rotate(-8deg);}
+.category-card[data-reveal].reveal{opacity:0;}
+.category-card[data-reveal].reveal.is-visible{animation:category-in .45s ease calc(var(--i,0) * 60ms) both;}
+@keyframes category-in{from{opacity:0;} to{opacity:1;}}
 .category-arrow{color:var(--ink-faint); font-size:1.15rem;}
 .local-now-grid{display:grid; grid-template-columns:1.25fr .9fr; gap:16px;}
 .today-card{padding:26px; border-radius:22px; color:#fff; background:linear-gradient(135deg, #383334 0%, #242122 100%);}
@@ -566,6 +572,7 @@ tr:last-child td{border-bottom:none;}
   .category-card{min-height:72px; grid-template-columns:auto 1fr; gap:9px; padding:11px; font-size:.84rem;}
   .category-arrow{display:none;}
   .category-icon{width:36px; height:36px; font-size:1.2rem;}
+  .category-icon svg{width:19px; height:19px;}
   .local-now-grid,.trend-section,.need-page,.local-story,.business-cta{grid-template-columns:1fr;}
   .today-links{grid-template-columns:1fr;}
   .trend-section{gap:20px; padding:24px;}

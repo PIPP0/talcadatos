@@ -74,7 +74,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260829-3">
+<link rel="stylesheet" href="/static/styles.css?v=20260829-4">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -252,6 +252,28 @@ def categorias_pills(categorias, activa_slug=None):
     return '<div class="pills">' + "".join(items) + "</div>"
 
 
+_ICONOS_RUBRO_PATHS = {
+    "aluminios": '<path d="M5 21h6"/><path d="M7 21V4"/><path d="M7 5h11"/><path d="M15 5v4"/><path d="M18 5l-3 4"/>',
+    "clases": '<path d="M4 5c3-1.5 6-1.5 8 0v14c-2-1.5-5-1.5-8 0V5Z"/><path d="M20 5c-3-1.5-6-1.5-8 0v14c2-1.5 5-1.5 8 0V5Z"/>',
+    "contabilidad": '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M3 20h18"/>',
+    "electricidad": '<path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z"/>',
+    "gasfiteria": '<path d="M20 5a3.5 3.5 0 0 1-4.6 3.3L7 16.7a1.8 1.8 0 1 1-2.5-2.5l8.4-8.4A3.5 3.5 0 1 1 20 5Z"/>',
+    "jardineria": '<path d="M4 20c8 0 14-6 14-14 0-1 0-2-.3-3C10 4 4 10 4 18c0 .7 0 1.4.1 2Z"/><path d="M4 20 15 9"/>',
+    "panaderia": '<path d="M4 12c0-4.5 3.5-8 8-8s8 3.5 8 8-2 8-8 8-8-3.5-8-8Z"/><path d="M8 9l2 2M12 8l2 3M16 9l2 2"/>',
+    "belleza": '<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><path d="M8 7.5 20 19M8 16.5 20 5"/>',
+    "tecnologia": '<rect x="4" y="5" width="16" height="10" rx="1.2"/><path d="M2 19h20"/>',
+    "vidrieria": '<rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M12 4v16M4 12h16"/>',
+}
+
+
+def icono_rubro_svg(slug, emoji_fallback="📌"):
+    paths = _ICONOS_RUBRO_PATHS.get(slug)
+    if not paths:
+        return f'<span class="category-icon-emoji">{emoji_fallback}</span>'
+    return (f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{paths}</svg>')
+
+
 def categorias_grid(categorias):
     """Atajos visuales para descubrir rubros sin depender del buscador."""
     colores = ["#E85D5D", "#2B80D8", "#0AA39A", "#7D5CD6", "#D9921B", "#28A968"]
@@ -259,9 +281,9 @@ def categorias_grid(categorias):
     for i, c in enumerate(categorias):
         color = colores[i % len(colores)]
         items.append(
-            f'<a class="category-card" style="--category-accent:{color}" '
+            f'<a class="category-card" style="--category-accent:{color}; --i:{i}" data-reveal '
             f'href="/avisos?categoria={quote(c["slug"])}">'
-            f'<span class="category-icon">{c["icono"]}</span>'
+            f'<span class="category-icon">{icono_rubro_svg(c["slug"], c["icono"])}</span>'
             f'<span>{esc(c["nombre"])}</span><span class="category-arrow" aria-hidden="true">→</span></a>'
         )
     return '<div class="category-grid">' + "".join(items) + "</div>"
