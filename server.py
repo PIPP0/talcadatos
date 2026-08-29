@@ -342,7 +342,7 @@ def home(handler):
 </section>
 
 <section class="trust-strip" data-reveal aria-label="Beneficios de Talcadatos">
-  <div style="--trust-accent:#E85D5D">
+  <div style="--trust-accent:#1DA851">
     <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/></svg></span>
     <p><strong>Hecho en Talca</strong><small>Datos y negocios de tu ciudad.</small></p>
   </div>
