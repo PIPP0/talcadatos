@@ -359,7 +359,7 @@ def home(handler):
 <section class="section" data-reveal>
   <div class="section-head">
     <div><span class="eyebrow">{t.esc(sitio['rubros_eyebrow'])}</span><h2>{t.esc(sitio['rubros_titulo'])}</h2></div>
-    <a href="/explorar">Ver todos →</a>
+    <a href="/avisos">Ver todos →</a>
   </div>
   {t.categorias_grid(categorias)}
 </section>
