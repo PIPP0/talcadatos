@@ -373,6 +373,14 @@ def home(handler):
   </div>
 </section>
 
+<section class="section" data-reveal>
+  <div class="section-head">
+    <div><span class="eyebrow">Nuevos en Talcadatos</span><h2>Recién publicados</h2></div>
+    <a href="/avisos">Ver todos →</a>
+  </div>
+  {t.cards_grid(recientes)}
+</section>
+
 <section class="section local-story" data-reveal>
   <figure class="local-story-visual">
     <img src="{t.esc(sitio['explorar_imagen_url'])}" alt="Emprendedores atendiendo una feria de comercio local" loading="lazy">
@@ -387,14 +395,6 @@ def home(handler):
     </div>
     <a class="btn btn-ghost" href="/explorar">Explorar negocios locales <span aria-hidden="true">→</span></a>
   </div>
-</section>
-
-<section class="section" data-reveal>
-  <div class="section-head">
-    <div><span class="eyebrow">Nuevos en Talcadatos</span><h2>Recién publicados</h2></div>
-    <a href="/avisos">Ver todos →</a>
-  </div>
-  {t.cards_grid(recientes)}
 </section>
 
 <section class="section trend-section" data-reveal>
