@@ -798,6 +798,8 @@ def publicar_submit(handler, form, foto=None):
     errores = _validar_publicar(form, categoria_ids)
     if foto and foto["content_type"] not in _EXT_POR_TIPO:
         errores.append("La foto debe ser JPG, PNG o WebP.")
+    elif foto and len(foto["data"]) > 5 * 1024 * 1024:
+        errores.append("La foto es muy pesada (máximo 5 MB).")
     if errores:
         return publicar_form(handler, form=form, errores=errores)
 
@@ -1209,6 +1211,9 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
         if archivo_foto["content_type"] not in _EXT_POR_TIPO:
             return admin_aviso_editar_form(handler, aviso_id,
                                             errores=["La foto debe ser JPG, PNG o WebP."])
+        if len(archivo_foto["data"]) > 5 * 1024 * 1024:
+            return admin_aviso_editar_form(handler, aviso_id,
+                                            errores=["La foto es muy pesada (máximo 5 MB)."])
         ext = _EXT_POR_TIPO[archivo_foto["content_type"]]
         foto_url = db.subir_imagen(archivo_foto["data"], archivo_foto["content_type"], ext, carpeta="avisos")
     elif form.get("quitar_foto"):
@@ -1656,6 +1661,9 @@ def admin_contenido_submit(handler, form, archivos=None):
             continue
         if archivo["content_type"] not in _EXT_POR_TIPO:
             errores_imagen.append(f"La imagen de \"{campo}\" debe ser JPG, PNG o WebP.")
+            continue
+        if len(archivo["data"]) > 5 * 1024 * 1024:
+            errores_imagen.append(f"La imagen de \"{campo}\" es muy pesada (máximo 5 MB).")
             continue
         ext = _EXT_POR_TIPO[archivo["content_type"]]
         form[campo] = db.subir_imagen(archivo["data"], archivo["content_type"], ext, carpeta="sitio")
@@ -2219,15 +2227,6 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0) or 0)
         return self.rfile.read(length).decode("utf-8") if length else ""
 
-    def _descartar_body(self):
-        """Marca la conexion para cerrarse despues de responder, en vez de
-        reusarse (keep-alive). Se usa antes de responder temprano sin leer
-        el cuerpo completo (ej. archivo demasiado grande): si se intenta
-        reusar la conexion sin haber leido lo que el cliente todavia esta
-        enviando, el proxy de Cloud Run la ve inconsistente y el navegador
-        recibe un 502/503 en vez de la pagina con el error."""
-        self.close_connection = True
-
     def _form(self):
         return {k: v for k, v in parse_qsl(self._body())}
 
@@ -2384,9 +2383,6 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             if path == "/publicar":
-                if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
-                    self._descartar_body()
-                    return publicar_form(self, errores=["La foto es muy pesada (máximo 5 MB)."])
                 form, archivos = self._form_multipart()
                 return publicar_submit(self, form, archivos.get("foto"))
             if path == "/necesito":
@@ -2404,9 +2400,6 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/admin/contenido":
                 if not require_role(self, {"super_admin"}):
                     return None
-                if int(self.headers.get("Content-Length", 0) or 0) > 18 * 1024 * 1024:
-                    self._descartar_body()
-                    return admin_contenido(self)
                 form, archivos = self._form_multipart()
                 return admin_contenido_submit(self, form, archivos)
             if path == "/admin/cuenta":
@@ -2419,10 +2412,6 @@ class Handler(BaseHTTPRequestHandler):
             if len(segs) == 3 and segs[0] == "admin" and segs[1] == "avisos" and segs[2].isdigit():
                 if not require_role(self, {"super_admin"}):
                     return None
-                if int(self.headers.get("Content-Length", 0) or 0) > 6 * 1024 * 1024:
-                    self._descartar_body()
-                    return admin_aviso_editar_form(self, int(segs[2]),
-                                                    errores=["La foto es muy pesada (máximo 5 MB)."])
                 form, archivos = self._form_multipart()
                 return admin_aviso_editar_submit(self, int(segs[2]), form, archivos)
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
