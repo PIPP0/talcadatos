@@ -192,7 +192,6 @@ def aviso_card(aviso, termino_busqueda=None, show_badge=True):
     badge_html = plan_badge(aviso["plan_nombre"]) if destacado and show_badge else ""
     verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
-    wa = whatsapp_url(aviso["whatsapp"], aviso["negocio_nombre"], aviso["titulo"])
     fav_attrs = (
         f'data-fav-id="{aviso["id"]}" data-titulo="{esc(aviso["titulo"])}" '
         f'data-negocio="{esc(aviso["negocio_nombre"])}" data-comuna="{esc(aviso["comuna"])}" '
@@ -218,9 +217,8 @@ def aviso_card(aviso, termino_busqueda=None, show_badge=True):
       <span>{esc(aviso['comuna'])}</span>
     </div>
     <div class="card-cat mono">{aviso['icono']} {esc(aviso['categoria_nombre'])}</div>
-    <a class="btn btn-whatsapp btn-block" href="{wa}" target="_blank" rel="noopener"
-       data-aviso-id="{aviso['id']}" data-wa-click="1">
-      Contactar por WhatsApp
+    <a class="btn btn-primary btn-block" href="/avisos/{aviso['id']}">
+      Ver detalle
     </a>
   </div>
 </article>"""
