@@ -13,6 +13,24 @@ document.addEventListener("change", function (e) {
   if (e.target.matches("select[data-autosubmit]")) e.target.form.submit();
 });
 
+/* Vista previa instantanea al elegir una foto nueva en un campo de imagen,
+   antes solo se veia la foto vieja hasta guardar. */
+document.addEventListener("change", function (e) {
+  if (!e.target.matches(".campo-imagen input[type=file]")) return;
+  var input = e.target;
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var campo = input.closest(".campo-imagen");
+  var img = campo.querySelector(".campo-imagen-preview");
+  if (!img) {
+    img = document.createElement("img");
+    img.className = "campo-imagen-preview";
+    img.alt = "";
+    campo.insertBefore(img, input);
+  }
+  img.src = URL.createObjectURL(file);
+});
+
 /* ---- modal de confirmacion / aviso, reemplaza confirm() nativo y el
    banner .flash silencioso por un popup que la persona no se pierde ---- */
 var appModalEl = null;
