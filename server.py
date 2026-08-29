@@ -2251,6 +2251,7 @@ class Handler(BaseHTTPRequestHandler):
                     archivos[key] = {"filename": filename, "content_type": item.type, "data": item.value}
             else:
                 form[key] = item.value
+        sys.stderr.write(f"DEBUG_MULTIPART keys={list(fs.keys())!r} archivos={ {k: (v['filename'], len(v['data'])) for k, v in archivos.items()} !r} content_length={self.headers.get('Content-Length')!r}\n")
         return form, archivos
 
     def end_headers(self):
