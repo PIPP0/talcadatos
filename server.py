@@ -2220,17 +2220,13 @@ class Handler(BaseHTTPRequestHandler):
         return self.rfile.read(length).decode("utf-8") if length else ""
 
     def _descartar_body(self):
-        """Vacia el cuerpo de la peticion sin procesarlo. Necesario antes de
-        responder temprano (ej. archivo demasiado grande): si el proxy de
-        Cloud Run sigue enviando bytes que nadie lee, corta la conexion y
-        el navegador recibe un 502 en vez de la pagina con el error."""
-        length = int(self.headers.get("Content-Length", 0) or 0)
-        restante = length
-        while restante > 0:
-            trozo = self.rfile.read(min(restante, 65536))
-            if not trozo:
-                break
-            restante -= len(trozo)
+        """Marca la conexion para cerrarse despues de responder, en vez de
+        reusarse (keep-alive). Se usa antes de responder temprano sin leer
+        el cuerpo completo (ej. archivo demasiado grande): si se intenta
+        reusar la conexion sin haber leido lo que el cliente todavia esta
+        enviando, el proxy de Cloud Run la ve inconsistente y el navegador
+        recibe un 502/503 en vez de la pagina con el error."""
+        self.close_connection = True
 
     def _form(self):
         return {k: v for k, v in parse_qsl(self._body())}
