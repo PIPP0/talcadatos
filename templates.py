@@ -217,7 +217,7 @@ def aviso_card(aviso, termino_busqueda=None, show_badge=True):
       <span>{esc(aviso['comuna'])}</span>
     </div>
     <div class="card-cat mono">{aviso['icono']} {esc(aviso['categoria_nombre'])}</div>
-    <a class="btn btn-primary btn-block" href="/avisos/{aviso['id']}">
+    <a class="btn btn-whatsapp btn-block" href="/avisos/{aviso['id']}">
       Ver detalle
     </a>
   </div>
