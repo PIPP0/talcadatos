@@ -361,7 +361,7 @@ def home(handler):
     <div><span class="eyebrow">{t.esc(sitio['destacados_eyebrow'])}</span><h2>{t.esc(sitio['destacados_titulo'])}</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
-  {t.carousel(destacados)}
+  {t.carousel(destacados, badge_mode="plan")}
 </section>
 
 <section class="section local-now" data-reveal>
@@ -387,7 +387,7 @@ def home(handler):
     <div><span class="eyebrow">Nuevos en Talcadatos</span><h2>Recién publicados</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
-  {t.cards_grid(recientes)}
+  {t.cards_grid(recientes, badge_mode="nuevo")}
 </section>
 
 <section class="section local-story" data-reveal>

@@ -4,6 +4,7 @@ Sin framework de templates (no hay Node/pip disponible de forma confiable
 en este entorno): son funciones Python que arman strings HTML. Mantener
 cada funcion pequena y componer con `layout()`.
 """
+import datetime
 from urllib.parse import quote
 
 
@@ -181,15 +182,26 @@ def plan_badge(plan_nombre):
     return badge(plan_nombre, kinds.get(plan_nombre, "muted"))
 
 
+def es_nuevo(aviso, dias=3):
+    creado = aviso.get("creado_en") or ""
+    if not creado:
+        return False
+    cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=dias)).isoformat()
+    return creado >= cutoff
+
+
 def whatsapp_url(whatsapp, negocio_nombre, titulo):
     numero = "".join(c for c in whatsapp if c.isdigit())
     mensaje = f"Hola {negocio_nombre}, vi tu aviso \"{titulo}\" en Talcadatos y quiero consultar por..."
     return f"https://wa.me/{numero}?text={quote(mensaje)}"
 
 
-def aviso_card(aviso, termino_busqueda=None, show_badge=True):
-    destacado = aviso["plan_nombre"] in ("Destacado", "Premium")
-    badge_html = plan_badge(aviso["plan_nombre"]) if destacado and show_badge else ""
+def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
+    badge_html = ""
+    if badge_mode == "plan" and aviso["plan_nombre"] in ("Destacado", "Premium"):
+        badge_html = plan_badge(aviso["plan_nombre"])
+    elif badge_mode == "nuevo" and es_nuevo(aviso):
+        badge_html = badge("Nuevo", "ok")
     verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
     fav_attrs = (
@@ -224,16 +236,16 @@ def aviso_card(aviso, termino_busqueda=None, show_badge=True):
 </article>"""
 
 
-def cards_grid(avisos, termino_busqueda=None, vacio_msg="No hay avisos que coincidan con tu búsqueda."):
+def cards_grid(avisos, termino_busqueda=None, vacio_msg="No hay avisos que coincidan con tu búsqueda.", badge_mode=None):
     if not avisos:
         return f'<p class="empty-state">{esc(vacio_msg)}</p>'
-    return '<div class="grid">' + "".join(aviso_card(a, termino_busqueda) for a in avisos) + "</div>"
+    return '<div class="grid">' + "".join(aviso_card(a, termino_busqueda, badge_mode=badge_mode) for a in avisos) + "</div>"
 
 
-def carousel(avisos, vacio_msg="Todavía no hay avisos destacados. ¡Sé el primero en publicar tu negocio!"):
+def carousel(avisos, vacio_msg="Todavía no hay avisos destacados. ¡Sé el primero en publicar tu negocio!", badge_mode=None):
     if not avisos:
         return f'<p class="empty-state">{esc(vacio_msg)}</p>'
-    items = "".join(aviso_card(a, show_badge=False) for a in avisos)
+    items = "".join(aviso_card(a, badge_mode=badge_mode) for a in avisos)
     return f"""
 <div class="carousel">
   <button class="carousel-arrow carousel-prev" type="button" aria-label="Ver anteriores">‹</button>
