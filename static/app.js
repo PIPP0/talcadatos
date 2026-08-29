@@ -57,10 +57,9 @@ function mostrarAviso(mensaje, tipo) {
   modal.querySelector(".app-modal-text").textContent = mensaje;
   var acciones = modal.querySelector(".app-modal-actions");
   acciones.className = "app-modal-actions single";
-  acciones.innerHTML = '<button class="btn btn-ghost btn-sm" type="button">Aceptar</button>';
+  acciones.innerHTML = "";
   modal.classList.add("is-open");
   function cerrar() { modal.classList.remove("is-open"); }
-  acciones.querySelector("button").onclick = cerrar;
   modal.onclick = function (e) { if (e.target === modal) cerrar(); };
   clearTimeout(modal._timer);
   modal._timer = setTimeout(cerrar, 3200);
