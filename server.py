@@ -19,6 +19,7 @@ import json
 import secrets
 import datetime
 import threading
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from urllib.parse import urlsplit, parse_qs, parse_qsl, quote, unquote
@@ -1275,9 +1276,47 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     redirect(handler, "/admin/avisos", flash=mensaje_sincronizacion("Cambios guardados.", actualizado))
 
 
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+
+
+def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
+    destinatario = (negocio or {}).get("email") or ""
+    if not RESEND_API_KEY or not destinatario:
+        return
+    link_aviso = f"{origin}/avisos/{aviso['id']}"
+    link_mi_negocio = f"{origin}/mi-negocio/{negocio.get('token_acceso', '')}"
+    html = f"""
+<p>Hola {t.esc(negocio.get('nombre', ''))},</p>
+<p>Buenas noticias: tu aviso <strong>{t.esc(aviso['titulo'])}</strong> ya fue aprobado y está publicado en Talcadatos.</p>
+<p><a href="{t.esc(link_aviso)}">Ver tu aviso</a></p>
+<p>Guarda este link — es tu acceso para revisar las estadísticas de tu aviso (visitas, contactos) más adelante:<br>
+<a href="{t.esc(link_mi_negocio)}">{t.esc(link_mi_negocio)}</a></p>
+<p>Gracias por sumarte a Talcadatos, el directorio de pymes y emprendedores de Talca.</p>
+<p>El equipo de Talcadatos</p>
+"""
+    payload = json.dumps({
+        "from": RESEND_FROM_EMAIL, "to": [destinatario],
+        "subject": "¡Tu aviso ya está en Talcadatos! 🎉", "html": html,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.resend.com/emails", data=payload, method="POST",
+        headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as exc:
+        sys.stderr.write(f"ERROR enviando correo de aprobacion (aviso {aviso['id']}): {exc!r}\n")
+
+
 def admin_aviso_aprobar(handler, aviso_id):
     db.cambiar_estado_aviso(aviso_id, "activo")
     auditar(handler, "aprobar", f"aviso {aviso_id}")
+    aviso = db.get_aviso(aviso_id)
+    if aviso:
+        negocio = db.get_negocio(aviso["negocio_id"])
+        origin = _origin(handler)
+        threading.Thread(target=_enviar_correo_aviso_aprobado, args=(aviso, negocio, origin), daemon=True).start()
     redirect(handler, "/admin/avisos",
              flash=mensaje_sincronizacion("Aviso aprobado y publicado.", sincronizar_sitio_estatico()))
 
