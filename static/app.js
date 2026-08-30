@@ -185,6 +185,16 @@ document.addEventListener("click", function (e) {
   share.textContent = "¡Link copiado!";
 });
 
+document.addEventListener("click", function (e) {
+  var chip = e.target.closest("[data-horario-chip]");
+  if (!chip) return;
+  var label = chip.closest("label");
+  var input = label && label.querySelector('input[name="horario"]');
+  if (!input) return;
+  input.value = chip.getAttribute("data-horario-chip");
+  input.focus();
+});
+
 function animarConteo(span) {
   var target = parseFloat(span.getAttribute("data-target"));
   if (!isFinite(target) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

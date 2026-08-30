@@ -13,6 +13,7 @@ Uso:
 import sys
 import os
 import io
+import re
 import csv
 import json
 import secrets
@@ -681,6 +682,9 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
     cat_options = "".join(
         f'<option value="{c["id"]}"{" selected" if str(c["id"]) == form.get("categoria_id") else ""}>'
         f'{c["icono"]} {t.esc(c["nombre"])}</option>' for c in categorias)
+    comuna_actual = form.get("comuna") or "Talca"
+    comuna_options = "".join(
+        f'<option value="{c}"{" selected" if c == comuna_actual else ""}>{c}</option>' for c in ("Talca", "Maule"))
     v = lambda campo, default="": t.esc(form.get(campo, default))
     errores_html = ('<div class="form-errors"><ul>' + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
                      "</ul></div>") if errores else ""
@@ -701,6 +705,10 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
     <label>WhatsApp de contacto
       <input name="whatsapp" required placeholder="+56 9 1234 5678" value="{v('whatsapp')}">
     </label>
+    <label>Correo electrónico
+      <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl" value="{v('email')}">
+      <span class="hint">Te avisamos por aquí cuando tu aviso quede publicado.</span>
+    </label>
     <label>Categoría
       <select name="categoria_id" required>{cat_options}</select>
     </label>
@@ -711,10 +719,16 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
       <textarea name="descripcion" required rows="4" placeholder="Cuéntale a tus futuros clientes qué haces, cómo trabajas y qué te diferencia.">{v('descripcion')}</textarea>
     </label>
     <label>Comuna
-      <input name="comuna" required value="{v('comuna', 'Talca')}">
+      <select name="comuna" required>{comuna_options}</select>
     </label>
     <label>Horario de atención (opcional)
       <input name="horario" placeholder="Lun a Vie 9:00-18:00" value="{v('horario')}">
+      <div class="chip-row">
+        <button type="button" class="pill pill-btn" data-horario-chip="Lun a Vie 9:00-18:00">Lun-Vie 9-18</button>
+        <button type="button" class="pill pill-btn" data-horario-chip="Lun a Sáb 9:00-20:00">Lun-Sáb 9-20</button>
+        <button type="button" class="pill pill-btn" data-horario-chip="Todos los días 9:00-21:00">Todos los días</button>
+        <button type="button" class="pill pill-btn" data-horario-chip="A convenir por WhatsApp">A convenir</button>
+      </div>
     </label>
     <label class="check-label">
       <input type="checkbox" name="acepto_terminos" required{' checked' if form.get('acepto_terminos') else ''}>
@@ -759,6 +773,8 @@ def _validar_publicar(form, categoria_ids):
     digitos = "".join(c for c in form.get("whatsapp", "") if c.isdigit())
     if len(digitos) < 8:
         errores.append("Ingresa un WhatsApp válido, con código de país (ej: +56 9 1234 5678).")
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", form.get("email", "").strip()):
+        errores.append("Ingresa un correo electrónico válido.")
     if form.get("categoria_id") not in categoria_ids:
         errores.append("Elige una categoría para tu aviso.")
     if not form.get("titulo", "").strip():
@@ -800,7 +816,7 @@ def publicar_submit(handler, form, foto=None):
     color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
     negocio_id, token_acceso = db.crear_negocio(
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
-        terminos_ip=_client_ip(handler))
+        terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200])
     db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
