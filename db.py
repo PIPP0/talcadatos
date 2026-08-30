@@ -43,7 +43,7 @@ CONTENIDO_SITIO_POR_DEFECTO = {
     "hero_ubicacion": "Talca, Chile",
     "hero_titulo": "Encuentra lo que necesitas en Talca, al toque.",
     "hero_bajada": "Negocios, servicios, datos y oportunidades cerca de ti.",
-    "hero_placeholder": "¿Qué estás buscando? Ej: ventanas, pan amasado, clases de inglés…",
+    "hero_placeholder": "¿Qué estás buscando?",
     "hero_ayuda": "Prueba: gásfiter, veterinaria, clases particulares",
     "destacados_eyebrow": "Lo más buscado en Talca",
     "destacados_titulo": "Destacados",
