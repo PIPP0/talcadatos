@@ -446,11 +446,12 @@ def get_negocio(negocio_id):
     return _con_id(doc.to_dict(), negocio_id) if doc.exists else None
 
 
-def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None, terminos_ip=None, email=None):
+def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None, terminos_ip=None, email=None,
+                   verificado=False):
     nid = _next_id("negocios")
     token = secrets.token_urlsafe(12)
     _fs().collection("negocios").document(nid).set({
-        "nombre": nombre, "whatsapp": whatsapp, "email": email, "verificado": False,
+        "nombre": nombre, "whatsapp": whatsapp, "email": email, "verificado": bool(verificado),
         "plan_id": plan_id, "plan_vencimiento": plan_vencimiento,
         "token_acceso": token, "creado_en": now(),
         "terminos_aceptados_en": now(), "terminos_aceptados_ip": terminos_ip,

@@ -879,7 +879,8 @@ def publicar_submit(handler, form, foto=None):
     color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
     negocio_id, _token_acceso = db.crear_negocio(
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
-        plan_id=plan_id, terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200])
+        plan_id=plan_id, terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200],
+        verificado=(plan_id == "premium"))
     db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
@@ -1408,8 +1409,9 @@ PLANES_SUSCRIPCION = [
     },
     {
         "id": "premium", "nombre": "Premium", "precio": 19990, "precio_normal": None,
-        "beneficios": ["Todo lo de Destacado", "Máxima prioridad en resultados y destacados",
-                       "Insignia \"Premium\" en tu aviso"],
+        "beneficios": ["Todo lo de Destacado", "Prioridad máxima, por sobre los avisos Destacado",
+                       "Insignia \"Premium\" en tu aviso", "Negocio verificado ✔ automáticamente",
+                       "Atención y soporte prioritario"],
     },
 ]
 PLANES_SUSCRIPCION_POR_ID = {p["id"]: p for p in PLANES_SUSCRIPCION}
