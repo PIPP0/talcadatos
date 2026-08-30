@@ -10,6 +10,8 @@
   --line:#E4DED6;
   --brick:#E0342B;
   --brick-soft:#FCE7E6;
+  --gold:#A6740A;
+  --gold-soft:#FBF0D6;
   --teal:#0E9F6E;
   --teal-soft:#E1F5EC;
   --whatsapp:#25D366;
@@ -344,7 +346,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 
 /* ---- badges ---- */
 .badge{display:inline-flex; align-items:center; font-family:"IBM Plex Mono"; font-size:.66rem; text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:6px; font-weight:600;}
-.badge-mvp,.badge-gold{background:var(--accent-soft); color:var(--accent-deep);}
+.badge-mvp{background:var(--accent-soft); color:var(--accent-deep);}
+.badge-gold{background:var(--gold-soft); color:var(--gold);}
 .badge-brick{background:var(--brick-soft); color:var(--brick);}
 .badge-ok{background:var(--teal-soft); color:var(--teal);}
 .badge-warn{background:#FDF1DA; color:#B4780C;}
