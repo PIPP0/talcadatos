@@ -757,24 +757,39 @@ def _paywall_body(sub_token=None, estado=None, error=None):
 </div>"""
     if estado == "cancelada" and not error:
         error_html = '<div class="form-errors"><ul><li>Tu suscripción no se completó. Intenta de nuevo.</li></ul></div>'
-    precio_normal_fmt = f"{MP_PRECIO_NORMAL:,}".replace(",", ".")
-    precio_promo_fmt = f"{MP_PRECIO_PROMO:,}".replace(",", ".")
+
+    def fmt(n):
+        return f"{n:,}".replace(",", ".")
+
+    def tarjeta_plan(p):
+        precio_html = (
+            f'<span class="precio-tachado">${fmt(p["precio_normal"])}/mes</span>'
+            f'<span class="precio-actual">${fmt(p["precio"])}/mes</span>'
+            if p.get("precio_normal") else
+            f'<span class="precio-actual">${fmt(p["precio"])}/mes</span>'
+        )
+        beneficios_html = "".join(f"<li>✓ {t.esc(b)}</li>" for b in p["beneficios"])
+        return f"""
+<div class="plan-card{' plan-card-recomendado' if p.get('recomendado') else ''}">
+  {'<span class="plan-ribbon">Más elegido</span>' if p.get('recomendado') else ''}
+  <h3>{t.esc(p['nombre'])}</h3>
+  <div class="plan-precio">{precio_html}</div>
+  <ul class="plan-beneficios">{beneficios_html}</ul>
+  <button class="btn {'btn-primary' if p.get('recomendado') else 'btn-ghost'} btn-lg" type="submit" name="plan" value="{p['id']}">Elegir {t.esc(p['nombre'])}</button>
+</div>"""
+
+    tarjetas = "".join(tarjeta_plan(p) for p in PLANES_SUSCRIPCION)
     return f"""
 <div class="panel panel-suscripcion">
   <h1>Publica tu negocio en Talcadatos</h1>
-  <p class="lede">Para seguir creciendo, publicar un aviso en Talcadatos tiene un costo mensual.</p>
+  <p class="lede">Para seguir creciendo, publicar un aviso en Talcadatos tiene un costo mensual. Elige el plan que más te acomode.</p>
   {error_html}
-  <div class="precio-promo">
-    <span class="precio-tachado">${precio_normal_fmt}/mes</span>
-    <span class="precio-actual">${precio_promo_fmt}/mes</span>
-    <span class="badge badge-gold">Oferta por tiempo limitado</span>
-  </div>
   <form method="post" action="/suscripcion/iniciar" class="form">
     {HONEYPOT_HTML}
     <label>Correo electrónico
       <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
     </label>
-    <button class="btn btn-primary btn-lg" type="submit">Suscribirme y publicar</button>
+    <div class="planes-grid">{tarjetas}</div>
   </form>
   <p class="hint">Pago seguro procesado por Mercado Pago. Puedes cancelar tu suscripción cuando quieras.</p>
 </div>
@@ -836,10 +851,12 @@ def publicar_submit(handler, form, foto=None):
     if _es_bot(form):
         return redirect(handler, "/publicar?ok=1")
     sub_token = form.get("sub_token", "")
+    plan_id = "gratis"
     if db.get_config_pagos()["suscripcion_activa"]:
         sub = db.get_suscripcion_pendiente(sub_token) if sub_token else None
         if not sub or sub.get("estado") != "activa":
             return redirect(handler, "/publicar")
+        plan_id = sub.get("plan_id", "gratis")
     if not db.verificar_limite(_client_ip(handler), "publicar"):
         return publicar_form(handler, sub_token=sub_token or None, form=form,
                               errores=["Ya enviaste varios avisos seguidos. Espera un poco antes de volver a intentar."])
@@ -862,7 +879,7 @@ def publicar_submit(handler, form, foto=None):
     color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
     negocio_id, _token_acceso = db.crear_negocio(
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
-        terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200])
+        plan_id=plan_id, terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200])
     db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
@@ -875,14 +892,18 @@ def suscripcion_iniciar_submit(handler, form):
     if _es_bot(form):
         return redirect(handler, "/publicar")
     email = form.get("email", "").strip()[:200]
+    plan = PLANES_SUSCRIPCION_POR_ID.get(form.get("plan", ""))
+    if not plan:
+        body = _paywall_body(error="Elige un plan para continuar.")
+        return render(handler, t.layout("Publica tu negocio", body, active="publicar", site=sitio))
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
         body = _paywall_body(error="Ingresa un correo electrónico válido.")
         return render(handler, t.layout("Publica tu negocio", body, active="publicar", site=sitio))
     sub_token = secrets.token_urlsafe(16)
-    db.crear_suscripcion_pendiente(sub_token, email)
+    db.crear_suscripcion_pendiente(sub_token, email, plan["id"])
     origin = _origin(handler)
     try:
-        resp = _crear_preapproval(email, sub_token, origin)
+        resp = _crear_preapproval(email, sub_token, origin, plan["precio"], plan["nombre"])
         init_point = resp.get("init_point") or resp.get("sandbox_init_point")
     except Exception as exc:
         sys.stderr.write(f"ERROR creando preapproval MP: {exc!r}\n")
@@ -1374,6 +1395,25 @@ MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 MP_PRECIO_PROMO = 1990
 MP_PRECIO_NORMAL = 5990
 
+PLANES_SUSCRIPCION = [
+    {
+        "id": "gratis", "nombre": "Básico", "precio": MP_PRECIO_PROMO, "precio_normal": MP_PRECIO_NORMAL,
+        "beneficios": ["Tu negocio visible en Talcadatos", "Contacto directo por WhatsApp",
+                       "Aparece en búsquedas y filtros"],
+    },
+    {
+        "id": "destacado", "nombre": "Destacado", "precio": 9990, "precio_normal": None, "recomendado": True,
+        "beneficios": ["Todo lo de Básico", "Aparece en la sección Destacados de la portada",
+                       "Insignia \"Destacado\" en tu aviso", "Mejor posición en los listados"],
+    },
+    {
+        "id": "premium", "nombre": "Premium", "precio": 19990, "precio_normal": None,
+        "beneficios": ["Todo lo de Destacado", "Máxima prioridad en resultados y destacados",
+                       "Insignia \"Premium\" en tu aviso"],
+    },
+]
+PLANES_SUSCRIPCION_POR_ID = {p["id"]: p for p in PLANES_SUSCRIPCION}
+
 
 def _mp_request(method, path, payload=None):
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
@@ -1393,14 +1433,14 @@ def _mp_request(method, path, payload=None):
         raise
 
 
-def _crear_preapproval(email, external_reference, origin):
+def _crear_preapproval(email, external_reference, origin, precio, nombre_plan):
     payload = {
-        "reason": "Talcadatos - Publicación mensual de aviso",
+        "reason": f"Talcadatos - Plan {nombre_plan} (publicación mensual de aviso)",
         "external_reference": external_reference,
         "payer_email": email,
         "auto_recurring": {
             "frequency": 1, "frequency_type": "months",
-            "transaction_amount": MP_PRECIO_PROMO, "currency_id": "CLP",
+            "transaction_amount": precio, "currency_id": "CLP",
         },
         "back_url": f"{origin}/publicar?sub={external_reference}",
         "notification_url": f"{origin}/api/mp-webhook",

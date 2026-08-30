@@ -284,10 +284,24 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .panel{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:30px 32px; margin:28px 0; box-shadow:var(--shadow);}
 .panel-narrow{max-width:420px; margin:60px auto;}
 .panel-ok{text-align:center; max-width:520px; margin:60px auto;}
-.panel-suscripcion{max-width:480px; margin:60px auto;}
-.precio-promo{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:18px 0;}
-.precio-tachado{color:var(--ink-faint); text-decoration:line-through; font-size:1.05rem;}
+.panel-suscripcion{max-width:920px; margin:60px auto; text-align:center;}
+.panel-suscripcion .lede{max-width:480px; margin-left:auto; margin-right:auto;}
+.panel-suscripcion .form>label{max-width:380px; margin:0 auto; text-align:left;}
+.precio-tachado{color:var(--ink-faint); text-decoration:line-through; font-size:1.05rem; margin-right:8px;}
 .precio-actual{color:var(--ink); font-size:1.9rem; font-weight:800; letter-spacing:-0.02em;}
+.planes-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:24px; text-align:left; align-items:stretch;}
+.plan-card{position:relative; display:flex; flex-direction:column; gap:14px; background:var(--paper-raised);
+  border:1px solid var(--line); border-radius:18px; padding:26px 22px; box-shadow:var(--shadow);}
+.plan-card-recomendado{border-color:var(--accent); box-shadow:0 14px 34px -18px rgba(232,93,93,.45);}
+.plan-ribbon{position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff;
+  font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:5px 14px; border-radius:999px;
+  white-space:nowrap;}
+.plan-card h3{margin:4px 0 0; font-size:1.15rem;}
+.plan-precio{display:flex; align-items:baseline; flex-wrap:wrap; gap:2px;}
+.plan-beneficios{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px; flex:1; font-size:.88rem; color:var(--ink-soft);}
+.plan-beneficios li{line-height:1.4;}
+.plan-card .btn{width:100%;}
+@media (max-width:800px){.planes-grid{grid-template-columns:1fr;}}
 .form{display:flex; flex-direction:column; gap:16px; margin-top:16px;}
 .form label{display:flex; flex-direction:column; gap:6px; font-size:.88rem; font-weight:600; color:var(--ink-soft);}
 .hp-field{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;}

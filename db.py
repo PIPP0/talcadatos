@@ -221,9 +221,9 @@ def set_suscripcion_activa(activa):
     _fs().collection("configuracion").document("pagos").set({"suscripcion_activa": bool(activa)}, merge=True)
 
 
-def crear_suscripcion_pendiente(token, email):
+def crear_suscripcion_pendiente(token, email, plan_id="gratis"):
     _fs().collection("suscripciones_pendientes").document(token).set({
-        "estado": "pendiente", "email": email, "creado_en": now(),
+        "estado": "pendiente", "email": email, "plan_id": plan_id, "creado_en": now(),
     })
 
 
