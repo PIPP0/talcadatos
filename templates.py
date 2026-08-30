@@ -123,7 +123,7 @@ PUBLIC_NAV = """
       <a href="/explorar">Explorar</a>
       <a href="/avisos">Avisos</a>
       <a href="/favoritos">Favoritos</a>
-      <a href="/publicar" class="btn btn-ghost">Publicar mi negocio</a>
+      <a href="/publicar" class="btn btn-primary">Publicar mi negocio</a>
     </nav>
   </div>
 </header>
