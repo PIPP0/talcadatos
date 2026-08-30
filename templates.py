@@ -85,7 +85,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
 {mobile_nav}
-<script src="/static/app.js?v=20260829-4"></script>
+<script src="/static/app.js?v=20260830-1"></script>
 </body>
 </html>"""
 
@@ -216,13 +216,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
         badge_html = badge("Nuevo", "ok")
     verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
-    fav_attrs = (
-        f'data-fav-id="{aviso["id"]}" data-titulo="{esc(aviso["titulo"])}" '
-        f'data-negocio="{esc(aviso["negocio_nombre"])}" data-comuna="{esc(aviso["comuna"])}" '
-        f'data-categoria="{esc(aviso["categoria_nombre"])}" data-icono="{aviso["icono"]}" '
-        f'data-color="{esc(aviso["color"])}" data-whatsapp="{esc(aviso["whatsapp"])}" '
-        f'data-verificado="{"1" if aviso["verificado"] else ""}" data-plan="{esc(aviso["plan_nombre"])}"'
-    )
+    fav_attrs = f'data-fav-id="{aviso["id"]}"'
     foto_url = aviso.get("foto_url")
     foto_html = (f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}" loading="lazy">'
                  if foto_url else f'<span class="icon-tile"><span class="card-icon">{aviso["icono"]}</span></span>')

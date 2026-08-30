@@ -824,6 +824,23 @@ def api_buscar(handler, body):
     render_json(handler, {"resultados": resultados})
 
 
+def api_favoritos(handler, body):
+    data = json.loads(body or "{}")
+    ids = [str(i) for i in (data.get("ids") or [])][:60]
+    avisos = []
+    for aviso_id in ids:
+        a = db.get_aviso(aviso_id)
+        if a and a["estado"] == "activo":
+            avisos.append(a)
+    resultados = [{
+        "id": a["id"], "titulo": a["titulo"], "negocio": a["negocio_nombre"],
+        "comuna": a["comuna"], "categoria": a["categoria_nombre"], "icono": a["icono"],
+        "color": a["color"], "foto_url": a.get("foto_url") or "",
+        "verificado": a["verificado"], "plan": a["plan_nombre"],
+    } for a in avisos]
+    render_json(handler, {"resultados": resultados})
+
+
 def api_evento(handler, body):
     data = json.loads(body or "{}")
     tipo = data.get("tipo")
@@ -2400,6 +2417,8 @@ class Handler(BaseHTTPRequestHandler):
                 return necesito_submit(self, self._form())
             if path == "/api/buscar":
                 return api_buscar(self, self._body())
+            if path == "/api/favoritos":
+                return api_favoritos(self, self._body())
             if path == "/api/evento":
                 return api_evento(self, self._body())
             if path == "/api/alerta":
