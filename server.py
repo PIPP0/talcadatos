@@ -1233,6 +1233,12 @@ def admin_moderar(handler, aviso_id, accion):
     db.cambiar_estado_aviso(aviso_id, nuevo_estado)
     mensaje = "Aviso aprobado y publicado." if nuevo_estado == "activo" else "Aviso rechazado."
     auditar(handler, "aprobar" if nuevo_estado == "activo" else "rechazar", f"aviso {aviso_id}")
+    if nuevo_estado == "activo":
+        aviso = db.get_aviso(aviso_id)
+        if aviso:
+            negocio = db.get_negocio(aviso["negocio_id"])
+            origin = _origin(handler)
+            threading.Thread(target=_enviar_correo_aviso_aprobado, args=(aviso, negocio, origin), daemon=True).start()
     redirect(handler, "/admin/moderacion", flash=mensaje_sincronizacion(mensaje, sincronizar_sitio_estatico()))
 
 
@@ -1412,6 +1418,13 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
         return not_found(handler)
     _og_cache_evict(aviso_id)
     auditar(handler, "editar_aviso", f"aviso {aviso_id}")
+    if actual["estado"] != "activo" and nuevo_estado == "activo":
+        aviso_fresco = db.get_aviso(aviso_id)
+        if aviso_fresco:
+            negocio = db.get_negocio(aviso_fresco["negocio_id"])
+            origin = _origin(handler)
+            threading.Thread(target=_enviar_correo_aviso_aprobado, args=(aviso_fresco, negocio, origin),
+                              daemon=True).start()
     actualizado = sincronizar_sitio_estatico()
     if ajax:
         handler.send_response(204)
