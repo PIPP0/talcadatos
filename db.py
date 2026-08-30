@@ -408,6 +408,27 @@ def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario,
     return True
 
 
+def agregar_foto_extra(aviso_id, url):
+    ref = _fs().collection("avisos").document(str(aviso_id))
+    doc = ref.get()
+    if not doc.exists:
+        return False
+    actuales = doc.to_dict().get("fotos_extra") or []
+    actuales.append(url)
+    ref.update({"fotos_extra": actuales[:8]})
+    return True
+
+
+def eliminar_foto_extra(aviso_id, url):
+    ref = _fs().collection("avisos").document(str(aviso_id))
+    doc = ref.get()
+    if not doc.exists:
+        return False
+    actuales = [u for u in (doc.to_dict().get("fotos_extra") or []) if u != url]
+    ref.update({"fotos_extra": actuales})
+    return True
+
+
 def cambiar_estado_aviso(aviso_id, estado):
     ref = _fs().collection("avisos").document(str(aviso_id))
     datos = {"estado": estado}

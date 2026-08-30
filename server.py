@@ -628,6 +628,11 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     foto_url = aviso.get("foto_url")
     foto_html = (f'<img src="{t.esc(foto_url)}" alt="{t.esc(aviso["titulo"])}" loading="eager">'
                  if foto_url else f'<span class="icon-tile big"><span class="card-icon big">{aviso["icono"]}</span></span>')
+    fotos_extra = aviso.get("fotos_extra") or []
+    galeria_html = ("<div class=\"detalle-galeria\">" + "".join(
+        f'<a href="{t.esc(url)}" target="_blank" rel="noopener"><img src="{t.esc(url)}" alt="{t.esc(aviso["titulo"])}" loading="lazy"></a>'
+        for url in fotos_extra
+    ) + "</div>") if fotos_extra else ""
     body = f"""
 <div class="detalle">
   <div class="detalle-photo{' has-foto' if foto_url else ''}" style="--card-accent:{t.esc(aviso['color'])}">
@@ -669,6 +674,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     </div>
   </div>
 </div>
+{galeria_html}
 {"<section class='section'><h2>También te puede servir</h2>" + t.cards_grid(relacionados, badge_mode="plan") + "</section>" if relacionados else ""}
 """
     resumen = aviso["descripcion"][:157] + "…" if len(aviso["descripcion"]) > 160 else aviso["descripcion"]
@@ -1197,6 +1203,7 @@ def admin_dashboard(handler, query):
 
 def admin_moderacion(handler):
     pendientes = db.get_avisos(estado="pendiente", orden="creado_asc")
+    pendientes.sort(key=lambda a: (-a.get("plan_prioridad", 0), a.get("creado_en", "")))
 
     if not pendientes:
         rows = '<p class="empty-state">No hay avisos pendientes de moderación. 🎉</p>'
@@ -1205,7 +1212,7 @@ def admin_moderacion(handler):
 <div class="mod-row" data-reveal style="--i:{i}">
   <div class="mod-info">
     <div class="mono">{a['icono']} {t.esc(a['categoria_nombre'])} · {t.esc(a['comuna'])}</div>
-    <h3>{t.esc(a['titulo'])}</h3>
+    <h3>{t.esc(a['titulo'])} {t.plan_badge(a['plan_nombre']) if a['plan_nombre'] != 'Gratis' else ''}</h3>
     <p>{t.esc(a['negocio_nombre'])} · {t.esc(a['whatsapp'])}</p>
     <p class="mod-desc">{t.esc(a['descripcion'])}</p>
   </div>
@@ -1294,6 +1301,7 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     categorias = db.get_categorias()
     if not aviso:
         return not_found(handler)
+    flash = get_flash(handler)
 
     cat_options = "".join(
         f'<option value="{c["id"]}"{" selected" if c["id"] == aviso["categoria_id"] else ""}>'
@@ -1309,6 +1317,28 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
                    '<span>Quitar la foto actual (vuelve a mostrar el ícono del rubro)</span></label>') if foto_url else ""
     errores_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
                      "</ul></div>") if errores else ""
+    fotos_extra = aviso.get("fotos_extra") or []
+    galeria_items = "".join(f"""
+<div class="galeria-item">
+  <img src="{t.esc(url)}" alt="">
+  <form method="post" action="/admin/avisos/{aviso_id}/fotos/eliminar">
+    <input type="hidden" name="url" value="{t.esc(url)}">
+    <button class="btn btn-icon btn-bad" title="Quitar foto" aria-label="Quitar foto">🗑️</button>
+  </form>
+</div>""" for url in fotos_extra)
+    galeria_html = f"""
+<div class="panel">
+  <h2>Galería de fotos (Premium)</h2>
+  <p class="lede">Fotos adicionales que se muestran en la página del aviso, además de la foto principal.</p>
+  <div class="galeria-grid">{galeria_items or '<p class="hint">Todavía no hay fotos adicionales.</p>'}</div>
+  <form method="post" action="/admin/avisos/{aviso_id}/fotos/agregar" class="form" enctype="multipart/form-data">
+    <label>Agregar foto
+      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required>
+      <span class="hint">JPG, PNG o WebP, máx. 5 MB. Hasta 8 fotos adicionales.</span>
+    </label>
+    <button class="btn btn-ghost btn-lg" type="submit">Agregar a la galería</button>
+  </form>
+</div>"""
     body = f"""
 <div class="panel">
   <h1>Editar aviso</h1>
@@ -1334,8 +1364,9 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     </div>
   </form>
 </div>
+{galeria_html}
 """
-    render(handler, t.layout("Editar aviso", body, active="avisos", admin=True))
+    render(handler, t.layout("Editar aviso", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
 
 
 def _responder_error_ajax(handler, mensaje, status=422):
@@ -1478,6 +1509,30 @@ def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
         urllib.request.urlopen(req, timeout=10)
     except Exception as exc:
         sys.stderr.write(f"ERROR enviando correo de aprobacion (aviso {aviso['id']}): {exc!r}\n")
+
+
+def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
+    archivos = archivos or {}
+    foto = archivos.get("foto")
+    if foto and foto["content_type"] in _EXT_POR_TIPO and len(foto["data"]) <= 5 * 1024 * 1024:
+        ext = _EXT_POR_TIPO[foto["content_type"]]
+        url = db.subir_foto_aviso(foto["data"], foto["content_type"], ext)
+        db.agregar_foto_extra(aviso_id, url)
+        auditar(handler, "agregar_foto_galeria", f"aviso {aviso_id}")
+        actualizado = sincronizar_sitio_estatico()
+        flash = mensaje_sincronizacion("Foto agregada a la galería.", actualizado)
+    else:
+        flash = "La foto debe ser JPG, PNG o WebP de máximo 5 MB."
+    redirect(handler, f"/admin/avisos/{aviso_id}", flash=flash)
+
+
+def admin_aviso_foto_eliminar_submit(handler, aviso_id, form):
+    url = form.get("url", "")
+    if url:
+        db.eliminar_foto_extra(aviso_id, url)
+        auditar(handler, "eliminar_foto_galeria", f"aviso {aviso_id}")
+    actualizado = sincronizar_sitio_estatico()
+    redirect(handler, f"/admin/avisos/{aviso_id}", flash=mensaje_sincronizacion("Foto eliminada.", actualizado))
 
 
 def admin_aviso_aprobar(handler, aviso_id):
@@ -2676,6 +2731,17 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_aviso_aprobar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "rechazar":
                 return admin_aviso_rechazar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
+            if (len(segs) == 5 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "fotos"
+                    and segs[4] == "agregar"):
+                if not require_role(self, {"super_admin"}):
+                    return None
+                form, archivos = self._form_multipart()
+                return admin_aviso_foto_agregar_submit(self, int(segs[2]), form, archivos)
+            if (len(segs) == 5 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "fotos"
+                    and segs[4] == "eliminar"):
+                if not require_role(self, {"super_admin"}):
+                    return None
+                return admin_aviso_foto_eliminar_submit(self, int(segs[2]), self._form())
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "plan":
                 return admin_anunciante_plan(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "verificar":
