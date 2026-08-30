@@ -483,7 +483,7 @@ def listado(handler, query):
   </form>
 </div>"""
     else:
-        resultados_html = t.cards_grid(avisos, termino_busqueda=q or None)
+        resultados_html = t.cards_grid(avisos, termino_busqueda=q or None, badge_mode="plan")
 
     body = f"""
 <div class="listado-head">
@@ -669,7 +669,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     </div>
   </div>
 </div>
-{"<section class='section'><h2>También te puede servir</h2>" + t.cards_grid(relacionados) + "</section>" if relacionados else ""}
+{"<section class='section'><h2>También te puede servir</h2>" + t.cards_grid(relacionados, badge_mode="plan") + "</section>" if relacionados else ""}
 """
     resumen = aviso["descripcion"][:157] + "…" if len(aviso["descripcion"]) > 160 else aviso["descripcion"]
     render(handler, t.layout(
