@@ -1422,6 +1422,7 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_REPLY_TO = os.environ.get("RESEND_REPLY_TO", "futuroiadesarrollo@gmail.com")
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 MP_PRECIO_PROMO = 1990
@@ -1497,7 +1498,7 @@ def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
 <p>El equipo de Talcadatos</p>
 """
     payload = json.dumps({
-        "from": RESEND_FROM_EMAIL, "to": [destinatario],
+        "from": RESEND_FROM_EMAIL, "to": [destinatario], "reply_to": RESEND_REPLY_TO,
         "subject": "¡Tu aviso ya está en Talcadatos! 🎉", "html": html,
     }).encode("utf-8")
     req = urllib.request.Request(
