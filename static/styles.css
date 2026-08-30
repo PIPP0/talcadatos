@@ -132,8 +132,6 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 
 .pills{display:flex; gap:8px; overflow-x:auto; padding:28px 2px 4px; justify-content:center; flex-wrap:wrap;}
 .pill{white-space:nowrap; background:var(--paper-raised); border:1px solid var(--line); border-radius:999px; padding:7px 14px; font-size:.86rem; color:var(--ink-soft); font-weight:500;}
-.pill-btn{font-family:inherit; cursor:pointer; transition:border-color .15s ease, color .15s ease;}
-.pill-btn:hover{border-color:var(--accent); color:var(--accent);}
 .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
 .pill:hover, .pill.active{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
 

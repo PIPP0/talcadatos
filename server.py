@@ -723,13 +723,14 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
       <select name="comuna" required>{comuna_options}</select>
     </label>
     <label>Horario de atención (opcional)
-      <input name="horario" placeholder="Lun a Vie 9:00-18:00" value="{v('horario')}">
-      <div class="chip-row">
-        <button type="button" class="pill pill-btn" data-horario-chip="Lun a Vie 9:00-18:00">Lun-Vie 9-18</button>
-        <button type="button" class="pill pill-btn" data-horario-chip="Lun a Sáb 9:00-20:00">Lun-Sáb 9-20</button>
-        <button type="button" class="pill pill-btn" data-horario-chip="Todos los días 9:00-21:00">Todos los días</button>
-        <button type="button" class="pill pill-btn" data-horario-chip="A convenir por WhatsApp">A convenir</button>
-      </div>
+      <select data-horario-preset>
+        <option value="">Elige un horario típico, o escribe el tuyo abajo…</option>
+        <option value="Lun a Vie 9:00-18:00">Lun a Vie, 9:00 a 18:00</option>
+        <option value="Lun a Sáb 9:00-20:00">Lun a Sáb, 9:00 a 20:00</option>
+        <option value="Todos los días 9:00-21:00">Todos los días, 9:00 a 21:00</option>
+        <option value="A convenir por WhatsApp">A convenir por WhatsApp</option>
+      </select>
+      <input name="horario" placeholder="Ej: Lun a Vie 9:00-13:00 y 15:00-19:00" value="{v('horario')}">
     </label>
     <label class="check-label">
       <input type="checkbox" name="acepto_terminos" required{' checked' if form.get('acepto_terminos') else ''}>

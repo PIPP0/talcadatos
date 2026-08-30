@@ -185,13 +185,14 @@ document.addEventListener("click", function (e) {
   share.textContent = "¡Link copiado!";
 });
 
-document.addEventListener("click", function (e) {
-  var chip = e.target.closest("[data-horario-chip]");
-  if (!chip) return;
-  var label = chip.closest("label");
+document.addEventListener("change", function (e) {
+  if (!e.target.matches("[data-horario-preset]")) return;
+  var select = e.target;
+  if (!select.value) return;
+  var label = select.closest("label");
   var input = label && label.querySelector('input[name="horario"]');
   if (!input) return;
-  input.value = chip.getAttribute("data-horario-chip");
+  input.value = select.value;
   input.focus();
 });
 
