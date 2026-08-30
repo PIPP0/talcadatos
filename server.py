@@ -1436,12 +1436,14 @@ PLANES_SUSCRIPCION = [
     {
         "id": "destacado", "nombre": "Destacado", "precio": 9990, "precio_normal": None, "recomendado": True,
         "beneficios": ["Todo lo de Básico", "Aparece en la sección Destacados de la portada",
-                       "Insignia \"Destacado\" en tu aviso", "Mejor posición en los listados"],
+                       "Insignia \"Destacado\" en tu aviso", "Mejor posición en los listados",
+                       "Revisión de tu aviso más rápida"],
     },
     {
         "id": "premium", "nombre": "Premium", "precio": 19990, "precio_normal": None,
-        "beneficios": ["Todo lo de Destacado", "Prioridad máxima, por sobre los avisos Destacado",
-                       "Insignia \"Premium\" en tu aviso", "Negocio verificado ✔ automáticamente",
+        "beneficios": ["Todo lo de Destacado", "Revisión de tu aviso con la máxima prioridad",
+                       "Prioridad máxima en resultados y destacados", "Insignia \"Premium\" en tu aviso",
+                       "Negocio verificado ✔ automáticamente", "Galería de varias fotos en tu aviso",
                        "Atención y soporte prioritario"],
     },
 ]
