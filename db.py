@@ -421,11 +421,6 @@ def get_negocio(negocio_id):
     return _con_id(doc.to_dict(), negocio_id) if doc.exists else None
 
 
-def get_negocio_por_token(token):
-    docs = list(_fs().collection("negocios").where("token_acceso", "==", token).limit(1).stream())
-    return _con_id(docs[0].to_dict(), docs[0].id) if docs else None
-
-
 def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None, terminos_ip=None, email=None):
     nid = _next_id("negocios")
     token = secrets.token_urlsafe(12)

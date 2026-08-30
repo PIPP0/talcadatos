@@ -743,23 +743,16 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
 """
 
 
-def publicar_form(handler, ok=False, token=None, form=None, errores=None):
+def publicar_form(handler, ok=False, form=None, errores=None):
     categorias = db.get_categorias()
     sitio = db.get_contenido_sitio()
 
     if ok:
-        mi_negocio_url = f"{_origin(handler)}/mi-negocio/{token}"
-        panel_link = (
-            f'<p class="panel-token"><strong>Guarda este link</strong> — es tu acceso para ver las '
-            f'estadísticas de tu aviso más adelante:<br><a href="{t.esc(mi_negocio_url)}">'
-            f'{t.esc(mi_negocio_url)}</a></p>' if token else ""
-        )
         body = f"""
 <div class="panel panel-ok">
   <h1>¡Listo! Tu aviso fue enviado 🎉</h1>
-  <p>Quedó en revisión. Nuestro equipo lo aprueba normalmente el mismo día y aparecerá en Talcadatos
+  <p>Quedó en revisión. Nuestro equipo lo aprueba normalmente el mismo día y te avisamos por correo
   apenas se publique.</p>
-  {panel_link}
   <a class="btn btn-primary" href="/">Volver al inicio</a>
 </div>"""
         return render(handler, t.layout("Aviso enviado", body, active="publicar", site=sitio))
@@ -815,14 +808,14 @@ def publicar_submit(handler, form, foto=None):
 
     slug = form["categoria_id"]
     color = db.COLOR_POR_CATEGORIA.get(slug, "#5E7CE2")
-    negocio_id, token_acceso = db.crear_negocio(
+    negocio_id, _token_acceso = db.crear_negocio(
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
         terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200])
     db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
         foto_url=foto_url)
-    redirect(handler, f"/publicar?ok=1&token={token_acceso}")
+    redirect(handler, "/publicar?ok=1")
 
 
 def api_buscar(handler, body):
@@ -1285,13 +1278,10 @@ def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
     if not RESEND_API_KEY or not destinatario:
         return
     link_aviso = f"{origin}/avisos/{aviso['id']}"
-    link_mi_negocio = f"{origin}/mi-negocio/{negocio.get('token_acceso', '')}"
     html = f"""
 <p>Hola {t.esc(negocio.get('nombre', ''))},</p>
 <p>Buenas noticias: tu aviso <strong>{t.esc(aviso['titulo'])}</strong> ya fue aprobado y está publicado en Talcadatos.</p>
 <p><a href="{t.esc(link_aviso)}">Ver tu aviso</a></p>
-<p>Guarda este link — es tu acceso para revisar las estadísticas de tu aviso (visitas, contactos) más adelante:<br>
-<a href="{t.esc(link_mi_negocio)}">{t.esc(link_mi_negocio)}</a></p>
 <p>Gracias por sumarte a Talcadatos, el directorio de pymes y emprendedores de Talca.</p>
 <p>El equipo de Talcadatos</p>
 """
@@ -1375,7 +1365,6 @@ def admin_anunciantes(handler):
     <form method="post" action="/admin/anunciantes/{n['id']}/verificar" class="inline-form">
       <button class="btn btn-ghost btn-sm">{'Quitar verificación' if n['verificado'] else 'Verificar'}</button>
     </form>
-    <a class="btn btn-ghost btn-sm" href="/mi-negocio/{n['token_acceso']}" target="_blank" rel="noopener">Ver como anunciante</a>
   </td>
 </tr>""" for n in negocios)
 
@@ -2176,34 +2165,6 @@ def favoritos(handler):
     render(handler, t.layout("Favoritos", body, active="favoritos", site=sitio))
 
 
-def mi_negocio(handler, token):
-    sitio = db.get_contenido_sitio()
-    negocio = db.get_negocio_por_token(token)
-    if not negocio:
-        return not_found(handler)
-    avisos = db.get_avisos(negocio_id=negocio["id"])
-
-    filas = "".join(f"""
-<tr>
-  <td>{t.esc(a['titulo'])}</td>
-  <td>{t.estado_badge(a['estado'])}</td>
-  <td class="mono">{a['vistas_total']}</td>
-  <td class="mono">{a['contactos_total']}</td>
-  <td class="mono">{round(100 * a['contactos_total'] / a['vistas_total'], 1) if a['vistas_total'] else 0}%</td>
-</tr>""" for a in avisos)
-
-    body = f"""
-<h1>Hola, {t.esc(negocio['nombre'])} 👋</h1>
-<p class="lede">Este es tu panel de estadísticas. Guarda este link — es tu acceso personal, no lo compartas.</p>
-<div class="tbl-wrap" data-reveal><table>
-  <tr><th>Aviso</th><th>Estado</th><th>Vistas</th><th>Contactos</th><th>Conversión</th></tr>
-  {filas or "<tr><td colspan='5' class='empty-state'>Todavía no tienes avisos.</td></tr>"}
-</table></div>
-<p class="hint">¿Quieres más visibilidad? Escríbenos por WhatsApp desde uno de tus propios avisos para subir de plan.</p>
-"""
-    render(handler, t.layout(f"Panel de {negocio['nombre']}", body, active="mi-negocio", site=sitio))
-
-
 def api_alerta(handler, body):
     data = json.loads(body or "{}")
     termino = (data.get("termino") or "").strip()[:120]
@@ -2379,7 +2340,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(segs) == 2 and segs[0] == "avisos" and segs[1].isdigit():
                 return detalle(self, int(segs[1]), query)
             if path == "/publicar":
-                return publicar_form(self, ok=qs(query).get("ok") == "1", token=qs(query).get("token"))
+                return publicar_form(self, ok=qs(query).get("ok") == "1")
             if path == "/necesito":
                 return necesito_form(self, ok=qs(query).get("ok") == "1")
             if path == "/sw.js":
@@ -2449,8 +2410,6 @@ class Handler(BaseHTTPRequestHandler):
                 return privacidad(self)
             if path == "/favoritos":
                 return favoritos(self)
-            if len(segs) == 2 and segs[0] == "mi-negocio":
-                return mi_negocio(self, segs[1])
 
             return not_found(self)
         except BrokenPipeError:
