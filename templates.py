@@ -24,12 +24,22 @@ SITE_DESCRIPTION = ("Encuentra pymes y emprendedores de Talca por lo que necesit
                      "directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.")
 
 
+def brand_logo_html(marca_raw):
+    pin = ('<svg class="brand-pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+           '<path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5'
+           's1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>')
+    if marca_raw.startswith("Talca") and len(marca_raw) > 5:
+        return f'{pin}<span class="brand-dark">Talca</span><span class="brand-accent">{esc(marca_raw[5:])}</span>'
+    return f'{pin}<span class="brand-dark">{esc(marca_raw)}</span>'
+
+
 def layout(title, body, active="home", admin=False, description=None, og_image="/og/default.png",
            canonical=None, json_ld=None, flash=None, site=None):
     site = site or {}
-    marca = esc(site.get("marca", "Talcadatos"))
+    marca_raw = site.get("marca", "Talcadatos")
+    marca = esc(marca_raw)
     pie = esc(site.get("pie", "Talcadatos — directorio de pymes y emprendedores de Talca"))
-    nav = admin_nav(active) if admin else PUBLIC_NAV.replace("{{marca}}", marca)
+    nav = admin_nav(active) if admin else PUBLIC_NAV.replace("{{marca}}", brand_logo_html(marca_raw))
     mobile_nav = ADMIN_MOBILE_NAV if admin else MOBILE_NAV
     active_attr = f' data-active="{active}"'
     desc = description or site.get("descripcion") or SITE_DESCRIPTION
@@ -75,7 +85,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260829-8">
+<link rel="stylesheet" href="/static/styles.css?v=20260829-9">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -107,7 +117,7 @@ ADMIN_MOBILE_NAV = """
 PUBLIC_NAV = """
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a href="/" class="brand">📌 {{marca}}</a>
+    <a href="/" class="brand">{{marca}}</a>
     <nav class="topnav">
       <a href="/">Inicio</a>
       <a href="/explorar">Explorar</a>

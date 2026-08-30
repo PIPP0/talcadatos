@@ -57,7 +57,10 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 /* ---- topbar ---- */
 .topbar{background:rgba(255,255,255,.82); backdrop-filter:saturate(180%) blur(14px); -webkit-backdrop-filter:saturate(180%) blur(14px); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
 .topbar-inner{display:flex; align-items:center; justify-content:space-between; padding:14px 20px; gap:16px; flex-wrap:wrap;}
-.brand{font-weight:700; font-size:1.15rem; color:var(--ink); display:flex; align-items:center; gap:6px; letter-spacing:-0.01em;}
+.brand{font-weight:700; font-size:1.15rem; color:var(--ink); display:flex; align-items:center; gap:5px; letter-spacing:-0.01em;}
+.brand-pin{width:25px; height:25px; flex:0 0 auto; color:var(--accent);}
+.brand-dark{color:var(--ink);}
+.brand-accent{color:var(--accent);}
 .tag-admin{font-family:"IBM Plex Mono"; font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; background:var(--brick-soft); color:var(--brick); padding:2px 6px; border-radius:5px;}
 .topnav{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
 .topnav a{color:var(--ink-soft); font-weight:500; font-size:.92rem;}
