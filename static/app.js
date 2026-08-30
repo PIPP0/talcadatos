@@ -40,6 +40,7 @@ function getAppModal() {
   back.className = "app-modal-backdrop";
   back.innerHTML =
     '<div class="app-modal" role="alertdialog" aria-modal="true">' +
+    '<button class="app-modal-close" type="button" aria-label="Cerrar">×</button>' +
     '<div class="app-modal-icon"></div>' +
     '<p class="app-modal-text"></p>' +
     '<div class="app-modal-actions"></div>' +
@@ -59,8 +60,9 @@ function mostrarAviso(mensaje, tipo) {
   acciones.className = "app-modal-actions single";
   acciones.innerHTML = "";
   modal.classList.add("is-open");
-  function cerrar() { modal.classList.remove("is-open"); }
+  function cerrar() { modal.classList.remove("is-open"); clearTimeout(modal._timer); }
   modal.onclick = function (e) { if (e.target === modal) cerrar(); };
+  modal.querySelector(".app-modal-close").onclick = cerrar;
   clearTimeout(modal._timer);
   modal._timer = setTimeout(cerrar, 3200);
 }
@@ -91,6 +93,7 @@ function pedirConfirmacion(mensaje) {
     }
     acciones.addEventListener("click", onClick);
     modal.onclick = function (e) { if (e.target === modal) resolver(false); };
+    modal.querySelector(".app-modal-close").onclick = function () { resolver(false); };
     modal.classList.add("is-open");
   });
 }
