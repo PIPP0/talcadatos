@@ -93,7 +93,6 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 MOBILE_NAV = """
 <nav class="mobile-nav" aria-label="Navegación principal">
   <a href="/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
-  <a href="/explorar"><span aria-hidden="true">▦</span><span>Explorar</span></a>
   <a href="/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
   <a href="/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
   <a href="/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
@@ -117,7 +116,6 @@ def public_nav(active, marca_html):
 
     links = "".join([
         link("home", "/", "Inicio"),
-        link("explorar", "/explorar", "Explorar"),
         link("avisos", "/avisos", "Avisos"),
         link("favoritos", "/favoritos", "Favoritos"),
         link("publicar", "/publicar", "Publicar mi negocio", "btn btn-primary nav-cta"),

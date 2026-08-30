@@ -402,7 +402,7 @@ def home(handler):
     <div class="local-story-points">
       <span>◆ Información clara</span><span>◆ Negocios verificables</span><span>◆ Atención humana</span>
     </div>
-    <a class="btn btn-ghost" href="/explorar">Explorar negocios locales <span aria-hidden="true">→</span></a>
+    <a class="btn btn-ghost" href="/avisos">Explorar negocios locales <span aria-hidden="true">→</span></a>
   </div>
 </section>
 
@@ -436,26 +436,6 @@ def home(handler):
 """
     render(handler, t.layout("Avisos de pymes y emprendedores de Talca", body, active="home",
                               og_image=f"{_origin(handler)}/og/default.png", site=sitio))
-
-
-def explorar(handler):
-    sitio = db.get_contenido_sitio()
-    categorias = db.get_categorias()
-    destacados = db.get_avisos(estado="activo", orden="destacados", limit=6)
-    body = f"""
-<section class="page-hero">
-  <span class="eyebrow">{t.esc(sitio['explorar_eyebrow'])}</span>
-  <h1>{t.esc(sitio['explorar_titulo'])}</h1>
-  <p class="lede">{t.esc(sitio['explorar_bajada'])}</p>
-  <form class="inline-search" action="/avisos" method="get">
-    <input name="q" type="search" placeholder="Ej: reparación de notebook" aria-label="Buscar en Talcadatos">
-    <button class="btn btn-primary" type="submit">Buscar</button>
-  </form>
-</section>
-<section class="section"><h2>Todos los rubros</h2>{t.categorias_grid(categorias)}</section>
-<section class="section"><div class="section-head"><h2>Negocios destacados</h2><a href="/avisos">Ver avisos →</a></div>{t.cards_grid(destacados)}</section>
-"""
-    render(handler, t.layout("Explorar Talca", body, active="explorar", site=sitio))
 
 
 def listado(handler, query):
@@ -1652,9 +1632,8 @@ def contenido_grupos(sitio):
          campo("necesidad_boton", "Botón de necesidad") + campo("pymes_eyebrow", "Antetítulo para pymes") +
          campo("pymes_titulo", "Título para pymes") + campo("pymes_bajada", "Bajada para pymes", True) +
          campo("pymes_boton", "Botón para pymes")),
-        ("Páginas Explorar, Recomendar negocio y Publicar", campo("explorar_eyebrow", "Antetítulo de Explorar") +
-         campo("explorar_titulo", "Título de Explorar", True) + campo("explorar_bajada", "Bajada de Explorar", True) +
-         campo("necesito_titulo", "Título de Recomendar negocio", True) + campo("necesito_bajada", "Bajada de Recomendar negocio", True) +
+        ("Páginas Recomendar negocio y Publicar", campo("necesito_titulo", "Título de Recomendar negocio", True) +
+         campo("necesito_bajada", "Bajada de Recomendar negocio", True) +
          campo("publicar_titulo", "Título de Publicar") + campo("publicar_bajada", "Bajada de Publicar", True)),
     ]
 
@@ -1730,7 +1709,7 @@ def admin_editor(handler):
       <div class="editor-controls-head"><strong>Contenido y datos</strong><span>Todos los campos públicos</span></div>
       <label class="editor-route-label">Vista previa
         <select id="editor-page-select" aria-label="Página que se muestra en la vista previa">
-          <option value="/">Inicio</option><option value="/explorar">Explorar</option><option value="/avisos">Avisos</option>
+          <option value="/">Inicio</option><option value="/avisos">Avisos</option>
           <option value="/necesito">Recomendar negocio</option><option value="/publicar">Publicar negocio</option><option value="/ayuda">Ayuda</option>
         </select>
       </label>
@@ -2235,7 +2214,7 @@ def robots_txt(handler):
 def sitemap_xml(handler):
     origin = _origin(handler)
     ids = [a["id"] for a in db.get_avisos(estado="activo")]
-    urls = ([f"{origin}/", f"{origin}/explorar", f"{origin}/avisos", f"{origin}/publicar", f"{origin}/necesito",
+    urls = ([f"{origin}/", f"{origin}/avisos", f"{origin}/publicar", f"{origin}/necesito",
              f"{origin}/ayuda", f"{origin}/terminos", f"{origin}/privacidad"]
             + [f"{origin}/guias/{slug}" for slug in GUIAS]
             + [f"{origin}/avisos/{i}" for i in ids])
@@ -2319,7 +2298,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/":
                 return home(self)
             if path == "/explorar":
-                return explorar(self)
+                return redirect(self, "/avisos")
             if path == "/avisos":
                 return listado(self, query)
             if len(segs) == 2 and segs[0] == "avisos" and segs[1].isdigit():
