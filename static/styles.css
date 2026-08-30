@@ -61,8 +61,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .brand-logo{height:46px; width:auto; display:block;}
 .tag-admin{font-family:"IBM Plex Mono"; font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; background:var(--brick-soft); color:var(--brick); padding:2px 6px; border-radius:5px;}
 .topnav{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
-.topnav a{color:var(--ink-soft); font-weight:500; font-size:.92rem;}
-.topnav a:hover{color:var(--ink);}
+.topnav a{font-weight:500; font-size:.92rem;}
+.topnav a:not(.btn){color:var(--ink-soft);}
+.topnav a:not(.btn):hover{color:var(--ink);}
 .topnav>a:not(.btn){position:relative; padding-bottom:6px;}
 .topnav a.is-active:not(.btn){color:var(--ink); font-weight:700;}
 .topnav a.is-active:not(.btn)::after{content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px; border-radius:2px; background:var(--accent);}
