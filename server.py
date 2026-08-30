@@ -20,6 +20,7 @@ import secrets
 import datetime
 import threading
 import urllib.request
+import urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from urllib.parse import urlsplit, parse_qs, parse_qsl, quote, unquote
@@ -187,7 +188,7 @@ def _origin(handler):
 # de enlaces, para no arriesgar romper nada de lo ya construido).
 PREVIEW_PATH = "/esteeselsitiodeprueba"
 PREVIEW_COOKIE = "talca_preview"
-_RUTAS_LIBRES_EXACTAS = ("/static", "/sw.js")
+_RUTAS_LIBRES_EXACTAS = ("/static", "/sw.js", "/api/mp-webhook")
 _RUTAS_LIBRES_PREFIJOS = ("/static/", "/og/")
 
 
@@ -696,6 +697,7 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
   {errores_html}
   <form method="post" action="/publicar" class="form" enctype="multipart/form-data">
     {HONEYPOT_HTML}
+    {f'<input type="hidden" name="sub_token" value="{t.esc(form["_sub_token"])}">' if form.get('_sub_token') else ''}
     <label>Nombre del negocio
       <input name="nombre_negocio" required maxlength="120" value="{v('nombre_negocio')}">
     </label>
@@ -744,7 +746,42 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
 """
 
 
-def publicar_form(handler, ok=False, form=None, errores=None):
+def _paywall_body(sub_token=None, estado=None, error=None):
+    error_html = f'<div class="form-errors"><ul><li>{t.esc(error)}</li></ul></div>' if error else ""
+    if estado == "pendiente":
+        return f"""
+<div class="panel panel-suscripcion">
+  <h1>Confirmando tu pago…</h1>
+  <p>Esto puede tardar unos segundos. Si ya completaste el pago en Mercado Pago, recarga esta página.</p>
+  <a class="btn btn-primary" href="/publicar?sub={t.esc(sub_token)}">Ya pagué, actualizar</a>
+</div>"""
+    if estado == "cancelada" and not error:
+        error_html = '<div class="form-errors"><ul><li>Tu suscripción no se completó. Intenta de nuevo.</li></ul></div>'
+    precio_normal_fmt = f"{MP_PRECIO_NORMAL:,}".replace(",", ".")
+    precio_promo_fmt = f"{MP_PRECIO_PROMO:,}".replace(",", ".")
+    return f"""
+<div class="panel panel-suscripcion">
+  <h1>Publica tu negocio en Talcadatos</h1>
+  <p class="lede">Para seguir creciendo, publicar un aviso en Talcadatos tiene un costo mensual.</p>
+  {error_html}
+  <div class="precio-promo">
+    <span class="precio-tachado">${precio_normal_fmt}/mes</span>
+    <span class="precio-actual">${precio_promo_fmt}/mes</span>
+    <span class="badge badge-gold">Oferta por tiempo limitado</span>
+  </div>
+  <form method="post" action="/suscripcion/iniciar" class="form">
+    {HONEYPOT_HTML}
+    <label>Correo electrónico
+      <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
+    </label>
+    <button class="btn btn-primary btn-lg" type="submit">Suscribirme y publicar</button>
+  </form>
+  <p class="hint">Pago seguro procesado por Mercado Pago. Puedes cancelar tu suscripción cuando quieras.</p>
+</div>
+"""
+
+
+def publicar_form(handler, ok=False, sub_token=None, form=None, errores=None):
     categorias = db.get_categorias()
     sitio = db.get_contenido_sitio()
 
@@ -757,6 +794,15 @@ def publicar_form(handler, ok=False, form=None, errores=None):
   <a class="btn btn-primary" href="/">Volver al inicio</a>
 </div>"""
         return render(handler, t.layout("Aviso enviado", body, active="publicar", site=sitio))
+
+    if db.get_config_pagos()["suscripcion_activa"]:
+        sub = db.get_suscripcion_pendiente(sub_token) if sub_token else None
+        if not sub or sub.get("estado") != "activa":
+            body = _paywall_body(sub_token, sub.get("estado") if sub else None)
+            return render(handler, t.layout("Publica tu negocio", body, active="publicar", site=sitio))
+        form = dict(form or {})
+        form.setdefault("email", sub.get("email", ""))
+        form["_sub_token"] = sub_token
 
     render(handler, t.layout("Publicar mi negocio", _publicar_body(categorias, sitio, form, errores), active="publicar", site=sitio))
 
@@ -789,8 +835,13 @@ _EXT_POR_TIPO = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 def publicar_submit(handler, form, foto=None):
     if _es_bot(form):
         return redirect(handler, "/publicar?ok=1")
+    sub_token = form.get("sub_token", "")
+    if db.get_config_pagos()["suscripcion_activa"]:
+        sub = db.get_suscripcion_pendiente(sub_token) if sub_token else None
+        if not sub or sub.get("estado") != "activa":
+            return redirect(handler, "/publicar")
     if not db.verificar_limite(_client_ip(handler), "publicar"):
-        return publicar_form(handler, form=form,
+        return publicar_form(handler, sub_token=sub_token or None, form=form,
                               errores=["Ya enviaste varios avisos seguidos. Espera un poco antes de volver a intentar."])
     categorias = db.get_categorias()
     categoria_ids = {c["id"] for c in categorias}
@@ -800,7 +851,7 @@ def publicar_submit(handler, form, foto=None):
     elif foto and len(foto["data"]) > 5 * 1024 * 1024:
         errores.append("La foto es muy pesada (máximo 5 MB).")
     if errores:
-        return publicar_form(handler, form=form, errores=errores)
+        return publicar_form(handler, sub_token=sub_token or None, form=form, errores=errores)
 
     foto_url = None
     if foto:
@@ -817,6 +868,52 @@ def publicar_submit(handler, form, foto=None):
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
         foto_url=foto_url)
     redirect(handler, "/publicar?ok=1")
+
+
+def suscripcion_iniciar_submit(handler, form):
+    sitio = db.get_contenido_sitio()
+    if _es_bot(form):
+        return redirect(handler, "/publicar")
+    email = form.get("email", "").strip()[:200]
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        body = _paywall_body(error="Ingresa un correo electrónico válido.")
+        return render(handler, t.layout("Publica tu negocio", body, active="publicar", site=sitio))
+    sub_token = secrets.token_urlsafe(16)
+    db.crear_suscripcion_pendiente(sub_token, email)
+    origin = _origin(handler)
+    try:
+        resp = _crear_preapproval(email, sub_token, origin)
+        init_point = resp.get("init_point") or resp.get("sandbox_init_point")
+    except Exception as exc:
+        sys.stderr.write(f"ERROR creando preapproval MP: {exc!r}\n")
+        init_point = None
+    if not init_point:
+        body = _paywall_body(error="No pudimos iniciar el pago. Intenta de nuevo en unos minutos.")
+        return render(handler, t.layout("Publica tu negocio", body, active="publicar", site=sitio))
+    db.actualizar_suscripcion_pendiente(sub_token, preapproval_id=resp.get("id"))
+    redirect(handler, init_point)
+
+
+def api_mp_webhook(handler, body, query):
+    try:
+        data = json.loads(body or "{}") if body else {}
+    except Exception:
+        data = {}
+    parametros = qs(query)
+    preapproval_id = (data.get("data") or {}).get("id") or parametros.get("id") or parametros.get("data.id")
+    if not preapproval_id:
+        return render_json(handler, {"ok": True})
+    try:
+        info = _mp_request("GET", f"/preapproval/{preapproval_id}")
+    except Exception as exc:
+        sys.stderr.write(f"ERROR consultando preapproval MP {preapproval_id}: {exc!r}\n")
+        return render_json(handler, {"ok": True})
+    external_reference = info.get("external_reference")
+    status = info.get("status")
+    if external_reference:
+        nuevo_estado = "activa" if status == "authorized" else "cancelada" if status == "cancelled" else "pendiente"
+        db.actualizar_suscripcion_pendiente(external_reference, estado=nuevo_estado, mp_status=status)
+    render_json(handler, {"ok": True})
 
 
 def api_buscar(handler, body):
@@ -1273,6 +1370,44 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
 
+MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+MP_PRECIO_PROMO = 1990
+MP_PRECIO_NORMAL = 5990
+
+
+def _mp_request(method, path, payload=None):
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = urllib.request.Request(
+        f"https://api.mercadopago.com{path}", data=data, method=method,
+        headers={
+            "Authorization": f"Bearer {MP_ACCESS_TOKEN}", "Content-Type": "application/json",
+            "User-Agent": "Talcadatos/1.0",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read().decode())
+    except urllib.error.HTTPError as exc:
+        detalle = exc.read().decode(errors="replace")
+        sys.stderr.write(f"ERROR MP API {method} {path}: {exc.code} {detalle}\n")
+        raise
+
+
+def _crear_preapproval(email, external_reference, origin):
+    payload = {
+        "reason": "Talcadatos - Publicación mensual de aviso",
+        "external_reference": external_reference,
+        "payer_email": email,
+        "auto_recurring": {
+            "frequency": 1, "frequency_type": "months",
+            "transaction_amount": MP_PRECIO_PROMO, "currency_id": "CLP",
+        },
+        "back_url": f"{origin}/publicar?sub={external_reference}",
+        "notification_url": f"{origin}/api/mp-webhook",
+        "status": "pending",
+    }
+    return _mp_request("POST", "/preapproval", payload)
+
 
 def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
     destinatario = (negocio or {}).get("email") or ""
@@ -1706,6 +1841,8 @@ def contenido_grupos(sitio):
 def admin_contenido(handler):
     sitio = db.get_contenido_sitio()
     flash = get_flash(handler)
+    suscripcion_activa = db.get_config_pagos()["suscripcion_activa"]
+    precio_fmt = f"{MP_PRECIO_PROMO:,}".replace(",", ".")
     grupos = "".join(
         f'<section class="panel cms-section"><h2>{titulo}</h2><div class="form-grid">{campos}</div></section>'
         for titulo, campos in contenido_grupos(sitio)
@@ -1716,6 +1853,17 @@ def admin_contenido(handler):
   <p class="lede">Edita textos, llamados a la acción y la identidad de las páginas públicas. Los avisos, negocios y usuarios se gestionan desde sus secciones propias.</p></div>
   <a class="btn btn-ghost" href="/admin/editor">Abrir editor visual</a>
 </div>
+<section class="panel cms-section">
+  <h2>Cobro de suscripción</h2>
+  <p class="lede">Cuando está activo, el botón "Publicar mi negocio" lleva a una pantalla de suscripción mensual
+  (${precio_fmt}/mes) antes de mostrar el formulario. Mientras está apagado, publicar sigue siendo gratis.</p>
+  <form method="post" action="/admin/suscripcion/toggle" class="inline-form">
+    <button class="btn {'btn-bad' if suscripcion_activa else 'btn-primary'} btn-lg" type="submit">
+      {'Desactivar cobro (volver a gratis)' if suscripcion_activa else 'Activar cobro de suscripción'}
+    </button>
+    <span class="hint">Estado actual: <strong>{'activo, se cobra' if suscripcion_activa else 'inactivo, gratis'}</strong></span>
+  </form>
+</section>
 <form method="post" action="/admin/contenido" class="form cms-form" enctype="multipart/form-data">
   {grupos}
   <div class="cms-save"><span class="hint">Los cambios se aplican al instante en la versión con servidor.</span><button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button></div>
@@ -1723,6 +1871,14 @@ def admin_contenido(handler):
 """
     render(handler, t.layout("Contenido del sitio", body, active="contenido", admin=True, flash=flash),
            clear_flash=bool(flash))
+
+
+def admin_suscripcion_toggle_submit(handler):
+    actual = db.get_config_pagos()["suscripcion_activa"]
+    db.set_suscripcion_activa(not actual)
+    auditar(handler, "toggle_suscripcion", "activada" if not actual else "desactivada")
+    mensaje = "Cobro de suscripción activado." if not actual else "Cobro de suscripción desactivado, publicar es gratis."
+    redirect(handler, "/admin/contenido", flash=mensaje)
 
 
 CAMPOS_IMAGEN_SITIO = ("hero_imagen_url", "explorar_imagen_url", "pymes_imagen_url")
@@ -2341,7 +2497,9 @@ class Handler(BaseHTTPRequestHandler):
             if len(segs) == 2 and segs[0] == "avisos" and segs[1].isdigit():
                 return detalle(self, int(segs[1]), query)
             if path == "/publicar":
-                return publicar_form(self, ok=qs(query).get("ok") == "1")
+                return publicar_form(self, ok=qs(query).get("ok") == "1", sub_token=qs(query).get("sub"))
+            if path == "/api/mp-webhook":
+                return api_mp_webhook(self, None, query)
             if path == "/necesito":
                 return necesito_form(self, ok=qs(query).get("ok") == "1")
             if path == "/sw.js":
@@ -2431,6 +2589,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/publicar":
                 form, archivos = self._form_multipart()
                 return publicar_submit(self, form, archivos.get("foto"))
+            if path == "/suscripcion/iniciar":
+                return suscripcion_iniciar_submit(self, self._form())
+            if path == "/api/mp-webhook":
+                return api_mp_webhook(self, self._body(), parts.query)
             if path == "/necesito":
                 return necesito_submit(self, self._form())
             if path == "/api/buscar":
@@ -2450,6 +2612,10 @@ class Handler(BaseHTTPRequestHandler):
                     return None
                 form, archivos = self._form_multipart()
                 return admin_contenido_submit(self, form, archivos)
+            if path == "/admin/suscripcion/toggle":
+                if not require_role(self, {"super_admin"}):
+                    return None
+                return admin_suscripcion_toggle_submit(self)
             if path == "/admin/cuenta":
                 return admin_cuenta_submit(self, self._form()) if require_admin(self) else None
 

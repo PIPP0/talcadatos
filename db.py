@@ -211,6 +211,31 @@ def _con_id(d, doc_id):
 
 # -------------------------------------------------------- contenido del sitio
 
+def get_config_pagos():
+    doc = _fs().collection("configuracion").document("pagos").get()
+    d = doc.to_dict() or {}
+    return {"suscripcion_activa": bool(d.get("suscripcion_activa", False))}
+
+
+def set_suscripcion_activa(activa):
+    _fs().collection("configuracion").document("pagos").set({"suscripcion_activa": bool(activa)}, merge=True)
+
+
+def crear_suscripcion_pendiente(token, email):
+    _fs().collection("suscripciones_pendientes").document(token).set({
+        "estado": "pendiente", "email": email, "creado_en": now(),
+    })
+
+
+def get_suscripcion_pendiente(token):
+    doc = _fs().collection("suscripciones_pendientes").document(token).get()
+    return doc.to_dict() if doc.exists else None
+
+
+def actualizar_suscripcion_pendiente(token, **campos):
+    _fs().collection("suscripciones_pendientes").document(token).set(campos, merge=True)
+
+
 def get_contenido_sitio():
     """Obtiene el CMS de una sola página y aplica valores seguros por defecto."""
     doc = _fs().collection("configuracion").document("sitio").get()

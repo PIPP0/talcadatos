@@ -284,6 +284,10 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .panel{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:30px 32px; margin:28px 0; box-shadow:var(--shadow);}
 .panel-narrow{max-width:420px; margin:60px auto;}
 .panel-ok{text-align:center; max-width:520px; margin:60px auto;}
+.panel-suscripcion{max-width:480px; margin:60px auto;}
+.precio-promo{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:18px 0;}
+.precio-tachado{color:var(--ink-faint); text-decoration:line-through; font-size:1.05rem;}
+.precio-actual{color:var(--ink); font-size:1.9rem; font-weight:800; letter-spacing:-0.02em;}
 .form{display:flex; flex-direction:column; gap:16px; margin-top:16px;}
 .form label{display:flex; flex-direction:column; gap:6px; font-size:.88rem; font-weight:600; color:var(--ink-soft);}
 .hp-field{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;}
