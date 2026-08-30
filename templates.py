@@ -211,7 +211,7 @@ def whatsapp_url(whatsapp, negocio_nombre, titulo):
 def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     badge_html = ""
     if badge_mode == "plan" and aviso["plan_nombre"] in ("Destacado", "Premium"):
-        badge_html = badge("Destacado", "gold")
+        badge_html = plan_badge(aviso["plan_nombre"])
     elif badge_mode == "nuevo" and es_nuevo(aviso):
         badge_html = badge("Nuevo", "ok")
     verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
