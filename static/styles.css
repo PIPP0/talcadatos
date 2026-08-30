@@ -113,7 +113,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .search-box{position:relative; max-width:640px; margin:0 auto; display:flex; align-items:center; gap:8px;
   background:var(--paper-raised); border:1px solid var(--line); border-radius:980px; padding:8px 8px 8px 20px; box-shadow:0 8px 30px -10px rgba(0,0,0,.35);}
 .search-icon{font-size:1.1rem;}
-.search-box input{flex:1; border:none; outline:none; font-size:1rem; font-family:inherit; background:transparent; padding:10px 4px; color:var(--ink);}
+.search-box input{flex:1; min-width:0; border:none; outline:none; font-size:1rem; font-family:inherit; background:transparent; padding:10px 4px; color:var(--ink); text-overflow:ellipsis;}
 .search-results{position:absolute; top:calc(100% + 8px); left:0; right:0; background:var(--paper-raised);
   border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); text-align:left; overflow:hidden; z-index:30;}
 .search-item{display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); color:var(--ink);}
