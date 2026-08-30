@@ -41,7 +41,7 @@ CONTENIDO_SITIO_POR_DEFECTO = {
     "pie": "Talcadatos — directorio de pymes y emprendedores de Talca",
     "descripcion": "Encuentra pymes y emprendedores de Talca por lo que necesitas y escríbeles directo por WhatsApp. Ventanas, gásfitería, clases, tecnología y más.",
     "hero_ubicacion": "Talca, Chile",
-    "hero_titulo": "Encuentra lo que necesitas en Talca, al toque.",
+    "hero_titulo": "Publica tu negocio en Talca, al toque.",
     "hero_bajada": "Negocios, servicios, datos y oportunidades cerca de ti.",
     "hero_placeholder": "¿Qué estás buscando?",
     "hero_ayuda": "Prueba: gásfiter, veterinaria, clases particulares",
