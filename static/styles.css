@@ -66,7 +66,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .topnav a:not(.btn):hover{color:var(--ink);}
 .topnav>a:not(.btn){position:relative; padding-bottom:6px;}
 .topnav a.is-active:not(.btn){color:var(--ink); font-weight:700;}
-.topnav a.is-active:not(.btn)::after{content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px; border-radius:2px; background:var(--accent);}
+.topnav a.is-active:not(.btn)::after{content:""; position:absolute; left:0; right:0; bottom:-6px; height:2px; border-radius:2px; background:#FC5347;}
 
 /* ---- buttons ---- */
 .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:980px; border:1px solid transparent; font-weight:600; font-size:.92rem; cursor:pointer; font-family:inherit; transition:transform .12s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;}
@@ -74,8 +74,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 @media (hover:hover){.btn:hover{transform:translateY(-2px); box-shadow:0 10px 20px -15px rgba(23,23,23,.45);}}
 .btn-primary{background:var(--accent); color:#fff;}
 .btn-primary:hover{background:var(--accent-deep); color:#fff;}
-.nav-cta{background:#FF6A52; font-weight:700; padding:10px 22px;}
-.nav-cta:hover{background:#F14F35;}
+.nav-cta{background:#FC5347; font-weight:700; padding:10px 22px;}
+.nav-cta:hover{background:#D8473D;}
 .btn-ghost{background:transparent; border-color:var(--line); color:var(--ink);}
 .btn-ghost:hover{border-color:var(--accent); color:var(--accent);}
 .btn-whatsapp{background:var(--whatsapp); color:#fff;}
