@@ -25,12 +25,7 @@ SITE_DESCRIPTION = ("Encuentra pymes y emprendedores de Talca por lo que necesit
 
 
 def brand_logo_html(marca_raw):
-    pin = ('<svg class="brand-pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
-           '<path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5'
-           's1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>')
-    if marca_raw.startswith("Talca") and len(marca_raw) > 5:
-        return f'{pin}<span class="brand-dark">Talca</span><span class="brand-accent">{esc(marca_raw[5:])}</span>'
-    return f'{pin}<span class="brand-dark">{esc(marca_raw)}</span>'
+    return f'<img class="brand-logo" src="/static/img/logo.png" alt="{esc(marca_raw)}">'
 
 
 def layout(title, body, active="home", admin=False, description=None, og_image="/og/default.png",
@@ -85,7 +80,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260829-10">
+<link rel="stylesheet" href="/static/styles.css?v=20260829-11">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
