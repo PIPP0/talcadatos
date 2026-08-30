@@ -34,7 +34,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
     marca_raw = site.get("marca", "Talcadatos")
     marca = esc(marca_raw)
     pie = esc(site.get("pie", "Talcadatos — directorio de pymes y emprendedores de Talca"))
-    nav = admin_nav(active) if admin else PUBLIC_NAV.replace("{{marca}}", brand_logo_html(marca_raw))
+    nav = admin_nav(active) if admin else public_nav(active, brand_logo_html(marca_raw))
     mobile_nav = ADMIN_MOBILE_NAV if admin else MOBILE_NAV
     active_attr = f' data-active="{active}"'
     desc = description or site.get("descripcion") or SITE_DESCRIPTION
@@ -80,7 +80,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260829-12">
+<link rel="stylesheet" href="/static/styles.css?v=20260829-13">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -109,16 +109,25 @@ ADMIN_MOBILE_NAV = """
 """
 
 
-PUBLIC_NAV = """
+def public_nav(active, marca_html):
+    def link(slug, href, label, extra_cls=""):
+        cls = " ".join(c for c in (extra_cls, "is-active" if slug == active else "") if c)
+        cls_attr = f' class="{cls}"' if cls else ""
+        return f'<a href="{href}"{cls_attr}>{label}</a>'
+
+    links = "".join([
+        link("home", "/", "Inicio"),
+        link("explorar", "/explorar", "Explorar"),
+        link("avisos", "/avisos", "Avisos"),
+        link("favoritos", "/favoritos", "Favoritos"),
+        link("publicar", "/publicar", "Publicar mi negocio", "btn btn-primary nav-cta"),
+    ])
+    return f"""
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a href="/" class="brand">{{marca}}</a>
+    <a href="/" class="brand">{marca_html}</a>
     <nav class="topnav">
-      <a href="/">Inicio</a>
-      <a href="/explorar">Explorar</a>
-      <a href="/avisos">Avisos</a>
-      <a href="/favoritos">Favoritos</a>
-      <a href="/publicar" class="btn btn-primary nav-cta">Publicar mi negocio</a>
+      {links}
     </nav>
   </div>
 </header>
