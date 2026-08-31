@@ -626,13 +626,25 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     }, ensure_ascii=False)
 
     foto_url = aviso.get("foto_url")
-    foto_html = (f'<img src="{t.esc(foto_url)}" alt="{t.esc(aviso["titulo"])}" loading="eager">'
-                 if foto_url else f'<span class="icon-tile big"><span class="card-icon big">{aviso["icono"]}</span></span>')
     fotos_extra = aviso.get("fotos_extra") or []
-    galeria_html = ("<div class=\"detalle-galeria\">" + "".join(
-        f'<a href="{t.esc(url)}" target="_blank" rel="noopener"><img src="{t.esc(url)}" alt="{t.esc(aviso["titulo"])}" loading="lazy"></a>'
-        for url in fotos_extra
-    ) + "</div>") if fotos_extra else ""
+    fotos = ([foto_url] + fotos_extra) if foto_url else []
+    chevrones_html = ""
+    if len(fotos) >= 2:
+        slides = "".join(
+            f'<img src="{t.esc(u)}" alt="{t.esc(aviso["titulo"])}" loading="eager" class="card-carousel-slide">'
+            for u in fotos)
+        dots = "".join(
+            f'<span class="card-carousel-dot{" is-active" if i == 0 else ""}"></span>' for i in range(len(fotos)))
+        foto_html = (f'<div class="card-carousel" data-carousel>'
+                     f'<div class="card-carousel-track">{slides}</div>'
+                     f'<div class="card-carousel-dots">{dots}</div></div>')
+        chevrones_html = """
+    <button type="button" class="card-carousel-nav card-carousel-prev" data-carousel-prev aria-label="Foto anterior">‹</button>
+    <button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>"""
+    elif foto_url:
+        foto_html = f'<img src="{t.esc(foto_url)}" alt="{t.esc(aviso["titulo"])}" loading="eager">'
+    else:
+        foto_html = f'<span class="icon-tile big"><span class="card-icon big">{aviso["icono"]}</span></span>'
     body = f"""
 <div class="detalle">
   <div class="detalle-photo{' has-foto' if foto_url else ''}" style="--card-accent:{t.esc(aviso['color'])}">
@@ -643,7 +655,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
        data-categoria="{t.esc(aviso['categoria_nombre'])}" data-icono="{aviso['icono']}"
        data-color="{t.esc(aviso['color'])}" data-verificado="{'1' if aviso['verificado'] else ''}"
        data-plan="{t.esc(aviso['plan_nombre'])}"
-       title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
+       title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>{chevrones_html}
   </div>
   <div class="detalle-body">
     <div class="mono detalle-cat">{aviso['icono']} {t.esc(aviso['categoria_nombre'])} · {t.esc(aviso['comuna'])}</div>
@@ -674,7 +686,6 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     </div>
   </div>
 </div>
-{galeria_html}
 {"<section class='section'><h2>También te puede servir</h2>" + t.cards_grid(relacionados, badge_mode="plan") + "</section>" if relacionados else ""}
 """
     resumen = aviso["descripcion"][:157] + "…" if len(aviso["descripcion"]) > 160 else aviso["descripcion"]

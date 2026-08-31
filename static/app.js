@@ -183,7 +183,7 @@ function iniciarCarousels() {
   document.querySelectorAll("[data-carousel]").forEach(function (car) {
     if (car.dataset.carouselInit) return;
     car.dataset.carouselInit = "1";
-    var tarjeta = car.closest(".card");
+    var tarjeta = car.closest(".card, .detalle-photo");
     if (!tarjeta) return;
     var track = car.querySelector(".card-carousel-track");
     var slides = car.querySelectorAll(".card-carousel-slide");
