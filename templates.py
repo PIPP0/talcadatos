@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260831-11">
+<link rel="stylesheet" href="/static/styles.css?v=20260831-12">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -166,9 +166,16 @@ ADMIN_NAV_GROUPS = [
 
 
 def admin_nav(active):
+    import db
+    try:
+        pendientes = len(db.get_avisos(estado="pendiente"))
+    except Exception:
+        pendientes = 0
+
     def link(slug, href, label, icon):
         cls = " is-active" if slug == active else ""
-        return f'<a href="{href}" class="admin-sidelink{cls}"><span class="admin-sideicon">{icon}</span>{label}</a>'
+        punto = '<span class="admin-sidedot" aria-label="Avisos pendientes"></span>' if slug == "moderacion" and pendientes else ""
+        return f'<a href="{href}" class="admin-sidelink{cls}"><span class="admin-sideicon">{icon}</span>{label}{punto}</a>'
 
     def group(titulo, items):
         links = "".join(link(*item) for item in items)

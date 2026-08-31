@@ -417,6 +417,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .admin-sidegroup{display:flex; flex-direction:column; gap:2px;}
 .admin-sidegroup-title{padding:0 10px; margin-bottom:4px; font-family:"IBM Plex Mono"; font-size:.63rem; text-transform:uppercase; letter-spacing:.07em; color:#8E8E93;}
 .admin-sidelink{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; color:#D8D8DC; font-size:.87rem; font-weight:500; transition:background-color .15s ease, color .15s ease;}
+.admin-sidedot{width:8px; height:8px; border-radius:50%; background:var(--brick); margin-left:auto; flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(224,52,43,.18);}
 .admin-sidelink:hover{background:rgba(255,255,255,.07); color:#fff;}
 .admin-sidelink.is-active{background:var(--accent); color:#fff; font-weight:700;}
 .admin-sideicon{display:inline-flex; align-items:center; justify-content:center; width:20px; flex:0 0 auto; font-size:.95rem; opacity:.9;}

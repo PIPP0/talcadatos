@@ -834,12 +834,17 @@ def publicar_submit(handler, form, foto=None):
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
         plan_id=plan_id, terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200],
         verificado=(plan_id == "premium"))
-    db.crear_aviso(
+    aviso_id = db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
         foto_url=foto_url)
     if sub_token:
         db.actualizar_suscripcion_pendiente(sub_token, negocio_id=negocio_id)
+    negocio = db.get_negocio(negocio_id)
+    aviso_nuevo = db.get_aviso(aviso_id)
+    if aviso_nuevo:
+        origin = _origin(handler)
+        threading.Thread(target=_enviar_correo_nueva_solicitud, args=(aviso_nuevo, negocio, origin), daemon=True).start()
     redirect(handler, "/publicar?ok=1")
 
 
@@ -1602,6 +1607,33 @@ def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
         urllib.request.urlopen(req, timeout=10)
     except Exception as exc:
         sys.stderr.write(f"ERROR enviando correo de aprobacion (aviso {aviso['id']}): {exc!r}\n")
+
+
+def _enviar_correo_nueva_solicitud(aviso, negocio, origin):
+    if not RESEND_API_KEY or not RESEND_REPLY_TO:
+        return
+    link_moderacion = f"{origin}/admin/moderacion"
+    html = f"""
+<p>Llegó una nueva solicitud de publicación en Talcadatos.</p>
+<p><strong>{t.esc((negocio or {}).get('nombre', ''))}</strong> · {t.esc((negocio or {}).get('whatsapp', ''))}</p>
+<p>Aviso: <strong>{t.esc(aviso['titulo'])}</strong> · {t.esc(aviso.get('categoria_nombre', ''))}</p>
+<p><a href="{t.esc(link_moderacion)}">Revisar en el panel de moderación</a></p>
+"""
+    payload = json.dumps({
+        "from": RESEND_FROM_EMAIL, "to": [RESEND_REPLY_TO], "reply_to": RESEND_REPLY_TO,
+        "subject": f"Nueva solicitud de publicación: {aviso['titulo']}", "html": html,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.resend.com/emails", data=payload, method="POST",
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json",
+            "User-Agent": "Talcadatos/1.0",
+        },
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as exc:
+        sys.stderr.write(f"ERROR enviando correo de nueva solicitud (aviso {aviso['id']}): {exc!r}\n")
 
 
 def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
