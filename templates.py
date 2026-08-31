@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260830-10">
+<link rel="stylesheet" href="/static/styles.css?v=20260830-11">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -195,6 +195,12 @@ def plan_badge(plan_nombre):
 
 def origen_badge(es_demo):
     return badge("Demo", "muted") if es_demo else badge("Real", "ok")
+
+
+def plan_cc(plan_nombre):
+    mapa = {"Premium": ("P", "cc-premium"), "Destacado": ("D", "cc-destacado")}
+    letra, clase = mapa.get(plan_nombre, ("R", "cc-regular"))
+    return f'<span class="cc-tag {clase}" title="{esc(plan_nombre)}">{letra}</span>'
 
 
 def es_nuevo(aviso, dias=3):

@@ -1271,6 +1271,7 @@ def admin_avisos_lista(handler, query):
   <td class="mono">{t.esc(a['categoria_nombre'])}</td>
   <td>{t.estado_badge(a['estado'])}</td>
   <td>{t.origen_badge(a.get('es_demo', False))}</td>
+  <td>{t.plan_cc(a.get('plan_nombre', 'Gratis'))}</td>
   <td class="mono">{a['vistas_total']}</td>
   <td class="mono">{a['contactos_total']}</td>
   <td class="admin-actions">
@@ -1327,8 +1328,8 @@ def admin_avisos_lista(handler, query):
   </div>
 </div>
 <div class="tbl-wrap" data-reveal><table>
-  <tr><th>Título</th><th>Negocio</th><th>Categoría</th><th>Estado</th><th>Origen</th><th>Vistas</th><th>Contactos</th><th>Acciones</th></tr>
-  {filas or "<tr><td colspan='8' class='empty-state'>Sin avisos.</td></tr>"}
+  <tr><th>Título</th><th>Negocio</th><th>Categoría</th><th>Estado</th><th>Origen</th><th>CC</th><th>Vistas</th><th>Contactos</th><th>Acciones</th></tr>
+  {filas or "<tr><td colspan='9' class='empty-state'>Sin avisos.</td></tr>"}
 </table></div>
 {paginacion_html}
 """

@@ -380,6 +380,12 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .badge-bad{background:var(--brick-soft); color:var(--brick);}
 .badge-muted{background:#EAEAEC; color:var(--ink-faint);}
 
+.cc-tag{display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:6px;
+  font-family:"IBM Plex Mono"; font-weight:700; font-size:.8rem; line-height:1;}
+.cc-premium{background:var(--brick); color:#fff;}
+.cc-destacado{background:#F0B429; color:#3A2A00;}
+.cc-regular{background:#4FADDE; color:#fff;}
+
 /* ---- admin: menu lateral ---- */
 .admin-shell{display:flex; align-items:flex-start;}
 .admin-sidebar{position:sticky; top:0; align-self:flex-start; flex:0 0 240px; width:240px; height:100vh; overflow-y:auto;
