@@ -677,3 +677,135 @@ document.addEventListener("click", function (e) {
   document.addEventListener("pointerup", soltar);
   document.addEventListener("pointercancel", soltar);
 })();
+
+/* ---- encuesta pasiva: widget fijo en el detalle del aviso ---- */
+(function initEncuestaPasiva() {
+  var KEY = "talca_encuestas_pasivas";
+  function leer() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; }
+  }
+  function marcar(avisoId) {
+    try {
+      var ids = leer();
+      if (ids.indexOf(avisoId) === -1) ids.push(avisoId);
+      localStorage.setItem(KEY, JSON.stringify(ids));
+    } catch (e) {}
+  }
+  document.querySelectorAll("[data-encuesta-pasiva]").forEach(function (widget) {
+    var avisoId = widget.getAttribute("data-aviso-id");
+    if (leer().indexOf(avisoId) !== -1) {
+      widget.querySelector(".encuesta-pasiva-texto").textContent = "¡Gracias por tu respuesta!";
+      widget.querySelector(".encuesta-pasiva-botones").remove();
+    }
+  });
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-encuesta-resp]");
+    if (!btn) return;
+    var widget = btn.closest("[data-encuesta-pasiva]");
+    if (!widget) return;
+    var avisoId = widget.getAttribute("data-aviso-id");
+    var respuesta = btn.getAttribute("data-encuesta-resp");
+    fetch("/api/encuesta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipo: "pasiva", aviso_id: avisoId, respuesta: respuesta }),
+    }).catch(function () {});
+    marcar(avisoId);
+    widget.querySelector(".encuesta-pasiva-texto").textContent = "¡Gracias por tu respuesta!";
+    widget.querySelector(".encuesta-pasiva-botones").remove();
+  });
+})();
+
+/* ---- encuesta activa: modal con estrellas + comentario, disparado tras
+   escribir por WhatsApp. No es obligatoria: se puede cerrar o enviar vacía. ---- */
+(function initEncuestaActiva() {
+  var KEY = "talca_encuesta_activa";
+  var DIAS_ESPERA = 30;
+  var overlayEl = null;
+
+  function yaRespondida() {
+    try {
+      var v = localStorage.getItem(KEY);
+      if (!v) return false;
+      return Date.now() - Number(v) < DIAS_ESPERA * 24 * 60 * 60 * 1000;
+    } catch (e) { return false; }
+  }
+  function marcarMostrada() {
+    try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+  }
+
+  function getOverlay() {
+    if (overlayEl) return overlayEl;
+    var back = document.createElement("div");
+    back.className = "app-modal-backdrop";
+    back.innerHTML =
+      '<div class="app-modal encuesta-activa-modal" role="dialog" aria-modal="true">' +
+      '<button class="app-modal-close" type="button" aria-label="Cerrar">×</button>' +
+      '<p class="app-modal-text">¿Cómo calificarías tu experiencia?</p>' +
+      '<div class="encuesta-estrellas" role="radiogroup" aria-label="Calificación de 1 a 5 estrellas">' +
+      [1, 2, 3, 4, 5].map(function (n) {
+        return '<button type="button" data-estrella="' + n + '" aria-label="' + n + ' estrellas">★</button>';
+      }).join("") +
+      "</div>" +
+      '<textarea class="encuesta-comentario" rows="2" maxlength="500" placeholder="Cuéntanos más (opcional)"></textarea>' +
+      '<div class="app-modal-actions single"><button class="btn btn-primary" type="button" data-encuesta-enviar>Enviar</button></div>' +
+      "</div>";
+    document.body.appendChild(back);
+    overlayEl = back;
+    return back;
+  }
+
+  function preguntar(avisoId) {
+    var overlay = getOverlay();
+    var estrellas = overlay.querySelectorAll("[data-estrella]");
+    var textarea = overlay.querySelector(".encuesta-comentario");
+    var calificacion = null;
+    textarea.value = "";
+    estrellas.forEach(function (b) { b.classList.remove("is-activa"); });
+
+    function pintar(n) {
+      estrellas.forEach(function (b) {
+        b.classList.toggle("is-activa", Number(b.getAttribute("data-estrella")) <= n);
+      });
+    }
+    function onEstrellaClick(e) {
+      var b = e.target.closest("[data-estrella]");
+      if (!b) return;
+      calificacion = Number(b.getAttribute("data-estrella"));
+      pintar(calificacion);
+    }
+    function cerrar() {
+      overlay.classList.remove("is-open");
+      overlay.querySelector(".encuesta-estrellas").removeEventListener("click", onEstrellaClick);
+      overlay.querySelector("[data-encuesta-enviar]").removeEventListener("click", onEnviar);
+      overlay.onclick = null;
+    }
+    function onEnviar() {
+      var comentario = textarea.value.trim();
+      if (calificacion === null && !comentario) {
+        cerrar();
+        return;
+      }
+      fetch("/api/encuesta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "activa", aviso_id: avisoId, calificacion: calificacion, comentario: comentario }),
+      }).catch(function () {});
+      cerrar();
+      mostrarAviso("¡Gracias por tu respuesta!", "ok");
+    }
+    overlay.querySelector(".encuesta-estrellas").addEventListener("click", onEstrellaClick);
+    overlay.querySelector("[data-encuesta-enviar]").addEventListener("click", onEnviar);
+    overlay.onclick = function (e) { if (e.target === overlay) cerrar(); };
+    overlay.querySelector(".app-modal-close").onclick = cerrar;
+    overlay.classList.add("is-open");
+  }
+
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest("[data-wa-click]");
+    if (!link || yaRespondida()) return;
+    var avisoId = link.getAttribute("data-aviso-id");
+    marcarMostrada();
+    setTimeout(function () { preguntar(avisoId); }, 4000);
+  });
+})();

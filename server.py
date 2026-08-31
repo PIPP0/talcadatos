@@ -614,6 +614,13 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
       <img src="{qr_url}" alt="Código QR de este aviso" width="110" height="110">
       <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
+    <div class="encuesta-pasiva" data-encuesta-pasiva data-aviso-id="{aviso_id}">
+      <span class="encuesta-pasiva-texto">¿Te sirvió esta página?</span>
+      <div class="encuesta-pasiva-botones">
+        <button type="button" data-encuesta-resp="si" aria-label="Sí, me sirvió">👍</button>
+        <button type="button" data-encuesta-resp="no" aria-label="No me sirvió">👎</button>
+      </div>
+    </div>
   </div>
 </div>
 {"<section class='section'><h2>También te puede servir</h2>" + t.cards_grid(relacionados, badge_mode="plan") + "</section>" if relacionados else ""}
@@ -937,6 +944,32 @@ def api_evento(handler, body):
     db.registrar_evento(tipo, aviso_id=aviso_id, termino_busqueda=termino)
     if tipo == "click_whatsapp" and aviso_id:
         db.incrementar_contactos(aviso_id)
+    render_json(handler, {"ok": True})
+
+
+def api_encuesta(handler, body):
+    data = json.loads(body or "{}")
+    tipo = data.get("tipo")
+    aviso_id = data.get("aviso_id")
+    if tipo == "pasiva":
+        respuesta = data.get("respuesta")
+        if respuesta not in ("si", "no"):
+            return render_json(handler, {"ok": False}, status=400)
+        if not db.verificar_limite(_client_ip(handler), "encuesta", maximo=30):
+            return render_json(handler, {"ok": False}, status=429)
+        db.crear_encuesta(tipo, aviso_id, respuesta=respuesta)
+    elif tipo == "activa":
+        calificacion = data.get("calificacion")
+        comentario = (data.get("comentario") or "").strip()[:500] or None
+        if calificacion is not None and (not isinstance(calificacion, int) or not (1 <= calificacion <= 5)):
+            return render_json(handler, {"ok": False}, status=400)
+        if calificacion is None and not comentario:
+            return render_json(handler, {"ok": False}, status=400)
+        if not db.verificar_limite(_client_ip(handler), "encuesta", maximo=30):
+            return render_json(handler, {"ok": False}, status=429)
+        db.crear_encuesta(tipo, aviso_id, calificacion=calificacion, comentario=comentario)
+    else:
+        return render_json(handler, {"ok": False}, status=400)
     render_json(handler, {"ok": True})
 
 
@@ -2781,6 +2814,8 @@ class Handler(BaseHTTPRequestHandler):
                 return api_favoritos(self, self._body())
             if path == "/api/evento":
                 return api_evento(self, self._body())
+            if path == "/api/encuesta":
+                return api_encuesta(self, self._body())
             if path == "/api/alerta":
                 return api_alerta(self, self._body())
             if len(segs) == 3 and segs[0] == "avisos" and segs[1].isdigit() and segs[2] == "reportar":

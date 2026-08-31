@@ -571,6 +571,22 @@ def get_eventos():
     return list(_all("eventos").values())
 
 
+# ------------------------------------------------------------- encuestas
+
+def crear_encuesta(tipo, aviso_id, respuesta=None, calificacion=None, comentario=None):
+    _fs().collection("encuestas").add({
+        "tipo": tipo, "aviso_id": str(aviso_id) if aviso_id else None,
+        "respuesta": respuesta, "calificacion": calificacion, "comentario": comentario,
+        "creado_en": now(),
+    })
+
+
+def get_encuestas():
+    filas = list(_all("encuestas").values())
+    filas.sort(key=lambda e: e.get("creado_en") or "", reverse=True)
+    return filas
+
+
 # ------------------------------------------------------------- sinonimos
 
 def get_sinonimos():
