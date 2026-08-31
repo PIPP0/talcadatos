@@ -689,47 +689,10 @@ document.addEventListener("click", function (e) {
   document.addEventListener("pointercancel", soltar);
 })();
 
-/* ---- encuesta pasiva: widget fijo en el detalle del aviso ---- */
-(function initEncuestaPasiva() {
-  var KEY = "talca_encuestas_pasivas";
-  function leer() {
-    try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; }
-  }
-  function marcar(avisoId) {
-    try {
-      var ids = leer();
-      if (ids.indexOf(avisoId) === -1) ids.push(avisoId);
-      localStorage.setItem(KEY, JSON.stringify(ids));
-    } catch (e) {}
-  }
-  document.querySelectorAll("[data-encuesta-pasiva]").forEach(function (widget) {
-    var avisoId = widget.getAttribute("data-aviso-id");
-    if (leer().indexOf(avisoId) !== -1) {
-      widget.querySelector(".encuesta-pasiva-texto").textContent = "¡Gracias por tu respuesta!";
-      widget.querySelector(".encuesta-pasiva-botones").remove();
-    }
-  });
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-encuesta-resp]");
-    if (!btn) return;
-    var widget = btn.closest("[data-encuesta-pasiva]");
-    if (!widget) return;
-    var avisoId = widget.getAttribute("data-aviso-id");
-    var respuesta = btn.getAttribute("data-encuesta-resp");
-    fetch("/api/encuesta", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tipo: "pasiva", aviso_id: avisoId, respuesta: respuesta }),
-    }).catch(function () {});
-    marcar(avisoId);
-    widget.querySelector(".encuesta-pasiva-texto").textContent = "¡Gracias por tu respuesta!";
-    widget.querySelector(".encuesta-pasiva-botones").remove();
-  });
-})();
-
-/* ---- encuesta activa: modal con estrellas + comentario, disparado tras
-   escribir por WhatsApp. No es obligatoria: se puede cerrar o enviar vacía. ---- */
-(function initEncuestaActiva() {
+/* ---- encuesta: modal con estrellas + comentario, reutilizado en dos
+   momentos (tras escribir por WhatsApp, y al terminar de publicar un
+   negocio). No es obligatoria: se puede cerrar o enviar vacía. ---- */
+(function initEncuesta() {
   var KEY = "talca_encuesta_activa";
   var DIAS_ESPERA = 30;
   var overlayEl = null;
@@ -752,7 +715,7 @@ document.addEventListener("click", function (e) {
     back.innerHTML =
       '<div class="app-modal encuesta-activa-modal" role="dialog" aria-modal="true">' +
       '<button class="app-modal-close" type="button" aria-label="Cerrar">×</button>' +
-      '<p class="app-modal-text">¿Cómo calificarías tu experiencia?</p>' +
+      '<p class="app-modal-text"></p>' +
       '<div class="encuesta-estrellas" role="radiogroup" aria-label="Calificación de 1 a 5 estrellas">' +
       [1, 2, 3, 4, 5].map(function (n) {
         return '<button type="button" data-estrella="' + n + '" aria-label="' + n + ' estrellas">★</button>';
@@ -766,8 +729,9 @@ document.addEventListener("click", function (e) {
     return back;
   }
 
-  function preguntar(avisoId) {
+  function preguntar(tipo, avisoId, pregunta) {
     var overlay = getOverlay();
+    overlay.querySelector(".app-modal-text").textContent = pregunta;
     var estrellas = overlay.querySelectorAll("[data-estrella]");
     var textarea = overlay.querySelector(".encuesta-comentario");
     var calificacion = null;
@@ -800,7 +764,7 @@ document.addEventListener("click", function (e) {
       fetch("/api/encuesta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo: "activa", aviso_id: avisoId, calificacion: calificacion, comentario: comentario }),
+        body: JSON.stringify({ tipo: tipo, aviso_id: avisoId, calificacion: calificacion, comentario: comentario }),
       }).catch(function () {});
       cerrar();
       mostrarAviso("¡Gracias por tu respuesta!", "ok");
@@ -817,6 +781,13 @@ document.addEventListener("click", function (e) {
     if (!link || yaRespondida()) return;
     var avisoId = link.getAttribute("data-aviso-id");
     marcarMostrada();
-    setTimeout(function () { preguntar(avisoId); }, 4000);
+    setTimeout(function () { preguntar("activa", avisoId, "¿Cómo calificarías tu experiencia?"); }, 4000);
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!document.querySelector("[data-encuesta-publicar]")) return;
+    setTimeout(function () {
+      preguntar("publicar", null, "¿Cómo fue publicar tu negocio en Talcadatos?");
+    }, 1200);
   });
 })();
