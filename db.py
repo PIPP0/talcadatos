@@ -409,14 +409,19 @@ def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario,
     return True
 
 
+FOTOS_EXTRA_MAX = 3
+
+
 def agregar_foto_extra(aviso_id, url):
     ref = _fs().collection("avisos").document(str(aviso_id))
     doc = ref.get()
     if not doc.exists:
         return False
     actuales = doc.to_dict().get("fotos_extra") or []
+    if len(actuales) >= FOTOS_EXTRA_MAX:
+        return False
     actuales.append(url)
-    ref.update({"fotos_extra": actuales[:8]})
+    ref.update({"fotos_extra": actuales})
     return True
 
 

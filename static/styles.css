@@ -213,6 +213,24 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .card-icon{font-size:2.3rem;}
 .card-icon.big{font-size:3.2rem;}
 .card-photo .badge{position:absolute; top:14px; right:14px;}
+
+.card-carousel{position:relative; width:100%; height:100%;}
+.card-carousel-slide{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; opacity:0; pointer-events:none;}
+.card-carousel-dots{position:absolute; left:50%; bottom:10px; transform:translateX(-50%); display:flex; gap:5px; z-index:2;}
+.card-carousel-dot{width:5px; height:5px; border-radius:50%; background:#fff; opacity:.4; box-shadow:0 0 0 1px rgba(0,0,0,.18); transition:opacity .2s;}
+.card-photo:hover .card-carousel-slide, .card-photo:hover .card-carousel-dot{animation-play-state:paused;}
+.card-carousel-slide.card-carousel-n2{animation:card-carousel-fade-2 7s infinite;}
+.card-carousel-slide.card-carousel-n3{animation:card-carousel-fade-3 10.5s infinite;}
+.card-carousel-slide.card-carousel-n4{animation:card-carousel-fade-4 14s infinite;}
+.card-carousel-dot.card-carousel-dot-n2{animation:card-carousel-dot-2 7s infinite;}
+.card-carousel-dot.card-carousel-dot-n3{animation:card-carousel-dot-3 10.5s infinite;}
+.card-carousel-dot.card-carousel-dot-n4{animation:card-carousel-dot-4 14s infinite;}
+@keyframes card-carousel-fade-2{0%,46%{opacity:1;} 50%,96%{opacity:0;} 100%{opacity:1;}}
+@keyframes card-carousel-fade-3{0%,29%{opacity:1;} 33%,96%{opacity:0;} 100%{opacity:1;}}
+@keyframes card-carousel-fade-4{0%,21%{opacity:1;} 25%,96%{opacity:0;} 100%{opacity:1;}}
+@keyframes card-carousel-dot-2{0%,46%{opacity:1;} 50%,96%{opacity:.4;} 100%{opacity:1;}}
+@keyframes card-carousel-dot-3{0%,29%{opacity:1;} 33%,96%{opacity:.4;} 100%{opacity:1;}}
+@keyframes card-carousel-dot-4{0%,21%{opacity:1;} 25%,96%{opacity:.4;} 100%{opacity:1;}}
 .card-body{padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px;}
 .card-title{font-weight:700; color:var(--ink); font-size:1.15rem; letter-spacing:-0.015em; line-height:1.25;}
 .card-meta{display:flex; align-items:center; gap:6px; font-size:.85rem; color:var(--ink-soft);}

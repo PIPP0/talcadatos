@@ -1358,6 +1358,7 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     errores_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
                      "</ul></div>") if errores else ""
     fotos_extra = aviso.get("fotos_extra") or []
+    es_premium = aviso.get("plan_nombre") == "Premium"
     galeria_items = "".join(f"""
 <div class="galeria-item">
   <img src="{t.esc(url)}" alt="">
@@ -1366,18 +1367,24 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     <button class="btn btn-icon btn-bad" title="Quitar foto" aria-label="Quitar foto">🗑️</button>
   </form>
 </div>""" for url in fotos_extra)
-    galeria_html = f"""
-<div class="panel">
-  <h2>Galería de fotos (Premium)</h2>
-  <p class="lede">Fotos adicionales que se muestran en la página del aviso, además de la foto principal.</p>
-  <div class="galeria-grid">{galeria_items or '<p class="hint">Todavía no hay fotos adicionales.</p>'}</div>
+    if es_premium:
+        form_agregar = (f"""
   <form method="post" action="/admin/avisos/{aviso_id}/fotos/agregar" class="form" enctype="multipart/form-data">
     <label>Agregar foto
       <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required>
-      <span class="hint">JPG, PNG o WebP, máx. 5 MB. Hasta 8 fotos adicionales.</span>
+      <span class="hint">JPG, PNG o WebP, máx. 5 MB. Hasta {db.FOTOS_EXTRA_MAX} fotos adicionales.</span>
     </label>
     <button class="btn btn-ghost btn-lg" type="submit">Agregar a la galería</button>
-  </form>
+  </form>""" if len(fotos_extra) < db.FOTOS_EXTRA_MAX else
+            '<p class="hint">Ya tiene el máximo de fotos adicionales.</p>')
+    else:
+        form_agregar = '<p class="hint">Disponible solo para avisos con plan Premium.</p>'
+    galeria_html = f"""
+<div class="panel">
+  <h2>Galería de fotos (Premium)</h2>
+  <p class="lede">Hasta {db.FOTOS_EXTRA_MAX} fotos adicionales que se muestran como carrusel en el aviso.</p>
+  <div class="galeria-grid">{galeria_items or '<p class="hint">Todavía no hay fotos adicionales.</p>'}</div>
+  {form_agregar}
 </div>"""
     body = f"""
 <div class="panel">
@@ -1567,10 +1574,12 @@ def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
     if foto and foto["content_type"] in _EXT_POR_TIPO and len(foto["data"]) <= 5 * 1024 * 1024:
         ext = _EXT_POR_TIPO[foto["content_type"]]
         url = db.subir_foto_aviso(foto["data"], foto["content_type"], ext)
-        db.agregar_foto_extra(aviso_id, url)
-        auditar(handler, "agregar_foto_galeria", f"aviso {aviso_id}")
-        actualizado = sincronizar_sitio_estatico()
-        flash = mensaje_sincronizacion("Foto agregada a la galería.", actualizado)
+        if db.agregar_foto_extra(aviso_id, url):
+            auditar(handler, "agregar_foto_galeria", f"aviso {aviso_id}")
+            actualizado = sincronizar_sitio_estatico()
+            flash = mensaje_sincronizacion("Foto agregada a la galería.", actualizado)
+        else:
+            flash = f"Ya tiene el máximo de {db.FOTOS_EXTRA_MAX} fotos adicionales."
     else:
         flash = "La foto debe ser JPG, PNG o WebP de máximo 5 MB."
     redirect(handler, f"/admin/avisos/{aviso_id}", flash=flash)
