@@ -1383,16 +1383,21 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     else:
         form_agregar = '<p class="hint">Disponible solo para avisos con plan Premium.</p>'
     galeria_html = f"""
-<div class="panel">
+<div class="panel" id="galeria">
   <h2>Galería de fotos (Premium)</h2>
   <p class="lede">Hasta {db.FOTOS_EXTRA_MAX} fotos adicionales que se muestran como carrusel en el aviso.</p>
   <div class="galeria-grid">{galeria_items or '<p class="hint">Todavía no hay fotos adicionales.</p>'}</div>
   {form_agregar}
 </div>"""
+    aviso_extra_html = (
+        f'<a href="#galeria" class="callout callout-premium">✨ Este aviso es <strong>Premium</strong> — '
+        f'puede tener hasta {db.FOTOS_EXTRA_MAX} fotos más. Ir a la galería ↓</a>'
+    ) if es_premium else ""
     body = f"""
 <div class="panel">
   <h1>Editar aviso</h1>
-  <p class="lede">{t.esc(aviso['negocio_nombre'])} · {t.esc(aviso['whatsapp'])}</p>
+  <p class="lede">{t.esc(aviso['negocio_nombre'])} · {t.esc(aviso['whatsapp'])} {t.plan_cc(aviso.get('plan_nombre', 'Gratis'))}</p>
+  {aviso_extra_html}
   {errores_html}
   <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data"
     data-ajax-form data-ajax-redirect="/admin/avisos">
@@ -1408,6 +1413,7 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
       <span class="hint">JPG, PNG o WebP, máx. 5 MB. Deja vacío para no cambiarla.</span>
     </label>
     {foto_quitar}
+    {'<p class="hint">¿Buscas subir más fotos? Este negocio es Premium — baja hasta la sección "Galería de fotos".</p>' if es_premium else ''}
     <div class="form-actions">
       <a class="btn btn-ghost btn-lg" href="/admin/avisos">Cancelar</a>
       <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>
