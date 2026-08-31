@@ -98,7 +98,7 @@ def public_mobile_nav(active):
 <nav class="mobile-nav" aria-label="Navegación principal">
   {item("home", "/", "⌂", "Inicio")}
   {item("avisos", "/avisos", "◈", "Avisos")}
-  {item("favoritos", "/favoritos", "♡", "Guardados")}
+  {item("favoritos", "/favoritos", "★", "Favoritos")}
   <a href="/publicar" class="mobile-nav-cta{" is-active" if active == "publicar" else ""}">
     <span aria-hidden="true">＋</span><span>Publicar</span>
   </a>
