@@ -248,7 +248,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
                      f'<div class="card-carousel-track">{slides}</div>'
                      f'<div class="card-carousel-dots">{dots}</div></div>')
     elif foto_url:
-        foto_html = f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}" loading="lazy">'
+        foto_html = f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}">'
     else:
         foto_html = f'<span class="icon-tile"><span class="card-icon">{aviso["icono"]}</span></span>'
     chevrones_html = ("""

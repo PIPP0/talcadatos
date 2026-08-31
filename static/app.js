@@ -520,7 +520,7 @@ document.addEventListener("click", function (e) {
         '<button type="button" class="card-carousel-nav card-carousel-prev" data-carousel-prev aria-label="Foto anterior">‹</button>' +
         '<button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>';
     } else if (d.foto_url) {
-      foto = '<img src="' + escHtml(d.foto_url) + '" alt="" loading="lazy">';
+      foto = '<img src="' + escHtml(d.foto_url) + '" alt="">';
     } else {
       foto = '<span class="icon-tile"><span class="card-icon">' + d.icono + "</span></span>";
     }

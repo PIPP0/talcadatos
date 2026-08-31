@@ -325,7 +325,7 @@ def home(handler):
 
 <section class="section local-story" data-reveal>
   <figure class="local-story-visual">
-    <img src="{t.esc(sitio['explorar_imagen_url'])}" alt="Emprendedores atendiendo una feria de comercio local" loading="lazy">
+    <img src="{t.esc(sitio['explorar_imagen_url'])}" alt="Emprendedores atendiendo una feria de comercio local">
     <figcaption><span></span> Cerca, útil y hecho por personas</figcaption>
   </figure>
   <div class="local-story-copy">
@@ -364,7 +364,7 @@ def home(handler):
 <section class="business-cta" data-reveal>
   <div class="business-cta-copy"><span class="eyebrow">{t.esc(sitio['pymes_eyebrow'])}</span><h2>{t.esc(sitio['pymes_titulo'])}</h2>
   <p>{t.esc(sitio['pymes_bajada'])}</p><a class="btn btn-ghost btn-lg" href="/publicar">{t.esc(sitio['pymes_boton'])} <span aria-hidden="true">→</span></a></div>
-  <figure class="business-cta-visual"><img src="{t.esc(sitio['pymes_imagen_url'])}" alt="Emprendedora preparando productos en su negocio local" loading="lazy"><figcaption>Tu vitrina también puede estar aquí.</figcaption></figure>
+  <figure class="business-cta-visual"><img src="{t.esc(sitio['pymes_imagen_url'])}" alt="Emprendedora preparando productos en su negocio local"><figcaption>Tu vitrina también puede estar aquí.</figcaption></figure>
 </section>
 """
     render(handler, t.layout("Avisos de pymes y emprendedores de Talca", body, active="home",
@@ -611,7 +611,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
       </details>
     </div>
     <div class="qr-block">
-      <img src="{qr_url}" alt="Código QR de este aviso" width="110" height="110" loading="lazy">
+      <img src="{qr_url}" alt="Código QR de este aviso" width="110" height="110">
       <span class="small">Escanea para abrir este aviso desde el celular, o imprime el QR en tu local.</span>
     </div>
   </div>
