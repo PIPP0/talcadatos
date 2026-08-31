@@ -1242,10 +1242,23 @@ def admin_moderar(handler, aviso_id, accion):
     redirect(handler, "/admin/moderacion", flash=mensaje_sincronizacion(mensaje, sincronizar_sitio_estatico()))
 
 
+AVISOS_POR_PAGINA = 12
+
+
 def admin_avisos_lista(handler, query):
     params = qs(query)
     estado = params.get("estado", "")
-    avisos = db.get_avisos(estado=estado or None, orden="creado")
+    avisos_todos = db.get_avisos(estado=estado or None, orden="creado")
+
+    total = len(avisos_todos)
+    total_paginas = max(1, -(-total // AVISOS_POR_PAGINA))
+    try:
+        pagina = int(params.get("page", "1"))
+    except ValueError:
+        pagina = 1
+    pagina = min(max(pagina, 1), total_paginas)
+    inicio = (pagina - 1) * AVISOS_POR_PAGINA
+    avisos = avisos_todos[inicio:inicio + AVISOS_POR_PAGINA]
 
     def opt(v, label):
         sel = " selected" if v == estado else ""
@@ -1280,6 +1293,25 @@ def admin_avisos_lista(handler, query):
   </td>
 </tr>""" for a in avisos)
 
+    def pagina_href(n):
+        qparams = f"page={n}"
+        if estado:
+            qparams = f"estado={t.esc(estado)}&{qparams}"
+        return f"?{qparams}"
+
+    paginacion_html = ""
+    if total_paginas > 1:
+        prev_html = (f'<a class="btn btn-ghost btn-sm" href="{pagina_href(pagina - 1)}">‹ Anterior</a>'
+                     if pagina > 1 else '<span class="btn btn-ghost btn-sm is-disabled">‹ Anterior</span>')
+        next_html = (f'<a class="btn btn-ghost btn-sm" href="{pagina_href(pagina + 1)}">Siguiente ›</a>'
+                     if pagina < total_paginas else '<span class="btn btn-ghost btn-sm is-disabled">Siguiente ›</span>')
+        paginacion_html = f"""
+<div class="paginacion">
+  {prev_html}
+  <span class="paginacion-info">Página {pagina} de {total_paginas}</span>
+  {next_html}
+</div>"""
+
     body = f"""
 <div class="listado-head">
   <h1>Avisos</h1>
@@ -1297,6 +1329,7 @@ def admin_avisos_lista(handler, query):
   <tr><th>Título</th><th>Negocio</th><th>Categoría</th><th>Estado</th><th>Vistas</th><th>Contactos</th><th>Acciones</th></tr>
   {filas or "<tr><td colspan='7' class='empty-state'>Sin avisos.</td></tr>"}
 </table></div>
+{paginacion_html}
 """
     flash = get_flash(handler)
     render(handler, t.layout("Avisos", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
