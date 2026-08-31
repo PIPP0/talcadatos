@@ -227,7 +227,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .card-carousel-nav:hover{opacity:1; background:rgba(255,255,255,.9);}
 .card-carousel-prev{left:8px;}
 .card-carousel-next{right:8px;}
-.card-body{padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px;}
+.card-body{padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px; flex:1;}
+.card-body .btn-block{margin-top:auto;}
 .card-title{font-weight:700; color:var(--ink); font-size:1.15rem; letter-spacing:-0.015em; line-height:1.25;}
 .card-meta{display:flex; align-items:center; gap:6px; font-size:.85rem; color:var(--ink-soft);}
 .card-meta .dot{color:var(--ink-faint);}
