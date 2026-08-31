@@ -650,7 +650,8 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
     </label>
     <label>Foto de tu negocio o trabajo (opcional)
       <input name="foto" type="file" accept="image/jpeg,image/png,image/webp">
-      <span class="hint">JPG, PNG o WebP, máximo 5 MB. Si no subes una, usamos un ícono del rubro.</span>
+      <span class="hint">JPG, PNG o WebP, máximo 5 MB. Si no subes una, usamos un ícono del rubro.
+        Idealmente que sea una foto de buena calidad, sin texto ni bordes — el texto va mejor en la descripción.</span>
     </label>
     <label>WhatsApp de contacto
       <input name="whatsapp" required placeholder="+56 9 1234 5678" value="{v('whatsapp')}">
