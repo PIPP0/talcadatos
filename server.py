@@ -1242,7 +1242,7 @@ def admin_moderar(handler, aviso_id, accion):
     redirect(handler, "/admin/moderacion", flash=mensaje_sincronizacion(mensaje, sincronizar_sitio_estatico()))
 
 
-AVISOS_POR_PAGINA = 12
+AVISOS_POR_PAGINA = 10
 
 
 def admin_avisos_lista(handler, query):
