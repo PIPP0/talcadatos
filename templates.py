@@ -79,12 +79,12 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260831-2">
+<link rel="stylesheet" href="/static/styles.css?v=20260831-3">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
 {mobile_nav}
-<script src="/static/app.js?v=20260831-1"></script>
+<script src="/static/app.js?v=20260831-2"></script>
 </body>
 </html>"""
 
@@ -228,27 +228,29 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     fav_attrs = f'data-fav-id="{aviso["id"]}"'
     foto_url = aviso.get("foto_url")
     fotos = ([foto_url] + (aviso.get("fotos_extra") or [])) if foto_url else []
-    if len(fotos) >= 2:
-        n = len(fotos)
-        paso = 3.5
+    es_carrusel = len(fotos) >= 2
+    if es_carrusel:
         slides = "".join(
-            f'<img src="{esc(url)}" alt="{esc(aviso["titulo"])}" loading="lazy" '
-            f'class="card-carousel-slide card-carousel-n{n}" style="animation-delay:{-(i * paso)}s">'
-            for i, url in enumerate(fotos))
+            f'<img src="{esc(url)}" alt="{esc(aviso["titulo"])}" loading="lazy" class="card-carousel-slide">'
+            for url in fotos)
         dots = "".join(
-            f'<span class="card-carousel-dot card-carousel-dot-n{n}" style="animation-delay:{-(i * paso)}s"></span>'
-            for i in range(n))
-        foto_html = f'<div class="card-carousel">{slides}<div class="card-carousel-dots">{dots}</div></div>'
+            f'<span class="card-carousel-dot{" is-active" if i == 0 else ""}"></span>' for i in range(len(fotos)))
+        foto_html = (f'<div class="card-carousel" data-carousel>'
+                     f'<div class="card-carousel-track">{slides}</div>'
+                     f'<div class="card-carousel-dots">{dots}</div></div>')
     elif foto_url:
         foto_html = f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}" loading="lazy">'
     else:
         foto_html = f'<span class="icon-tile"><span class="card-icon">{aviso["icono"]}</span></span>'
+    chevrones_html = ("""
+  <button type="button" class="card-carousel-nav card-carousel-prev" data-carousel-prev aria-label="Foto anterior">‹</button>
+  <button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>""" if es_carrusel else "")
     return f"""
 <article class="card" style="--card-accent:{esc(aviso['color'])}"{click_attr} data-aviso-id="{aviso['id']}">
   <a class="card-photo{' has-foto' if foto_url else ''}" href="/avisos/{aviso['id']}">
     {foto_html}
     {badge_html}
-  </a>
+  </a>{chevrones_html}
   <button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
     <a class="card-title" href="/avisos/{aviso['id']}">{esc(aviso['titulo'])}</a>

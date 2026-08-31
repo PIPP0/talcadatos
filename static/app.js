@@ -179,7 +179,50 @@ document.addEventListener("submit", function (e) {
   ejecutarAjaxDelete(form);
 });
 
+function iniciarCarousels() {
+  document.querySelectorAll("[data-carousel]").forEach(function (car) {
+    if (car.dataset.carouselInit) return;
+    car.dataset.carouselInit = "1";
+    var tarjeta = car.closest(".card");
+    if (!tarjeta) return;
+    var track = car.querySelector(".card-carousel-track");
+    var slides = car.querySelectorAll(".card-carousel-slide");
+    var dots = car.querySelectorAll(".card-carousel-dot");
+    var prev = tarjeta.querySelector("[data-carousel-prev]");
+    var next = tarjeta.querySelector("[data-carousel-next]");
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0;
+    var timer = null;
+    function ir(idx) {
+      i = (idx + n) % n;
+      track.style.transform = "translateX(-" + i * 100 + "%)";
+      dots.forEach(function (d, di) { d.classList.toggle("is-active", di === i); });
+    }
+    function reiniciarAuto() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(function () { ir(i + 1); }, 3500);
+    }
+    if (prev) prev.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      ir(i - 1);
+      reiniciarAuto();
+    });
+    if (next) next.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      ir(i + 1);
+      reiniciarAuto();
+    });
+    tarjeta.addEventListener("mouseenter", function () { if (timer) clearInterval(timer); });
+    tarjeta.addEventListener("mouseleave", reiniciarAuto);
+    reiniciarAuto();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
+  iniciarCarousels();
   var flash = document.querySelector(".flash");
   var texto = flash ? flash.textContent.trim() : "";
   if (texto) mostrarAviso(texto, "ok");
