@@ -879,6 +879,10 @@ def publicar_submit(handler, form, foto=None):
     if not db.verificar_limite(_client_ip(handler), "publicar"):
         return publicar_form(handler, sub_token=sub_token or None, form=form,
                               errores=["Ya enviaste varios avisos seguidos. Espera un poco antes de volver a intentar."])
+    if db.avisos_activos_por_contacto(form.get("whatsapp", ""), form.get("email", "")) >= 1:
+        return publicar_form(handler, sub_token=sub_token or None, form=form,
+                              errores=["Ya tienes un aviso publicado con este WhatsApp o correo. "
+                                       "Si necesitas agregar otro rubro, escríbenos por WhatsApp."])
     categorias = db.get_categorias()
     categoria_ids = {c["id"] for c in categorias}
     errores = _validar_publicar(form, categoria_ids)
@@ -1227,7 +1231,8 @@ def admin_moderacion(handler):
 <div class="mod-row" data-reveal style="--i:{i}">
   <div class="mod-info">
     <div class="mono">{a['icono']} {t.esc(a['categoria_nombre'])} · {t.esc(a['comuna'])}</div>
-    <h3>{t.esc(a['titulo'])} {t.plan_badge(a['plan_nombre']) if a['plan_nombre'] != 'Gratis' else ''}</h3>
+    <h3>{t.esc(a['titulo'])} {t.plan_badge(a['plan_nombre']) if a['plan_nombre'] != 'Gratis' else ''}
+      {t.badge('Ya tiene otro aviso', 'warn') if db.avisos_activos_por_contacto(a['whatsapp'], a['email']) > 1 else ''}</h3>
     <p>{t.esc(a['negocio_nombre'])} · {t.esc(a['whatsapp'])}</p>
     <p class="mod-desc">{t.esc(a['descripcion'])}</p>
   </div>

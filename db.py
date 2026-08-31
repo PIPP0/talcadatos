@@ -323,6 +323,7 @@ def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None
         row["id"] = aid
         row["negocio_nombre"] = neg.get("nombre", "")
         row["whatsapp"] = neg.get("whatsapp", "")
+        row["email"] = neg.get("email", "")
         row["verificado"] = bool(neg.get("verificado", False))
         row["categoria_id"] = a.get("categoria_slug")
         row["categoria_nombre"] = cat.get("nombre", "")
@@ -485,6 +486,27 @@ def get_negocios():
 def get_negocio(negocio_id):
     doc = _fs().collection("negocios").document(str(negocio_id)).get()
     return _con_id(doc.to_dict(), negocio_id) if doc.exists else None
+
+
+def avisos_activos_por_contacto(whatsapp, email):
+    """Cuenta avisos activos/pendientes de negocios con este mismo WhatsApp o
+    correo, para frenar que una misma persona publique avisos sin límite."""
+    wa_norm = "".join(c for c in (whatsapp or "") if c.isdigit())
+    email_norm = (email or "").strip().lower()
+    if not wa_norm and not email_norm:
+        return 0
+    negocios = _all("negocios")
+    ids_match = set()
+    for nid, n in negocios.items():
+        n_wa = "".join(c for c in (n.get("whatsapp") or "") if c.isdigit())
+        n_email = (n.get("email") or "").strip().lower()
+        if (wa_norm and n_wa == wa_norm) or (email_norm and n_email == email_norm):
+            ids_match.add(nid)
+    if not ids_match:
+        return 0
+    avisos = _all("avisos")
+    return sum(1 for a in avisos.values()
+               if a.get("negocio_id") in ids_match and a.get("estado") in ("activo", "pendiente"))
 
 
 def crear_negocio(nombre, whatsapp, plan_id="gratis", plan_vencimiento=None, terminos_ip=None, email=None,
