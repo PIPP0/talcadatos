@@ -35,7 +35,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
     marca = esc(marca_raw)
     pie = esc(site.get("pie", "Talcadatos — directorio de pymes y emprendedores de Talca"))
     nav = admin_nav(active) if admin else public_nav(active, brand_logo_html(marca_raw))
-    mobile_nav = ADMIN_MOBILE_NAV if admin else MOBILE_NAV
+    mobile_nav = ADMIN_MOBILE_NAV if admin else public_mobile_nav(active)
     active_attr = f' data-active="{active}"'
     desc = description or site.get("descripcion") or SITE_DESCRIPTION
     canonical_tag = f'<link rel="canonical" href="{esc(canonical)}">' if canonical else ""
@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260831-6">
+<link rel="stylesheet" href="/static/styles.css?v=20260831-7">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -89,12 +89,19 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 </html>"""
 
 
-MOBILE_NAV = """
+def public_mobile_nav(active):
+    def item(slug, href, icon, label):
+        cls = ' class="is-active"' if slug == active else ""
+        return f'<a href="{href}"{cls}><span aria-hidden="true">{icon}</span><span>{label}</span></a>'
+
+    return f"""
 <nav class="mobile-nav" aria-label="Navegación principal">
-  <a href="/"><span aria-hidden="true">⌂</span><span>Inicio</span></a>
-  <a href="/avisos"><span aria-hidden="true">◈</span><span>Avisos</span></a>
-  <a href="/favoritos"><span aria-hidden="true">♡</span><span>Guardados</span></a>
-  <a href="/publicar"><span aria-hidden="true">＋</span><span>Publicar</span></a>
+  {item("home", "/", "⌂", "Inicio")}
+  {item("avisos", "/avisos", "◈", "Avisos")}
+  {item("favoritos", "/favoritos", "♡", "Guardados")}
+  <a href="/publicar" class="mobile-nav-cta{" is-active" if active == "publicar" else ""}">
+    <span aria-hidden="true">＋</span><span>Publicar</span>
+  </a>
 </nav>
 """
 
