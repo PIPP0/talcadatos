@@ -11,7 +11,15 @@ document.addEventListener("click", function (e) {
    Content-Security-Policy (script-src 'self' no permite inline handlers). */
 document.addEventListener("change", function (e) {
   if (e.target.matches("select[data-autosubmit]")) e.target.form.submit();
+  if (e.target.matches("[data-auto-submit]")) e.target.form.requestSubmit();
 });
+
+/* "error" no burbujea, hay que escucharlo en fase de captura para delegarlo. */
+document.addEventListener("error", function (e) {
+  if (e.target.matches && e.target.matches(".card-carousel-slide")) {
+    e.target.style.visibility = "hidden";
+  }
+}, true);
 
 /* Vista previa instantanea al elegir una foto nueva en un campo de imagen,
    antes solo se veia la foto vieja hasta guardar. */
@@ -501,7 +509,7 @@ document.addEventListener("click", function (e) {
     var foto;
     if (fotos.length >= 2) {
       var slides = fotos.map(function (u) {
-        return '<img src="' + escHtml(u) + '" alt="" loading="lazy" class="card-carousel-slide">';
+        return '<img src="' + escHtml(u) + '" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'" class="card-carousel-slide">';
       }).join("");
       var dots = fotos.map(function (u, i) {
         return '<span class="card-carousel-dot' + (i === 0 ? " is-active" : "") + '"></span>';
@@ -591,4 +599,81 @@ document.addEventListener("click", function (e) {
         });
     }
   }
+})();
+
+/* ---- admin: orden de avisos por arrastrar y soltar ---- */
+(function initOrdenLista() {
+  var lista = document.getElementById("orden-lista");
+  if (!lista) return;
+  var guardarUrl = lista.getAttribute("data-orden-guardar-url");
+  var filtroChk = document.getElementById("orden-solo-destacados");
+
+  if (filtroChk) {
+    filtroChk.addEventListener("change", function () {
+      lista.querySelectorAll(".orden-fila").forEach(function (fila) {
+        var esDestacado = fila.getAttribute("data-orden-destacado") === "1";
+        fila.classList.toggle("orden-oculta", filtroChk.checked && !esDestacado);
+      });
+    });
+  }
+
+  function guardarOrden() {
+    var ids = Array.from(lista.querySelectorAll(".orden-fila")).map(function (f) {
+      return f.getAttribute("data-orden-id");
+    });
+    fetch(guardarUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "fetch" },
+      body: JSON.stringify({ ids: ids }),
+    })
+      .then(function (r) { mostrarAviso(r.ok ? "Orden guardado." : "No se pudo guardar el orden.", r.ok ? "ok" : "warn"); })
+      .catch(function () { mostrarAviso("No se pudo guardar el orden.", "warn"); });
+  }
+
+  var arrastrando = null;
+  var puntoY = 0;
+
+  lista.addEventListener("pointerdown", function (e) {
+    var handle = e.target.closest(".orden-handle");
+    if (!handle) return;
+    var fila = handle.closest(".orden-fila");
+    if (!fila) return;
+    e.preventDefault();
+    arrastrando = fila;
+    puntoY = e.clientY;
+    fila.classList.add("orden-arrastrando");
+  });
+
+  document.addEventListener("pointermove", function (e) {
+    if (!arrastrando) return;
+    var delta = e.clientY - puntoY;
+    arrastrando.style.transform = "translateY(" + delta + "px)";
+
+    var filas = Array.from(lista.querySelectorAll(".orden-fila:not(.orden-oculta)"));
+    var siguiente = null;
+    for (var i = 0; i < filas.length; i++) {
+      if (filas[i] === arrastrando) continue;
+      var box = filas[i].getBoundingClientRect();
+      if (e.clientY < box.top + box.height / 2) { siguiente = filas[i]; break; }
+    }
+    var actualSiguiente = arrastrando.nextElementSibling;
+    var necesitaMover = siguiente ? actualSiguiente !== siguiente : lista.lastElementChild !== arrastrando;
+    if (necesitaMover) {
+      if (siguiente) lista.insertBefore(arrastrando, siguiente);
+      else lista.appendChild(arrastrando);
+      puntoY = e.clientY;
+      arrastrando.style.transform = "translateY(0px)";
+    }
+  });
+
+  function soltar() {
+    if (!arrastrando) return;
+    arrastrando.classList.remove("orden-arrastrando");
+    arrastrando.style.transform = "";
+    arrastrando = null;
+    guardarOrden();
+  }
+
+  document.addEventListener("pointerup", soltar);
+  document.addEventListener("pointercancel", soltar);
 })();

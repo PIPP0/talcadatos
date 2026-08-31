@@ -1288,6 +1288,49 @@ def admin_avisos_lista(handler, query):
     render(handler, t.layout("Avisos", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
 
 
+def admin_orden(handler):
+    avisos = db.get_avisos(estado="activo", orden="destacados")
+    filas = "".join(f"""
+<li class="orden-fila" data-orden-id="{a['id']}" data-orden-destacado="{'1' if a['plan_nombre'] in ('Destacado', 'Premium') else '0'}">
+  <span class="orden-handle" aria-hidden="true">⠿</span>
+  <span class="orden-foto">{f'<img src="{t.esc(a["foto_url"])}" alt="">' if a.get('foto_url') else f'<span class="orden-icono">{a["icono"]}</span>'}</span>
+  <span class="orden-info">
+    <span class="orden-titulo">{t.esc(a['titulo'])}</span>
+    <span class="orden-negocio">{t.esc(a['negocio_nombre'])} · {t.esc(a['comuna'])}</span>
+  </span>
+  {t.plan_cc(a['plan_nombre'])}
+</li>""" for a in avisos)
+    body = f"""
+<div class="listado-head">
+  <h1>Orden de avisos</h1>
+  <div class="listado-head-actions">
+    <label class="check-label orden-filtro">
+      <input type="checkbox" id="orden-solo-destacados">
+      <span>Mostrar solo Destacados y Premium</span>
+    </label>
+  </div>
+</div>
+<p class="lede">Arrastra los avisos para cambiar el orden en que aparecen en el sitio (carrusel de destacados y
+  listado de avisos). Se guarda solo cuando sueltas.</p>
+<ul class="orden-lista" id="orden-lista" data-orden-guardar-url="/admin/orden/guardar">
+  {filas or "<p class='empty-state'>No hay avisos activos todavía.</p>"}
+</ul>
+"""
+    render(handler, t.layout("Orden de avisos", body, active="orden", admin=True))
+
+
+def admin_orden_guardar(handler, body):
+    data = json.loads(body or "{}")
+    ids = [str(i) for i in (data.get("ids") or [])]
+    if not ids:
+        return _responder_error_ajax(handler, "Nada que guardar.")
+    db.guardar_orden_manual(ids)
+    auditar(handler, "reordenar_avisos", f"{len(ids)} avisos")
+    sincronizar_sitio_estatico()
+    handler.send_response(204)
+    handler.end_headers()
+
+
 def admin_aviso_editar_form(handler, aviso_id, errores=None):
     aviso = db.get_aviso(aviso_id)
     categorias = db.get_categorias()
@@ -1325,7 +1368,7 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
   class="galeria-slot-add" data-ajax-form data-ajax-reload>
   <label>
     <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required
-      onchange="this.form.requestSubmit()">
+      data-auto-submit>
     <span class="galeria-add-plus">+</span>
     <span class="galeria-add-text">Agregar imagen</span>
   </label>
@@ -2667,6 +2710,8 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_reportes(self) if require_admin(self) else None
             if path == "/admin/avisos":
                 return admin_avisos_lista(self, query) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/orden":
+                return admin_orden(self) if require_role(self, {"super_admin"}) else None
             if len(segs) == 3 and segs[0] == "admin" and segs[1] == "avisos" and segs[2].isdigit():
                 return admin_aviso_editar_form(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if path == "/admin/avisos.csv":
@@ -2763,6 +2808,8 @@ class Handler(BaseHTTPRequestHandler):
                     return None
                 form, archivos = self._form_multipart()
                 return admin_aviso_editar_submit(self, int(segs[2]), form, archivos)
+            if path == "/admin/orden/guardar":
+                return admin_orden_guardar(self, self._body()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
                 return admin_aviso_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "aprobar":

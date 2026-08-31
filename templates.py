@@ -79,12 +79,12 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260831-5">
+<link rel="stylesheet" href="/static/styles.css?v=20260831-6">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
 {mobile_nav}
-<script src="/static/app.js?v=20260831-4"></script>
+<script src="/static/app.js?v=20260831-5"></script>
 </body>
 </html>"""
 
@@ -138,6 +138,7 @@ ADMIN_NAV_GROUPS = [
     ]),
     ("Contenido", [
         ("avisos", "/admin/avisos", "Avisos", "▦"),
+        ("orden", "/admin/orden", "Orden de avisos", "⇅"),
         ("moderacion", "/admin/moderacion", "Moderación", "✓"),
         ("reportes", "/admin/reportes", "Reportes", "⚑"),
         ("contenido", "/admin/contenido", "Contenido", "✦"),
@@ -239,7 +240,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     es_carrusel = len(fotos) >= 2
     if es_carrusel:
         slides = "".join(
-            f'<img src="{esc(url)}" alt="{esc(aviso["titulo"])}" loading="lazy" class="card-carousel-slide">'
+            f'<img src="{esc(url)}" alt="{esc(aviso["titulo"])}" loading="eager" class="card-carousel-slide">'
             for url in fotos)
         dots = "".join(
             f'<span class="card-carousel-dot{" is-active" if i == 0 else ""}"></span>' for i in range(len(fotos)))

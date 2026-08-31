@@ -362,13 +362,25 @@ def get_avisos(estado=None, estado_ne=None, categoria_slug=None, comuna=None,
     elif orden == "creado_asc":
         filas.sort(key=lambda a: a.get("creado_en") or "")
     elif orden == "destacados" or orden == "relevancia":
-        filas.sort(key=lambda a: (a.get("plan_prioridad", 0), a.get("publicado_en") or ""), reverse=True)
+        filas.sort(key=lambda a: a.get("publicado_en") or "", reverse=True)
+        filas.sort(key=lambda a: a.get("plan_prioridad", 0), reverse=True)
+        filas.sort(key=lambda a: a.get("orden_manual") if a.get("orden_manual") is not None else float("inf"))
     else:  # "creado"
         filas.sort(key=lambda a: a.get("creado_en") or "", reverse=True)
 
     if limit:
         filas = filas[:limit]
     return filas
+
+
+def guardar_orden_manual(ids_en_orden):
+    """Reescribe orden_manual de cada aviso segun su posicion en ids_en_orden
+    (0 = primero). Usado por la pantalla de arrastrar-y-soltar del admin."""
+    fs = _fs()
+    batch = fs.batch()
+    for i, aid in enumerate(ids_en_orden):
+        batch.update(fs.collection("avisos").document(str(aid)), {"orden_manual": i})
+    batch.commit()
 
 
 def get_aviso(aviso_id):
