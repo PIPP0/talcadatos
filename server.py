@@ -2838,7 +2838,8 @@ class Handler(BaseHTTPRequestHandler):
                     and segs[4] == "eliminar"):
                 if not require_role(self, {"super_admin"}):
                     return None
-                return admin_aviso_foto_eliminar_submit(self, int(segs[2]), self._form())
+                form, _archivos = self._form_multipart()
+                return admin_aviso_foto_eliminar_submit(self, int(segs[2]), form)
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "plan":
                 return admin_anunciante_plan(self, int(segs[2]), self._form()) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "anunciantes" and segs[3] == "verificar":
