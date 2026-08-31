@@ -733,10 +733,12 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
       <select name="categoria_id" required>{cat_options}</select>
     </label>
     <label>Título del aviso
-      <input name="titulo" required maxlength="120" placeholder="Ej: Instalación de ventanas y termopaneles" value="{v('titulo')}">
+      <input name="titulo" required maxlength="70" placeholder="Ej: Instalación de ventanas y termopaneles" value="{v('titulo')}">
+      <span class="hint">Máximo 70 caracteres, para que se vea bien en las tarjetas.</span>
     </label>
     <label>Descripción
-      <textarea name="descripcion" required rows="4" placeholder="Cuéntale a tus futuros clientes qué haces, cómo trabajas y qué te diferencia.">{v('descripcion')}</textarea>
+      <textarea name="descripcion" required maxlength="600" rows="4" placeholder="Cuéntale a tus futuros clientes qué haces, cómo trabajas y qué te diferencia.">{v('descripcion')}</textarea>
+      <span class="hint">Máximo 600 caracteres.</span>
     </label>
     <label>Comuna
       <select name="comuna" required>{comuna_options}</select>
@@ -899,7 +901,7 @@ def publicar_submit(handler, form, foto=None):
         plan_id=plan_id, terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200],
         verificado=(plan_id == "premium"))
     db.crear_aviso(
-        negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
+        negocio_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
         foto_url=foto_url)
     if sub_token:
@@ -1406,8 +1408,8 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
   {errores_html}
   <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data"
     data-ajax-form data-ajax-redirect="/admin/avisos">
-    <label>Título <input name="titulo" required value="{t.esc(aviso['titulo'])}"></label>
-    <label>Descripción <textarea name="descripcion" rows="4" required>{t.esc(aviso['descripcion'])}</textarea></label>
+    <label>Título <input name="titulo" required maxlength="70" value="{t.esc(aviso['titulo'])}"></label>
+    <label>Descripción <textarea name="descripcion" rows="4" required maxlength="600">{t.esc(aviso['descripcion'])}</textarea></label>
     <label>Categoría <select name="categoria_id">{cat_options}</select></label>
     <label>Comuna <input name="comuna" value="{t.esc(aviso['comuna'])}"></label>
     <label>Horario <input name="horario" value="{t.esc(aviso['horario'] or '')}"></label>
@@ -1464,8 +1466,8 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
         foto_url = ""
     nuevo_estado = form.get("estado", actual["estado"])
     ok = db.editar_aviso(
-        aviso_id, form.get("titulo", ""), form.get("descripcion", ""), form.get("categoria_id"),
-        form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url)
+        aviso_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
+        form.get("categoria_id"), form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url)
     if not ok:
         if ajax:
             return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)

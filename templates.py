@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260831-4">
+<link rel="stylesheet" href="/static/styles.css?v=20260831-5">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -211,6 +211,14 @@ def es_nuevo(aviso, dias=3):
     return creado >= cutoff
 
 
+def extracto(texto, largo=110):
+    texto = (texto or "").strip()
+    if len(texto) <= largo:
+        return texto
+    corte = texto[:largo].rsplit(" ", 1)[0]
+    return corte + "…"
+
+
 def whatsapp_url(whatsapp, negocio_nombre, titulo):
     numero = "".join(c for c in whatsapp if c.isdigit())
     mensaje = f"Hola {negocio_nombre}, vi tu aviso \"{titulo}\" en Talcadatos y quiero consultar por..."
@@ -260,6 +268,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
       <span>{esc(aviso['comuna'])}</span>
     </div>
     <div class="card-cat mono">{aviso['icono']} {esc(aviso['categoria_nombre'])}</div>
+    <p class="card-desc">{esc(extracto(aviso.get('descripcion')))}</p>
     <a class="btn btn-whatsapp btn-block" href="/avisos/{aviso['id']}">
       Ver detalle
     </a>
