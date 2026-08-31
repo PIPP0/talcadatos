@@ -991,6 +991,7 @@ def api_favoritos(handler, body):
         "id": a["id"], "titulo": a["titulo"], "negocio": a["negocio_nombre"],
         "comuna": a["comuna"], "categoria": a["categoria_nombre"], "icono": a["icono"],
         "color": a["color"], "foto_url": a.get("foto_url") or "",
+        "fotos_extra": a.get("fotos_extra") or [],
         "verificado": a["verificado"], "plan": a["plan_nombre"],
     } for a in avisos]
     render_json(handler, {"resultados": resultados})

@@ -84,7 +84,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
 {mobile_nav}
-<script src="/static/app.js?v=20260831-3"></script>
+<script src="/static/app.js?v=20260831-4"></script>
 </body>
 </html>"""
 

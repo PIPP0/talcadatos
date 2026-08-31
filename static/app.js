@@ -496,12 +496,30 @@ document.addEventListener("click", function (e) {
   function tarjetaHtml(d) {
     var badge = d.plan && d.plan !== "Gratis" ? '<span class="badge badge-gold">' + escHtml(d.plan) + "</span>" : "";
     var verificado = d.verificado ? '<span class="check">✔</span>' : "";
-    var foto = d.foto_url
-      ? '<img src="' + escHtml(d.foto_url) + '" alt="" loading="lazy">'
-      : '<span class="icon-tile"><span class="card-icon">' + d.icono + "</span></span>";
+    var fotos = d.foto_url ? [d.foto_url].concat(d.fotos_extra || []) : [];
+    var chevrones = "";
+    var foto;
+    if (fotos.length >= 2) {
+      var slides = fotos.map(function (u) {
+        return '<img src="' + escHtml(u) + '" alt="" loading="lazy" class="card-carousel-slide">';
+      }).join("");
+      var dots = fotos.map(function (u, i) {
+        return '<span class="card-carousel-dot' + (i === 0 ? " is-active" : "") + '"></span>';
+      }).join("");
+      foto = '<div class="card-carousel" data-carousel><div class="card-carousel-track">' + slides +
+        '</div><div class="card-carousel-dots">' + dots + "</div></div>";
+      chevrones =
+        '<button type="button" class="card-carousel-nav card-carousel-prev" data-carousel-prev aria-label="Foto anterior">‹</button>' +
+        '<button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>';
+    } else if (d.foto_url) {
+      foto = '<img src="' + escHtml(d.foto_url) + '" alt="" loading="lazy">';
+    } else {
+      foto = '<span class="icon-tile"><span class="card-icon">' + d.icono + "</span></span>";
+    }
     return (
       '<article class="card" style="--card-accent:' + escHtml(d.color) + '">' +
       '<a class="card-photo' + (d.foto_url ? " has-foto" : "") + '" href="/avisos/' + d.id + '">' + foto + badge + "</a>" +
+      chevrones +
       '<button class="fav-btn is-fav" type="button" data-fav-id="' + d.id + '" title="Quitar de favoritos">★</button>' +
       '<div class="card-body">' +
       '<a class="card-title" href="/avisos/' + d.id + '">' + escHtml(d.titulo) + "</a>" +
@@ -566,6 +584,7 @@ document.addEventListener("click", function (e) {
           mount.innerHTML = items.length
             ? '<div class="grid">' + items.map(tarjetaHtml).join("") + "</div>"
             : vacioHtml;
+          iniciarCarousels();
         })
         .catch(function () {
           mount.innerHTML = '<p class="fav-empty">No se pudieron cargar tus favoritos. Intenta de nuevo más tarde.</p>';
