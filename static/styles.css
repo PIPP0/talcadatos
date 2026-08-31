@@ -267,6 +267,16 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .galeria-item img{width:100%; height:100%; object-fit:cover; border-radius:12px; border:1px solid var(--line);}
 .galeria-item form{position:absolute; top:-8px; right:-8px;}
 .galeria-item .btn-icon{width:26px; height:26px; font-size:.8rem;}
+.campo-galeria{margin:20px 0 4px;}
+.campo-galeria-label{display:block; font-size:.85rem; color:var(--ink-soft); margin-bottom:8px;}
+.galeria-slot-add{width:100px; height:100px;}
+.galeria-slot-add label{width:100%; height:100%; border-radius:12px; border:2px dashed var(--line);
+  background:#F1F1F0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; cursor:pointer; transition:background .15s ease, border-color .15s ease;}
+.galeria-slot-add:hover label{background:#E6E6E4; border-color:var(--ink-faint);}
+.galeria-slot-add input[type=file]{position:absolute; width:1px; height:1px; opacity:0; overflow:hidden;}
+.galeria-add-plus{font-size:1.6rem; line-height:1; color:var(--ink-faint); font-weight:300;}
+.galeria-add-text{font-size:.62rem; color:var(--ink-faint); text-align:center; padding:0 6px;}
 .detalle-cat{color:var(--ink-faint); margin-bottom:6px;}
 .detalle-negocio{font-weight:600; color:var(--ink-soft); margin-bottom:14px; display:flex; gap:8px; align-items:center;}
 .detalle-desc{font-size:1.05rem; max-width:62ch;}
@@ -310,9 +320,6 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 
 /* ---- forms ---- */
 .panel{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:30px 32px; margin:28px 0; box-shadow:var(--shadow);}
-.callout{display:block; margin:0 0 20px; padding:12px 16px; border-radius:10px; font-size:.9rem; text-decoration:none;}
-.callout-premium{background:#F0B429; color:#3A2A00; font-weight:600;}
-.callout-premium:hover{background:#e0a61f; color:#3A2A00;}
 .panel-narrow{max-width:420px; margin:60px auto;}
 .panel-ok{text-align:center; max-width:520px; margin:60px auto;}
 .panel-suscripcion{max-width:920px; margin:60px auto; text-align:center;}

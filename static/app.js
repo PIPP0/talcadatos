@@ -134,6 +134,10 @@ function ejecutarAjaxForm(form) {
     .then(function (res) {
       if (res.ok) {
         mostrarAviso("Cambios guardados.", "ok");
+        if (form.hasAttribute("data-ajax-reload")) {
+          setTimeout(function () { window.location.reload(); }, 400);
+          return;
+        }
         var destino = form.getAttribute("data-ajax-redirect");
         if (destino) setTimeout(function () { window.location.href = destino; }, 700);
         else if (boton) { boton.disabled = false; boton.textContent = textoOriginal; }

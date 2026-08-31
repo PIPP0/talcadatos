@@ -1365,39 +1365,33 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     galeria_items = "".join(f"""
 <div class="galeria-item">
   <img src="{t.esc(url)}" alt="">
-  <form method="post" action="/admin/avisos/{aviso_id}/fotos/eliminar">
+  <form method="post" action="/admin/avisos/{aviso_id}/fotos/eliminar" data-ajax-form data-ajax-reload>
     <input type="hidden" name="url" value="{t.esc(url)}">
     <button class="btn btn-icon btn-bad" title="Quitar foto" aria-label="Quitar foto">🗑️</button>
   </form>
 </div>""" for url in fotos_extra)
+    slots_vacios = max(0, db.FOTOS_EXTRA_MAX - len(fotos_extra))
+    galeria_add_boxes = "".join(f"""
+<form method="post" action="/admin/avisos/{aviso_id}/fotos/agregar" enctype="multipart/form-data"
+  class="galeria-slot-add" data-ajax-form data-ajax-reload>
+  <label>
+    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required
+      onchange="this.form.requestSubmit()">
+    <span class="galeria-add-plus">+</span>
+    <span class="galeria-add-text">Agregar imagen</span>
+  </label>
+</form>""" for _ in range(slots_vacios))
+    galeria_seccion = ""
     if es_premium:
-        form_agregar = (f"""
-  <form method="post" action="/admin/avisos/{aviso_id}/fotos/agregar" class="form" enctype="multipart/form-data">
-    <label>Agregar foto
-      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required>
-      <span class="hint">JPG, PNG o WebP, máx. 5 MB. Hasta {db.FOTOS_EXTRA_MAX} fotos adicionales.</span>
-    </label>
-    <button class="btn btn-ghost btn-lg" type="submit">Agregar a la galería</button>
-  </form>""" if len(fotos_extra) < db.FOTOS_EXTRA_MAX else
-            '<p class="hint">Ya tiene el máximo de fotos adicionales.</p>')
-    else:
-        form_agregar = '<p class="hint">Disponible solo para avisos con plan Premium.</p>'
-    galeria_html = f"""
-<div class="panel" id="galeria">
-  <h2>Galería de fotos (Premium)</h2>
-  <p class="lede">Hasta {db.FOTOS_EXTRA_MAX} fotos adicionales que se muestran como carrusel en el aviso.</p>
-  <div class="galeria-grid">{galeria_items or '<p class="hint">Todavía no hay fotos adicionales.</p>'}</div>
-  {form_agregar}
-</div>"""
-    aviso_extra_html = (
-        f'<a href="#galeria" class="callout callout-premium">✨ Este aviso es <strong>Premium</strong> — '
-        f'puede tener hasta {db.FOTOS_EXTRA_MAX} fotos más. Ir a la galería ↓</a>'
-    ) if es_premium else ""
+        galeria_seccion = f"""
+    <div class="campo-galeria">
+      <span class="campo-galeria-label">Fotos adicionales (Premium) — hasta {db.FOTOS_EXTRA_MAX}</span>
+      <div class="galeria-grid">{galeria_items}{galeria_add_boxes}</div>
+    </div>"""
     body = f"""
 <div class="panel">
   <h1>Editar aviso</h1>
   <p class="lede">{t.esc(aviso['negocio_nombre'])} · {t.esc(aviso['whatsapp'])} {t.plan_cc(aviso.get('plan_nombre', 'Gratis'))}</p>
-  {aviso_extra_html}
   {errores_html}
   <form method="post" action="/admin/avisos/{aviso_id}" class="form" enctype="multipart/form-data"
     data-ajax-form data-ajax-redirect="/admin/avisos">
@@ -1413,14 +1407,13 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
       <span class="hint">JPG, PNG o WebP, máx. 5 MB. Deja vacío para no cambiarla.</span>
     </label>
     {foto_quitar}
-    {'<p class="hint">¿Buscas subir más fotos? Este negocio es Premium — baja hasta la sección "Galería de fotos".</p>' if es_premium else ''}
     <div class="form-actions">
       <a class="btn btn-ghost btn-lg" href="/admin/avisos">Cancelar</a>
       <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>
     </div>
   </form>
+  {galeria_seccion}
 </div>
-{galeria_html}
 """
     render(handler, t.layout("Editar aviso", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
 
@@ -1578,6 +1571,7 @@ def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
 
 
 def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
+    ajax = _es_ajax(handler)
     archivos = archivos or {}
     foto = archivos.get("foto")
     if foto and foto["content_type"] in _EXT_POR_TIPO and len(foto["data"]) <= 5 * 1024 * 1024:
@@ -1589,17 +1583,30 @@ def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
             flash = mensaje_sincronizacion("Foto agregada a la galería.", actualizado)
         else:
             flash = f"Ya tiene el máximo de {db.FOTOS_EXTRA_MAX} fotos adicionales."
+            if ajax:
+                return _responder_error_ajax(handler, flash)
     else:
         flash = "La foto debe ser JPG, PNG o WebP de máximo 5 MB."
+        if ajax:
+            return _responder_error_ajax(handler, flash)
+    if ajax:
+        handler.send_response(204)
+        handler.end_headers()
+        return
     redirect(handler, f"/admin/avisos/{aviso_id}", flash=flash)
 
 
 def admin_aviso_foto_eliminar_submit(handler, aviso_id, form):
+    ajax = _es_ajax(handler)
     url = form.get("url", "")
     if url:
         db.eliminar_foto_extra(aviso_id, url)
         auditar(handler, "eliminar_foto_galeria", f"aviso {aviso_id}")
     actualizado = sincronizar_sitio_estatico()
+    if ajax:
+        handler.send_response(204)
+        handler.end_headers()
+        return
     redirect(handler, f"/admin/avisos/{aviso_id}", flash=mensaje_sincronizacion("Foto eliminada.", actualizado))
 
 
