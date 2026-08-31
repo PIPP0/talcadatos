@@ -891,6 +891,8 @@ def publicar_submit(handler, form, foto=None):
         negocio_id, form.get("titulo", "").strip()[:120], form.get("descripcion", "").strip(),
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
         foto_url=foto_url)
+    if sub_token:
+        db.actualizar_suscripcion_pendiente(sub_token, negocio_id=negocio_id)
     redirect(handler, "/publicar?ok=1")
 
 
@@ -1884,6 +1886,17 @@ def admin_pagos(handler):
   <td>{t.plan_badge(p['plan_nombre'])}</td>
   <td class="mono">${money(p['precio_clp'])}</td>
 </tr>""" for p in pagos)
+
+    suscripciones = db.get_suscripciones()
+    plan_nombre_por_id = {p["id"]: p["nombre"] for p in PLANES_SUSCRIPCION}
+    filas_sub = "".join(f"""
+<tr>
+  <td class="mono small">{t.esc((s.get('creado_en') or '')[:10])}</td>
+  <td>{t.esc(s.get('negocio_nombre') or s.get('email', ''))}</td>
+  <td>{t.plan_badge(plan_nombre_por_id.get(s.get('plan_id'), s.get('plan_id', '')))}</td>
+  <td>{t.estado_badge(s.get('estado', ''))}</td>
+  <td class="mono small">{t.esc(s.get('preapproval_id') or '—')}</td>
+</tr>""" for s in suscripciones)
     body = f"""
 <div class="listado-head">
   <h1>Historial de pagos</h1>
@@ -1893,6 +1906,17 @@ def admin_pagos(handler):
 <div class="tbl-wrap" data-reveal><table>
   <tr><th>Fecha</th><th>Negocio</th><th>Plan</th><th>Monto</th></tr>
   {filas or "<tr><td colspan='4' class='empty-state'>Sin pagos registrados todavía.</td></tr>"}
+</table></div>
+
+<div class="panel">
+  <h2>Suscripciones Mercado Pago</h2>
+  <p class="lede">Si un cliente pide que le devuelvas dinero, busca su fila y copia el ID de suscripción —
+    con eso lo encuentras en el panel de Mercado Pago para hacer el reembolso. Talcadatos nunca guarda
+    datos de tarjeta ni de cuenta bancaria, solo esta referencia.</p>
+</div>
+<div class="tbl-wrap" data-reveal><table>
+  <tr><th>Fecha</th><th>Negocio / email</th><th>Plan</th><th>Estado</th><th>ID suscripción (Mercado Pago)</th></tr>
+  {filas_sub or "<tr><td colspan='5' class='empty-state'>Sin suscripciones todavía.</td></tr>"}
 </table></div>
 """
     render(handler, t.layout("Pagos", body, active="pagos", admin=True))

@@ -236,6 +236,20 @@ def actualizar_suscripcion_pendiente(token, **campos):
     _fs().collection("suscripciones_pendientes").document(token).set(campos, merge=True)
 
 
+def get_suscripciones():
+    subs = _all("suscripciones_pendientes")
+    negocios = _all("negocios")
+    filas = []
+    for token, s in subs.items():
+        row = dict(s)
+        row["token"] = token
+        neg = negocios.get(s.get("negocio_id"), {})
+        row["negocio_nombre"] = neg.get("nombre", "")
+        filas.append(row)
+    filas.sort(key=lambda r: r.get("creado_en") or "", reverse=True)
+    return filas
+
+
 def get_contenido_sitio():
     """Obtiene el CMS de una sola página y aplica valores seguros por defecto."""
     doc = _fs().collection("configuracion").document("sitio").get()
