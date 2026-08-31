@@ -1,3 +1,14 @@
+/* El logo y "Inicio" siempre llevan arriba del todo, aunque ya estés en "/"
+   (si no, un clic ahí no hace nada porque la URL no cambia). */
+document.addEventListener("click", function (e) {
+  var link = e.target.closest('a[href="/"]');
+  if (!link) return;
+  if (location.pathname === "/" && !location.search && !location.hash) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+});
+
 document.addEventListener("click", function (e) {
   var arrow = e.target.closest(".carousel-arrow");
   if (!arrow) return;
