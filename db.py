@@ -316,6 +316,7 @@ def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None
         row["icono"] = cat.get("icono", "📌")
         row["plan_prioridad"] = plan.get("prioridad", 0)
         row["plan_nombre"] = plan.get("nombre", "Gratis")
+        row["es_demo"] = bool(a.get("es_demo", False))
         filas.append(row)
     return filas
 
@@ -378,13 +379,13 @@ def get_comunas_activas():
 
 
 def crear_aviso(negocio_id, titulo, descripcion, categoria_slug, comuna, horario, color, estado="pendiente",
-                 foto_url=None):
+                 foto_url=None, es_demo=False):
     aid = _next_id("avisos")
     _fs().collection("avisos").document(aid).set({
         "negocio_id": negocio_id, "titulo": titulo, "descripcion": descripcion,
         "categoria_slug": categoria_slug, "comuna": comuna, "horario": horario,
         "color": color, "estado": estado, "vistas_total": 0, "contactos_total": 0,
-        "foto_url": foto_url,
+        "foto_url": foto_url, "es_demo": bool(es_demo),
         "publicado_en": now() if estado == "activo" else None, "creado_en": now(),
     })
     return aid

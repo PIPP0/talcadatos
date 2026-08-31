@@ -1266,7 +1266,7 @@ def admin_avisos_lista(handler, query):
 
     filas = "".join(f"""
 <tr>
-  <td><a href="/admin/avisos/{a['id']}">{t.esc(a['titulo'])}</a></td>
+  <td><a href="/admin/avisos/{a['id']}">{t.esc(a['titulo'])}</a> {t.origen_badge(a.get('es_demo', False))}</td>
   <td>{t.esc(a['negocio_nombre'])}</td>
   <td class="mono">{t.esc(a['categoria_nombre'])}</td>
   <td>{t.estado_badge(a['estado'])}</td>

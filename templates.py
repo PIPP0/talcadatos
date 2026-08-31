@@ -193,6 +193,10 @@ def plan_badge(plan_nombre):
     return badge(plan_nombre, kinds.get(plan_nombre, "muted"))
 
 
+def origen_badge(es_demo):
+    return badge("Demo", "muted") if es_demo else badge("Real", "ok")
+
+
 def es_nuevo(aviso, dias=3):
     creado = aviso.get("creado_en") or ""
     if not creado:
