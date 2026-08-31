@@ -402,6 +402,11 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .cc-premium{background:var(--brick); color:#fff;}
 .cc-destacado{background:#F0B429; color:#3A2A00;}
 .cc-regular{background:#4FADDE; color:#fff;}
+.cc-select{border:none; text-align:center; text-align-last:center; cursor:pointer; appearance:none;
+  -webkit-appearance:none; padding:0; margin:0;}
+.cc-select option{color:#1a1a1a; background:#fff; font-weight:700;}
+.cc-select:hover{filter:brightness(1.08);}
+.cc-select:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
 /* ---- admin: menu lateral ---- */
 .admin-shell{display:flex; align-items:flex-start;}

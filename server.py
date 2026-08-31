@@ -1241,7 +1241,7 @@ def admin_avisos_lista(handler, query):
   <td class="mono">{t.esc(a['categoria_nombre'])}</td>
   <td>{t.estado_badge(a['estado'])}</td>
   <td>{t.origen_badge(a.get('es_demo', False))}</td>
-  <td>{t.plan_cc(a.get('plan_nombre', 'Gratis'))}</td>
+  <td>{t.plan_cc_editable(a['id'], a.get('plan_nombre', 'Gratis'))}</td>
   <td class="mono">{a['vistas_total']}</td>
   <td class="mono">{a['contactos_total']}</td>
   <td class="admin-actions">
@@ -1305,6 +1305,29 @@ def admin_avisos_lista(handler, query):
 """
     flash = get_flash(handler)
     render(handler, t.layout("Avisos", body, active="avisos", admin=True, flash=flash), clear_flash=bool(flash))
+
+
+def admin_aviso_cc_submit(handler, aviso_id, form):
+    ajax = _es_ajax(handler)
+    plan_id = form.get("plan_id")
+    plan = db.get_plan(plan_id)
+    if not plan:
+        if ajax:
+            return _responder_error_ajax(handler, "Plan inválido.")
+        return redirect(handler, "/admin/avisos", flash="Plan inválido.")
+    aviso = db.get_aviso(aviso_id)
+    if not aviso:
+        if ajax:
+            return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
+        return not_found(handler)
+    db.cambiar_plan_negocio(aviso["negocio_id"], plan_id, None)
+    auditar(handler, "cambiar_cc", f"negocio {aviso['negocio_id']} -> {plan['nombre']} (desde avisos)")
+    sincronizar_sitio_estatico()
+    if ajax:
+        handler.send_response(204)
+        handler.end_headers()
+        return
+    redirect(handler, "/admin/avisos", flash=f"Categoría de cliente actualizada a {plan['nombre']}.")
 
 
 def admin_orden(handler):
@@ -2831,6 +2854,11 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_aviso_editar_submit(self, int(segs[2]), form, archivos)
             if path == "/admin/orden/guardar":
                 return admin_orden_guardar(self, self._body()) if require_role(self, {"super_admin"}) else None
+            if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "cc":
+                if not require_role(self, {"super_admin"}):
+                    return None
+                form, _archivos = self._form_multipart()
+                return admin_aviso_cc_submit(self, int(segs[2]), form)
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "eliminar":
                 return admin_aviso_eliminar(self, int(segs[2])) if require_role(self, {"super_admin"}) else None
             if len(segs) == 4 and segs[0] == "admin" and segs[1] == "avisos" and segs[3] == "aprobar":
