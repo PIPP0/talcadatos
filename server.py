@@ -1914,6 +1914,7 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_FROM_DISPLAY = f"Talcadatos <{RESEND_FROM_EMAIL}>"
 RESEND_REPLY_TO = os.environ.get("RESEND_REPLY_TO", "futuroiadesarrollo@gmail.com")
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
@@ -2008,7 +2009,7 @@ def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
 <p>El equipo de Talcadatos</p>
 """
     payload = json.dumps({
-        "from": RESEND_FROM_EMAIL, "to": [destinatario], "reply_to": RESEND_REPLY_TO,
+        "from": RESEND_FROM_DISPLAY, "to": [destinatario], "reply_to": RESEND_REPLY_TO,
         "subject": "¡Tu aviso ya está en Talcadatos! 🎉", "html": html,
     }).encode("utf-8")
     req = urllib.request.Request(
@@ -2035,7 +2036,7 @@ def _enviar_correo_nueva_solicitud(aviso, negocio, origin):
 <p><a href="{t.esc(link_moderacion)}">Revisar en el panel de moderación</a></p>
 """
     payload = json.dumps({
-        "from": RESEND_FROM_EMAIL, "to": [RESEND_REPLY_TO], "reply_to": RESEND_REPLY_TO,
+        "from": RESEND_FROM_DISPLAY, "to": [RESEND_REPLY_TO], "reply_to": RESEND_REPLY_TO,
         "subject": f"Nueva solicitud de publicación: {aviso['titulo']}", "html": html,
     }).encode("utf-8")
     req = urllib.request.Request(
@@ -2062,7 +2063,7 @@ def _enviar_correo_solicitud_web(solicitud, token, origin):
 <p><a href="{t.esc(origin)}/admin/quieromiweb">Ver en el panel de admin</a></p>
 """
     payload = json.dumps({
-        "from": RESEND_FROM_EMAIL, "to": [RESEND_REPLY_TO], "reply_to": RESEND_REPLY_TO,
+        "from": RESEND_FROM_DISPLAY, "to": [RESEND_REPLY_TO], "reply_to": RESEND_REPLY_TO,
         "subject": f"Nueva solicitud de sitio web: {solicitud.get('negocio', '')}", "html": html,
     }).encode("utf-8")
     req = urllib.request.Request(
@@ -2096,7 +2097,7 @@ def _enviar_correo_confirmacion_solicitud_web(solicitud, token, origin):
 <p>El equipo de Talcadatos</p>
 """
     payload = json.dumps({
-        "from": RESEND_FROM_EMAIL, "to": [destinatario], "reply_to": RESEND_REPLY_TO,
+        "from": RESEND_FROM_DISPLAY, "to": [destinatario], "reply_to": RESEND_REPLY_TO,
         "subject": "Tu solicitud de sitio web en Talcadatos", "html": html,
     }).encode("utf-8")
     req = urllib.request.Request(
