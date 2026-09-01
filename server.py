@@ -621,9 +621,11 @@ def _quieromiweb_intro_body(errores=None, form=None):
       </ul>
     </div>
   </div>
-  <p class="hint" style="margin-top:22px">Los ${money(WEB_PRECIO_CREACION)} son solo el diseño de tu sitio. Para publicarlo en un
-    dominio real necesitas además la suscripción mensual de ${money(WEB_PRECIO_SOPORTE)}, que cubre el hosting —
-    sin ella, tu sitio no puede quedar en línea.</p>
+  <p class="hint" style="margin-top:22px">Los ${money(WEB_PRECIO_CREACION)} corresponden solo al diseño de tu sitio 😊</p>
+  <p class="hint" style="margin-top:10px">Para publicarlo en un dominio real y que quede disponible en internet, necesitas además
+    la suscripción mensual de ${money(WEB_PRECIO_SOPORTE)}, que incluye el hosting y todo lo necesario para mantener
+    tu sitio en línea.</p>
+  <p class="hint" style="margin-top:10px">Así tendrás tu web funcionando y disponible para tus clientes de forma permanente.</p>
 </section>
 
 <section class="section" id="empezar" data-reveal>
