@@ -579,102 +579,106 @@ def _quieromiweb_intro_body(errores=None, form=None):
     errors_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
                    "</ul></div>") if errores else ""
     return f"""
-<section class="need-page">
-  <div class="need-page-intro">
-    <span class="eyebrow">Sitios web para pymes de Talca</span>
-    <h1>Quiero mi sitio web</h1>
-    <p class="lede">Te creamos un sitio web propio para tu negocio, simple y listo para que te encuentren y te
-      escriban por WhatsApp — sin depender solo de tu aviso en Talcadatos.</p>
-    <div class="trust-points"><span>✓ Diseño a tu medida</span><span>✓ Listo para celular</span>
-      <span>✓ Hosting y soporte incluidos</span></div>
-  </div>
+<section class="need-cta" data-reveal>
+  <div><span class="eyebrow">Sitios web para pymes de Talca</span><h2>Quiero mi sitio web</h2>
+    <p>Te creamos un sitio propio para tu negocio, simple y listo para que te encuentren y te escriban por
+      WhatsApp — sin depender solo de tu aviso en Talcadatos.</p></div>
+  <a class="btn btn-primary btn-lg" href="#empezar">Quiero mi sitio →</a>
+</section>
 
-  <div class="need-page-content">
-  <div class="panel">
-    <h2>¿Cómo funciona?</h2>
-    <div class="quieromiweb-como-grid">
-      <div>
-        <h3>Qué incluye</h3>
-        <ul class="plan-beneficios">
-          <li>✓ Sitio de una o varias secciones (inicio, servicios/productos, contacto)</li>
-          <li>✓ Diseño adaptado a tu rubro, listo para celular</li>
-          <li>✓ Botón directo a tu WhatsApp para que te contacten sin fricción</li>
-          <li>✓ Conectamos tu dominio si ya tienes uno (o te ayudamos a conseguir uno)</li>
-        </ul>
-      </div>
-      <div>
-        <h3>Qué necesitamos de ti</h3>
-        <ul class="plan-beneficios">
-          <li>✓ Nombre del negocio, rubro y una descripción breve de lo que ofreces</li>
-          <li>✓ Logo (si tienes) y fotos de tu local, productos o trabajos</li>
-          <li>✓ Textos o ideas de lo que quieres mostrar (o lo redactamos por ti)</li>
-          <li>✓ WhatsApp, dirección y redes sociales para el contacto</li>
-        </ul>
-      </div>
+<section class="trust-strip" data-reveal aria-label="Beneficios de tu sitio web">
+  <div style="--trust-accent:#1DA851">
+    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+    <p><strong>Diseño a tu medida</strong><small>Adaptado a tu rubro y listo para celular.</small></p>
+  </div>
+  <div style="--trust-accent:#0AA39A">
+    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 19a4.5 4.5 0 0 1-.4-8.98A6 6 0 0 1 17.8 8.1 4 4 0 0 1 17 16H6.5Z"/></svg></span>
+    <p><strong>Hosting incluido</strong><small>No pagas aparte por alojar tu sitio.</small></p>
+  </div>
+  <div style="--trust-accent:#2B80D8">
+    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"/></svg></span>
+    <p><strong>Contacto directo</strong><small>Botón a tu WhatsApp, sin intermediarios.</small></p>
+  </div>
+</section>
+
+<section class="section" data-reveal>
+  <div class="section-head"><div><span class="eyebrow">Así de simple</span><h2>¿Cómo funciona?</h2></div></div>
+  <div class="how">
+    <div class="how-step"><span class="how-n">1</span><h3>Cuéntanos de tu negocio</h3>
+      <p>Nombre, rubro, logo y fotos, y qué quieres mostrar — o te ayudamos a redactarlo.</p></div>
+    <div class="how-step"><span class="how-n">2</span><h3>Pagas la creación</h3>
+      <p>Un pago único de ${money(WEB_PRECIO_CREACION)} y empezamos a diseñar tu sitio.</p></div>
+    <div class="how-step"><span class="how-n">3</span><h3>Publicamos tu sitio</h3>
+      <p>Con hosting y soporte mensual incluido desde ${money(WEB_PRECIO_SOPORTE)}/mes.</p></div>
+  </div>
+</section>
+
+<section class="section" data-reveal>
+  <div class="section-head"><div><span class="eyebrow">Sin sorpresas</span><h2>Precio</h2></div></div>
+  <div class="planes-grid">
+    <div class="plan-card">
+      <h3>Creación del sitio</h3>
+      <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_CREACION)}</span></div>
+      <ul class="plan-beneficios">
+        <li>✓ Pago único, se paga al confirmar tu solicitud</li>
+        <li>✓ Diseño completo de tu sitio</li>
+        <li>✓ Publicación en línea cuando esté listo</li>
+      </ul>
+    </div>
+    <div class="plan-card plan-card-recomendado">
+      <span class="plan-ribbon">Incluye hosting</span>
+      <h3>Soporte mensual</h3>
+      <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
+      <ul class="plan-beneficios">
+        <li>✓ Hosting de tu sitio incluido (no pagas aparte)</li>
+        <li>✓ Hasta 2 cambios de contenido o imágenes al mes</li>
+        <li>✓ Cancelas cuando quieras</li>
+      </ul>
     </div>
   </div>
+  <p class="hint">Primero se paga la creación del sitio; la suscripción de soporte mensual se activa cuando tu
+    sitio ya está listo y publicado.</p>
+</section>
 
-  <div class="panel">
-    <h2>Precio</h2>
-    <div class="planes-grid">
-      <div class="plan-card">
-        <h3>Creación del sitio</h3>
-        <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_CREACION)}</span></div>
-        <ul class="plan-beneficios">
-          <li>✓ Pago único, se paga al confirmar tu solicitud</li>
-          <li>✓ Diseño completo de tu sitio</li>
-          <li>✓ Publicación en línea cuando esté listo</li>
-        </ul>
-      </div>
-      <div class="plan-card plan-card-recomendado">
-        <span class="plan-ribbon">Incluye hosting</span>
-        <h3>Soporte mensual</h3>
-        <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
-        <ul class="plan-beneficios">
-          <li>✓ Hosting de tu sitio incluido (no pagas aparte)</li>
-          <li>✓ Hasta 2 cambios de contenido o imágenes al mes</li>
-          <li>✓ Cancelas cuando quieras</li>
-        </ul>
-      </div>
-    </div>
-    <p class="hint">Primero se paga la creación del sitio; la suscripción de soporte mensual se activa cuando tu
-      sitio ya está listo y publicado.</p>
-  </div>
-
-  <div class="panel need-form-panel">
-    <h2>Empecemos</h2>
+<section class="section" id="empezar" data-reveal>
+  <div class="section-head"><div><span class="eyebrow">Último paso</span><h2>Empecemos</h2></div></div>
+  <div class="panel need-form-panel" style="max-width:640px; margin:0 auto;">
     {errors_html}
     <form method="post" action="/quieromiweb" class="form" id="quieromiweb-form">
       {HONEYPOT_HTML}
-      <label>Tu nombre
-        <input name="nombre" required maxlength="120" value="{value("nombre")}">
-      </label>
-      <label>Nombre de tu negocio
-        <input name="negocio" required maxlength="120" value="{value("negocio")}">
-      </label>
-      <label>WhatsApp
-        <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
-      </label>
-      <label>Correo electrónico
-        <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl" value="{value("email")}">
-      </label>
+      <div class="form-grid-2col">
+        <label>Tu nombre
+          <input name="nombre" required maxlength="120" value="{value("nombre")}">
+        </label>
+        <label>Nombre de tu negocio
+          <input name="negocio" required maxlength="120" value="{value("negocio")}">
+        </label>
+        <label>WhatsApp
+          <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
+        </label>
+        <label>Correo electrónico
+          <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl" value="{value("email")}">
+        </label>
+      </div>
       <label>Cuéntanos brevemente qué quieres mostrar en tu sitio
-        <textarea name="descripcion" maxlength="600" rows="4" placeholder="Ej: Somos una peluquería en el centro de Talca, queremos mostrar nuestros servicios y precios.">{value("descripcion")}</textarea>
+        <textarea name="descripcion" maxlength="600" rows="3" placeholder="Ej: Somos una peluquería en el centro de Talca, queremos mostrar nuestros servicios y precios.">{value("descripcion")}</textarea>
       </label>
       <button class="btn btn-primary btn-lg" type="submit">Continuar</button>
       <p class="hint">Después de enviar el formulario te llega un correo con el link para pagar — puedes
-        continuar de inmediato o volver más tarde.</p>
+        continuar de inmediato o volver más tarde. ¿Ya enviaste tu solicitud?
+        <a href="#buscar">Búscala con tu correo</a>.</p>
     </form>
   </div>
+</section>
 
-  <div class="panel need-form-panel">
-    <h2>¿Ya enviaste tu solicitud?</h2>
-    <p class="lede">Busca con tu correo el link para continuar o pagar.</p>
-    <form method="post" action="/quieromiweb/buscar" class="form form-inline">
+<section class="section" id="buscar" data-reveal>
+  <div class="panel" style="max-width:480px; margin:0 auto; text-align:center;">
+    <h2 style="font-size:1.15rem; margin-top:0">¿Ya enviaste tu solicitud?</h2>
+    <p class="hint">Busca con tu correo el link para continuar o pagar.</p>
+    <form method="post" action="/quieromiweb/buscar" class="form form-inline" style="justify-content:center;">
       <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
       <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
     </form>
-  </div>
   </div>
 </section>
 """
@@ -733,16 +737,14 @@ def _quieromiweb_pagar_body(solicitud, token, pago=None):
 </div>"""
 
     return f"""
-<section class="need-page">
-  <div class="panel panel-suscripcion">
-    <h1>¡Gracias, {t.esc(solicitud.get('nombre', ''))}!</h1>
-    <p class="lede">Recibimos tu solicitud para <strong>{t.esc(solicitud.get('negocio', ''))}</strong>.
-      Ahora puedes pagar la creación de tu sitio.</p>
-    {aviso_html}
-    <div class="planes-grid">{tarjeta_creacion()}{tarjeta_soporte()}</div>
-    <p class="hint">Pago seguro procesado por Mercado Pago.</p>
-  </div>
-</section>
+<div class="panel panel-suscripcion">
+  <h1>¡Gracias, {t.esc(solicitud.get('nombre', ''))}!</h1>
+  <p class="lede">Recibimos tu solicitud para <strong>{t.esc(solicitud.get('negocio', ''))}</strong>.
+    Ahora puedes pagar la creación de tu sitio.</p>
+  {aviso_html}
+  <div class="planes-grid">{tarjeta_creacion()}{tarjeta_soporte()}</div>
+  <p class="hint">Pago seguro procesado por Mercado Pago.</p>
+</div>
 """
 
 
@@ -772,14 +774,10 @@ def _quieromiweb_resultados_body(email, solicitudes):
 <p class="hint">¿Es para otro negocio? <a href="/quieromiweb">Envía una solicitud nueva</a>.</p>"""
 
     return f"""
-<section class="need-page">
-  <div class="need-page-content">
-  <div class="panel panel-suscripcion">
-    <h1>Tus solicitudes</h1>
-    {contenido}
-  </div>
-  </div>
-</section>
+<div class="panel panel-suscripcion">
+  <h1>Tus solicitudes</h1>
+  {contenido}
+</div>
 """
 
 
