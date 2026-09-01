@@ -45,9 +45,6 @@
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--ink)}
 
   .hero{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);background-color:var(--surface-alt);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;overflow:hidden}
-  .hero-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.16;color:var(--primary);pointer-events:none}
-  .hero-watermark svg{width:9rem;height:9rem;animation:watermark-pulse 5s ease-in-out infinite}
-  @keyframes watermark-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
   .hero-inner{position:relative;max-width:640px;padding:0 24px}
   .hero-inner .eyebrow{color:var(--text-muted)}
   .hero-inner h1{font-family:Georgia,serif;font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;margin-bottom:18px}
@@ -171,7 +168,6 @@
 </header>
 
 <section class="hero" id="top">
-  <span class="hero-watermark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></span>
   <div class="hero-inner">
     <span class="eyebrow ph"><em>[Tu rubro — ej. Cocina casera, Pastelería, Boutique]</em></span>
     <h1 class="ph"><em>[Nombre de tu negocio, en grande]</em></h1>
