@@ -561,6 +561,254 @@ def necesito_submit(handler, form):
     redirect(handler, "/necesito?ok=1")
 
 
+def _quieromiweb_intro_body(errores=None, form=None):
+    form = form or {}
+    errores = errores or []
+    value = lambda field, default="": t.esc(form.get(field, default))
+    errors_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
+                   "</ul></div>") if errores else ""
+    return f"""
+<section class="need-page">
+  <div class="need-page-intro">
+    <span class="eyebrow">Sitios web para pymes de Talca</span>
+    <h1>Quiero mi sitio web</h1>
+    <p class="lede">Te creamos un sitio web propio para tu negocio, simple y listo para que te encuentren y te
+      escriban por WhatsApp — sin depender solo de tu aviso en Talcadatos.</p>
+    <div class="trust-points"><span>✓ Diseño a tu medida</span><span>✓ Listo para celular</span>
+      <span>✓ Hosting y soporte incluidos</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>¿Qué incluye?</h2>
+    <ul class="plan-beneficios">
+      <li>✓ Sitio de una o varias secciones (inicio, servicios/productos, contacto)</li>
+      <li>✓ Diseño adaptado a tu rubro, optimizado para que se vea bien en el celular</li>
+      <li>✓ Botón directo a tu WhatsApp para que te contacten sin fricción</li>
+      <li>✓ Conectamos tu dominio si ya tienes uno (o te ayudamos a conseguir uno)</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>¿Qué información necesitamos de ti?</h2>
+    <p>Con esto ya podemos partir con el diseño:</p>
+    <ul class="plan-beneficios">
+      <li>✓ Nombre del negocio, rubro y una descripción breve de lo que ofreces</li>
+      <li>✓ Logo (si ya tienes uno) y fotos de tu local, productos o trabajos</li>
+      <li>✓ Textos o ideas de lo que quieres mostrar (o lo redactamos por ti)</li>
+      <li>✓ WhatsApp, dirección y redes sociales para el contacto</li>
+      <li>✓ Si ya tienes un dominio comprado, o si necesitas que te ayudemos a conseguir uno</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>Precio</h2>
+    <div class="planes-grid">
+      <div class="plan-card">
+        <h3>Creación del sitio</h3>
+        <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_CREACION)}</span></div>
+        <ul class="plan-beneficios">
+          <li>✓ Pago único, se paga al confirmar tu solicitud</li>
+          <li>✓ Diseño completo de tu sitio</li>
+          <li>✓ Publicación en línea cuando esté listo</li>
+        </ul>
+      </div>
+      <div class="plan-card plan-card-recomendado">
+        <span class="plan-ribbon">Incluye hosting</span>
+        <h3>Soporte mensual</h3>
+        <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
+        <ul class="plan-beneficios">
+          <li>✓ Hosting de tu sitio incluido (no pagas aparte)</li>
+          <li>✓ Hasta 2 cambios de contenido o imágenes al mes</li>
+          <li>✓ Cancelas cuando quieras</li>
+        </ul>
+      </div>
+    </div>
+    <p class="hint">Primero se paga la creación del sitio; la suscripción de soporte mensual se activa cuando tu
+      sitio ya está listo y publicado.</p>
+  </div>
+
+  <div class="panel need-form-panel">
+    <h2>Empecemos</h2>
+    {errors_html}
+    <form method="post" action="/quieromiweb" class="form" id="quieromiweb-form">
+      {HONEYPOT_HTML}
+      <label>Tu nombre
+        <input name="nombre" required maxlength="120" value="{value("nombre")}">
+      </label>
+      <label>Nombre de tu negocio
+        <input name="negocio" required maxlength="120" value="{value("negocio")}">
+      </label>
+      <label>WhatsApp
+        <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
+      </label>
+      <label>Correo electrónico
+        <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl" value="{value("email")}">
+      </label>
+      <label>Cuéntanos brevemente qué quieres mostrar en tu sitio
+        <textarea name="descripcion" maxlength="600" rows="4" placeholder="Ej: Somos una peluquería en el centro de Talca, queremos mostrar nuestros servicios y precios.">{value("descripcion")}</textarea>
+      </label>
+      <button class="btn btn-primary btn-lg" type="submit">Continuar</button>
+      <p class="hint">Después de enviar el formulario vas a poder pagar la creación del sitio.</p>
+    </form>
+  </div>
+</section>
+"""
+
+
+def _quieromiweb_pagar_body(solicitud, token, pago=None):
+    creacion_pagada = solicitud.get("estado") == "creacion_pagada"
+    soporte_activo = solicitud.get("estado_soporte") == "activa"
+    aviso_html = ""
+    if pago == "error":
+        aviso_html = '<div class="form-errors"><ul><li>El pago no se completó. Puedes intentarlo de nuevo.</li></ul></div>'
+    elif pago == "pendiente":
+        aviso_html = '<div class="flash">Tu pago está pendiente de confirmación. Esto puede tardar unos minutos.</div>'
+    elif pago == "ok":
+        aviso_html = '<div class="flash">¡Gracias! Tu pago fue registrado.</div>'
+
+    def tarjeta_creacion():
+        if creacion_pagada:
+            return """
+<div class="plan-card">
+  <h3>Creación del sitio</h3>
+  <p class="flash" style="margin-top:8px">✓ Pagada</p>
+  <p class="hint">Ya estamos trabajando en tu sitio. Te contactamos por WhatsApp para coordinar los detalles.</p>
+</div>"""
+        return f"""
+<div class="plan-card">
+  <h3>Creación del sitio</h3>
+  <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_CREACION)}</span></div>
+  <p class="hint">Pago único para empezar a diseñar tu sitio.</p>
+  <form method="post" action="/quieromiweb/pagar-creacion">
+    <input type="hidden" name="token" value="{t.esc(token)}">
+    <button class="btn btn-primary btn-lg" type="submit">Pagar creación</button>
+  </form>
+</div>"""
+
+    def tarjeta_soporte():
+        if soporte_activo:
+            return """
+<div class="plan-card plan-card-recomendado">
+  <h3>Soporte mensual</h3>
+  <p class="flash" style="margin-top:8px">✓ Suscripción activa</p>
+</div>"""
+        deshabilitado = "" if creacion_pagada else " disabled"
+        nota = "" if creacion_pagada else '<p class="hint">Se activa cuando ya pagaste la creación del sitio.</p>'
+        return f"""
+<div class="plan-card plan-card-recomendado">
+  <span class="plan-ribbon">Incluye hosting</span>
+  <h3>Soporte mensual</h3>
+  <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
+  <p class="hint">Hosting incluido + hasta 2 cambios de contenido o imágenes al mes.</p>
+  {nota}
+  <form method="post" action="/quieromiweb/suscribir-soporte">
+    <input type="hidden" name="token" value="{t.esc(token)}">
+    <button class="btn btn-ghost btn-lg" type="submit"{deshabilitado}>Suscribirme al soporte</button>
+  </form>
+</div>"""
+
+    return f"""
+<section class="need-page">
+  <div class="panel panel-suscripcion">
+    <h1>¡Gracias, {t.esc(solicitud.get('nombre', ''))}!</h1>
+    <p class="lede">Recibimos tu solicitud para <strong>{t.esc(solicitud.get('negocio', ''))}</strong>.
+      Ahora puedes pagar la creación de tu sitio.</p>
+    {aviso_html}
+    <div class="planes-grid">{tarjeta_creacion()}{tarjeta_soporte()}</div>
+    <p class="hint">Pago seguro procesado por Mercado Pago.</p>
+  </div>
+</section>
+"""
+
+
+def quieromiweb_form(handler, query=""):
+    sitio = db.get_contenido_sitio()
+    params = qs(query)
+    token = params.get("token", "")
+    solicitud = db.get_solicitud_web(token) if token else None
+    if solicitud:
+        body = _quieromiweb_pagar_body(solicitud, token, pago=params.get("pago"))
+    else:
+        body = _quieromiweb_intro_body()
+    render(handler, t.layout("Quiero mi sitio web", body, active="quieromiweb", site=sitio))
+
+
+def quieromiweb_submit(handler, form):
+    if _es_bot(form):
+        return redirect(handler, "/quieromiweb")
+    if not db.verificar_limite(_client_ip(handler), "quieromiweb"):
+        return render(handler, t.layout(
+            "Quiero mi sitio web",
+            _quieromiweb_intro_body(form=form, errores=[
+                "Ya enviaste varias solicitudes seguidas. Espera un poco antes de volver a intentar."]),
+            active="quieromiweb", site=db.get_contenido_sitio()))
+    nombre = form.get("nombre", "").strip()
+    negocio = form.get("negocio", "").strip()
+    whatsapp = form.get("whatsapp", "").strip()
+    email = form.get("email", "").strip()
+    descripcion = form.get("descripcion", "").strip()
+    errores = []
+    if not nombre:
+        errores.append("Ingresa tu nombre.")
+    if not negocio:
+        errores.append("Ingresa el nombre de tu negocio.")
+    if len("".join(c for c in whatsapp if c.isdigit())) < 8:
+        errores.append("Ingresa un WhatsApp válido con código de país.")
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        errores.append("Ingresa un correo electrónico válido.")
+    if errores:
+        return render(handler, t.layout(
+            "Quiero mi sitio web", _quieromiweb_intro_body(form=form, errores=errores),
+            active="quieromiweb", site=db.get_contenido_sitio()))
+
+    token = f"web_{secrets.token_urlsafe(16)}"
+    db.crear_solicitud_web(token, nombre[:120], negocio[:120], email[:200], whatsapp[:40], descripcion[:600])
+    solicitud = db.get_solicitud_web(token)
+    origin = _origin(handler)
+    threading.Thread(target=_enviar_correo_solicitud_web, args=(solicitud, token, origin), daemon=True).start()
+    redirect(handler, f"/quieromiweb?token={quote(token)}")
+
+
+def quieromiweb_pagar_creacion_submit(handler, form):
+    token = form.get("token", "")
+    solicitud = db.get_solicitud_web(token)
+    if not solicitud:
+        return redirect(handler, "/quieromiweb")
+    origin = _origin(handler)
+    back_url = f"{origin}/quieromiweb?token={quote(token)}"
+    try:
+        resp = _crear_preference("Talcadatos — Creación de sitio web", WEB_PRECIO_CREACION, token, origin,
+                                  back_url, email=solicitud.get("email"))
+        init_point = resp.get("init_point") or resp.get("sandbox_init_point")
+    except Exception as exc:
+        sys.stderr.write(f"ERROR creando preference MP (quieromiweb {token}): {exc!r}\n")
+        init_point = None
+    if not init_point:
+        return redirect(handler, f"/quieromiweb?token={quote(token)}&pago=error")
+    redirect(handler, init_point)
+
+
+def quieromiweb_suscribir_soporte_submit(handler, form):
+    token = form.get("token", "")
+    solicitud = db.get_solicitud_web(token)
+    if not solicitud:
+        return redirect(handler, "/quieromiweb")
+    origin = _origin(handler)
+    back_url = f"{origin}/quieromiweb?token={quote(token)}"
+    try:
+        resp = _crear_preapproval(
+            solicitud.get("email"), token, origin, WEB_PRECIO_SOPORTE, "Soporte mensual sitio web",
+            reason="Talcadatos - Soporte mensual de sitio web (hosting + 2 cambios al mes)", back_url=back_url)
+        init_point = resp.get("init_point") or resp.get("sandbox_init_point")
+    except Exception as exc:
+        sys.stderr.write(f"ERROR creando preapproval MP (quieromiweb {token}): {exc!r}\n")
+        init_point = None
+    if not init_point:
+        return redirect(handler, f"/quieromiweb?token={quote(token)}&pago=error")
+    db.actualizar_solicitud_web(token, preapproval_soporte_id=resp.get("id"))
+    redirect(handler, init_point)
+
+
 def detalle(handler, aviso_id, query="", contabilizar=True):
     sitio = db.get_contenido_sitio()
     reportado = qs(query).get("reportado") == "1"
@@ -936,17 +1184,38 @@ def api_mp_webhook(handler, body, query):
     except Exception:
         data = {}
     parametros = qs(query)
-    preapproval_id = (data.get("data") or {}).get("id") or parametros.get("id") or parametros.get("data.id")
-    if not preapproval_id:
+    notif_id = (data.get("data") or {}).get("id") or parametros.get("id") or parametros.get("data.id")
+    if not notif_id:
         return render_json(handler, {"ok": True})
+    tipo = data.get("type") or parametros.get("type") or parametros.get("topic")
+
+    if tipo == "payment":
+        # Pago unico de Checkout Pro (hoy solo lo usa /quieromiweb, la creacion del sitio).
+        try:
+            info = _mp_request("GET", f"/v1/payments/{notif_id}")
+        except Exception as exc:
+            sys.stderr.write(f"ERROR consultando payment MP {notif_id}: {exc!r}\n")
+            return render_json(handler, {"ok": True})
+        external_reference = info.get("external_reference") or ""
+        status = info.get("status")
+        if external_reference.startswith("web_"):
+            nuevo_estado = ("creacion_pagada" if status == "approved" else
+                             "creacion_rechazada" if status == "rejected" else "creacion_pendiente")
+            db.actualizar_solicitud_web(external_reference, estado=nuevo_estado,
+                                         mp_status_creacion=status, pago_creacion_id=notif_id)
+        return render_json(handler, {"ok": True})
+
     try:
-        info = _mp_request("GET", f"/preapproval/{preapproval_id}")
+        info = _mp_request("GET", f"/preapproval/{notif_id}")
     except Exception as exc:
-        sys.stderr.write(f"ERROR consultando preapproval MP {preapproval_id}: {exc!r}\n")
+        sys.stderr.write(f"ERROR consultando preapproval MP {notif_id}: {exc!r}\n")
         return render_json(handler, {"ok": True})
-    external_reference = info.get("external_reference")
+    external_reference = info.get("external_reference") or ""
     status = info.get("status")
-    if external_reference:
+    if external_reference.startswith("web_"):
+        nuevo_estado_soporte = "activa" if status == "authorized" else "cancelada" if status == "cancelled" else "pendiente"
+        db.actualizar_solicitud_web(external_reference, estado_soporte=nuevo_estado_soporte, mp_status_soporte=status)
+    elif external_reference:
         nuevo_estado = "activa" if status == "authorized" else "cancelada" if status == "cancelled" else "pendiente"
         db.actualizar_suscripcion_pendiente(external_reference, estado=nuevo_estado, mp_status=status)
     render_json(handler, {"ok": True})
@@ -1580,6 +1849,9 @@ MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 MP_PRECIO_PROMO = 1990
 MP_PRECIO_NORMAL = 5990
 
+WEB_PRECIO_CREACION = 49990
+WEB_PRECIO_SOPORTE = 5990
+
 PLANES_SUSCRIPCION = [
     {
         "id": "gratis", "nombre": "Básico", "precio": MP_PRECIO_PROMO, "precio_normal": MP_PRECIO_NORMAL,
@@ -1621,20 +1893,35 @@ def _mp_request(method, path, payload=None):
         raise
 
 
-def _crear_preapproval(email, external_reference, origin, precio, nombre_plan):
+def _crear_preapproval(email, external_reference, origin, precio, nombre_plan, reason=None, back_url=None):
     payload = {
-        "reason": f"Talcadatos - Plan {nombre_plan} (publicación mensual de aviso)",
+        "reason": reason or f"Talcadatos - Plan {nombre_plan} (publicación mensual de aviso)",
         "external_reference": external_reference,
         "payer_email": email,
         "auto_recurring": {
             "frequency": 1, "frequency_type": "months",
             "transaction_amount": precio, "currency_id": "CLP",
         },
-        "back_url": f"{origin}/publicar?sub={external_reference}",
+        "back_url": back_url or f"{origin}/publicar?sub={external_reference}",
         "notification_url": f"{origin}/api/mp-webhook",
         "status": "pending",
     }
     return _mp_request("POST", "/preapproval", payload)
+
+
+def _crear_preference(titulo, precio, external_reference, origin, back_url, email=None):
+    """Pago unico (Checkout Pro) -- a diferencia de _crear_preapproval(), que
+    es para suscripciones recurrentes."""
+    payload = {
+        "items": [{"title": titulo, "quantity": 1, "unit_price": precio, "currency_id": "CLP"}],
+        "external_reference": external_reference,
+        "back_urls": {"success": back_url, "failure": back_url, "pending": back_url},
+        "auto_return": "approved",
+        "notification_url": f"{origin}/api/mp-webhook",
+    }
+    if email:
+        payload["payer"] = {"email": email}
+    return _mp_request("POST", "/checkout/preferences", payload)
 
 
 def _enviar_correo_aviso_aprobado(aviso, negocio, origin):
@@ -1691,6 +1978,33 @@ def _enviar_correo_nueva_solicitud(aviso, negocio, origin):
         urllib.request.urlopen(req, timeout=10)
     except Exception as exc:
         sys.stderr.write(f"ERROR enviando correo de nueva solicitud (aviso {aviso['id']}): {exc!r}\n")
+
+
+def _enviar_correo_solicitud_web(solicitud, token, origin):
+    if not RESEND_API_KEY or not RESEND_REPLY_TO:
+        return
+    html = f"""
+<p>Llegó una nueva solicitud de sitio web en Talcadatos.</p>
+<p><strong>{t.esc(solicitud.get('nombre', ''))}</strong> · {t.esc(solicitud.get('negocio', ''))}</p>
+<p>WhatsApp: {t.esc(solicitud.get('whatsapp', ''))} · Correo: {t.esc(solicitud.get('email', ''))}</p>
+<p>{t.esc(solicitud.get('descripcion', ''))}</p>
+<p><a href="{t.esc(origin)}/admin/quieromiweb">Ver en el panel de admin</a></p>
+"""
+    payload = json.dumps({
+        "from": RESEND_FROM_EMAIL, "to": [RESEND_REPLY_TO], "reply_to": RESEND_REPLY_TO,
+        "subject": f"Nueva solicitud de sitio web: {solicitud.get('negocio', '')}", "html": html,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.resend.com/emails", data=payload, method="POST",
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json",
+            "User-Agent": "Talcadatos/1.0",
+        },
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as exc:
+        sys.stderr.write(f"ERROR enviando correo de solicitud web (token {token}): {exc!r}\n")
 
 
 def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
@@ -2056,6 +2370,30 @@ def admin_pagos(handler):
 </table></div>
 """
     render(handler, t.layout("Pagos", body, active="pagos", admin=True))
+
+
+def admin_quieromiweb(handler):
+    solicitudes = db.get_solicitudes_web()
+    filas = "".join(f"""
+<tr>
+  <td class="mono small">{t.esc((s.get('creado_en') or '')[:10])}</td>
+  <td>{t.esc(s.get('nombre', ''))}</td>
+  <td>{t.esc(s.get('negocio', ''))}</td>
+  <td class="mono">{t.esc(s.get('whatsapp', ''))}</td>
+  <td class="mono small">{t.esc(s.get('email', ''))}</td>
+  <td>{t.estado_badge(s.get('estado', 'nueva'))}</td>
+  <td>{t.estado_badge(s.get('estado_soporte', '')) if s.get('estado_soporte') else '—'}</td>
+</tr>""" for s in solicitudes)
+    body = f"""
+<div class="listado-head"><h1>Quiero mi sitio web</h1></div>
+<p class="lede">Solicitudes recibidas en /quieromiweb. "Creación" es el pago único; "Soporte" es la
+  suscripción mensual (hosting + 2 cambios al mes).</p>
+<div class="tbl-wrap" data-reveal><table>
+  <tr><th>Fecha</th><th>Nombre</th><th>Negocio</th><th>WhatsApp</th><th>Correo</th><th>Creación</th><th>Soporte</th></tr>
+  {filas or "<tr><td colspan='7' class='empty-state'>Sin solicitudes todavía.</td></tr>"}
+</table></div>
+"""
+    render(handler, t.layout("Quiero mi sitio web", body, active="quieromiweb", admin=True))
 
 
 def admin_alertas(handler):
@@ -2726,7 +3064,7 @@ def sitemap_xml(handler):
     origin = _origin(handler)
     ids = [a["id"] for a in db.get_avisos(estado="activo")]
     urls = ([f"{origin}/", f"{origin}/avisos", f"{origin}/publicar", f"{origin}/necesito",
-             f"{origin}/ayuda", f"{origin}/terminos", f"{origin}/privacidad"]
+             f"{origin}/quieromiweb", f"{origin}/ayuda", f"{origin}/terminos", f"{origin}/privacidad"]
             + [f"{origin}/guias/{slug}" for slug in GUIAS]
             + [f"{origin}/avisos/{i}" for i in ids])
     body = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -2866,6 +3204,8 @@ class Handler(BaseHTTPRequestHandler):
                 return admin_pagos(self) if require_role(self, {"super_admin"}) else None
             if path == "/admin/pagos.csv":
                 return admin_pagos_csv(self) if require_role(self, {"super_admin"}) else None
+            if path == "/admin/quieromiweb":
+                return admin_quieromiweb(self) if require_role(self, {"super_admin"}) else None
             if path == "/admin/alertas":
                 return admin_alertas(self) if require_role(self, {"super_admin"}) else None
             if path == "/admin/necesidades":
@@ -2888,6 +3228,8 @@ class Handler(BaseHTTPRequestHandler):
                 return privacidad(self)
             if path == "/favoritos":
                 return favoritos(self)
+            if path == "/quieromiweb":
+                return quieromiweb_form(self, query)
 
             return not_found(self)
         except BrokenPipeError:
@@ -2918,6 +3260,12 @@ class Handler(BaseHTTPRequestHandler):
                 return api_mp_webhook(self, self._body(), parts.query)
             if path == "/necesito":
                 return necesito_submit(self, self._form())
+            if path == "/quieromiweb":
+                return quieromiweb_submit(self, self._form())
+            if path == "/quieromiweb/pagar-creacion":
+                return quieromiweb_pagar_creacion_submit(self, self._form())
+            if path == "/quieromiweb/suscribir-soporte":
+                return quieromiweb_suscribir_soporte_submit(self, self._form())
             if path == "/api/buscar":
                 return api_buscar(self, self._body())
             if path == "/api/favoritos":

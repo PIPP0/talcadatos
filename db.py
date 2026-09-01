@@ -267,6 +267,34 @@ def get_suscripciones():
     return filas
 
 
+# ---------------------------------------------------- solicitudes de sitio web (/quieromiweb)
+
+def crear_solicitud_web(token, nombre, negocio, email, whatsapp, descripcion):
+    _fs().collection("solicitudes_web").document(token).set({
+        "estado": "nueva", "nombre": nombre, "negocio": negocio, "email": email,
+        "whatsapp": whatsapp, "descripcion": descripcion, "creado_en": now(),
+    })
+
+
+def get_solicitud_web(token):
+    doc = _fs().collection("solicitudes_web").document(token).get()
+    return doc.to_dict() if doc.exists else None
+
+
+def actualizar_solicitud_web(token, **campos):
+    _fs().collection("solicitudes_web").document(token).set(campos, merge=True)
+
+
+def get_solicitudes_web():
+    filas = []
+    for token, s in _all("solicitudes_web").items():
+        row = dict(s)
+        row["token"] = token
+        filas.append(row)
+    filas.sort(key=lambda r: r.get("creado_en") or "", reverse=True)
+    return filas
+
+
 def get_contenido_sitio():
     """Obtiene el CMS de una sola página y aplica valores seguros por defecto."""
     doc = _fs().collection("configuracion").document("sitio").get()

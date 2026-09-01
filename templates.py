@@ -154,6 +154,7 @@ ADMIN_NAV_GROUPS = [
     ("Negocio", [
         ("anunciantes", "/admin/anunciantes", "Anunciantes", "⌂"),
         ("pagos", "/admin/pagos", "Pagos", "¤"),
+        ("quieromiweb", "/admin/quieromiweb", "Quiero mi sitio web", "◫"),
         ("necesidades", "/admin/necesidades", "Necesidades", "↗"),
         ("alertas", "/admin/alertas", "Alertas", "◉"),
         ("sinonimos", "/admin/sinonimos", "Sinónimos", "≈"),
