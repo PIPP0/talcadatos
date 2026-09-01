@@ -540,7 +540,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
 
     canonical = f"{_origin(handler)}/avisos/{aviso_id}"
     mapa_url = ("https://www.google.com/maps/search/?api=1&query=" +
-                quote(f"{aviso['negocio_nombre']} {aviso['comuna']} Chile"))
+                quote(f"{aviso['direccion']}, {aviso['comuna']}, Chile")) if aviso.get("direccion") else None
     qr_url = f"/avisos/{aviso_id}/qr.png"
     reportado_html = ('<p class="flash" style="margin-top:16px">Gracias, tu reporte quedó registrado para revisión.'
                        '</p>') if reportado else ""
@@ -603,7 +603,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     </a>
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" data-share-btn>Compartir aviso</button>
-      <a class="btn btn-ghost" href="{mapa_url}" target="_blank" rel="noopener">📍 Ver en el mapa</a>
+      {f'<a class="btn btn-ghost" href="{mapa_url}" target="_blank" rel="noopener">📍 Ver en el mapa</a>' if mapa_url else ''}
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
         <form method="post" action="/avisos/{aviso_id}/reportar" class="form report-form">
