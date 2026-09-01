@@ -19,6 +19,7 @@ se referencian por id en una URL.
 """
 import os
 import json
+import time
 import random
 import hashlib
 import secrets
@@ -34,6 +35,13 @@ _FOTOS_BUCKET = os.environ.get("FOTOS_BUCKET", "talcadatos-fotos")
 
 _db = None
 _storage_client = None
+
+# categorias y planes casi no cambian (los edita un super_admin muy de vez en
+# cuando), y _denormalizar_avisos los relee completos en cada llamada. Un
+# cache corto en memoria evita esas dos lecturas completas de Firestore en
+# cada carga de pagina publica, que es lo que hacia lenta la navegacion.
+_CACHE_TTL = 30
+_cache_colecciones = {}
 
 
 CONTENIDO_SITIO_POR_DEFECTO = {
@@ -203,6 +211,15 @@ def _all(coleccion):
     return {doc.id: doc.to_dict() for doc in _fs().collection(coleccion).stream()}
 
 
+def _all_cacheado(coleccion):
+    entrada = _cache_colecciones.get(coleccion)
+    if entrada and (time.monotonic() - entrada[0]) < _CACHE_TTL:
+        return entrada[1]
+    datos = _all(coleccion)
+    _cache_colecciones[coleccion] = (time.monotonic(), datos)
+    return datos
+
+
 def _con_id(d, doc_id):
     row = dict(d)
     row["id"] = doc_id
@@ -283,7 +300,7 @@ def _categoria_con_slug(c, slug):
 
 
 def get_categorias():
-    cats = _all("categorias")
+    cats = _all_cacheado("categorias")
     filas = [_categoria_con_slug(c, slug) for slug, c in cats.items()]
     filas.sort(key=lambda c: c["nombre"])
     return filas
@@ -297,7 +314,7 @@ def get_categoria(slug):
 # ------------------------------------------------------------------ planes
 
 def get_planes():
-    planes = _all("planes")
+    planes = _all_cacheado("planes")
     filas = [_con_id(p, pid) for pid, p in planes.items()]
     filas.sort(key=lambda p: p["prioridad"])
     return filas
@@ -312,8 +329,8 @@ def get_plan(plan_id):
 
 def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None):
     negocios = negocios if negocios is not None else _all("negocios")
-    categorias = categorias if categorias is not None else _all("categorias")
-    planes = planes if planes is not None else _all("planes")
+    categorias = categorias if categorias is not None else _all_cacheado("categorias")
+    planes = planes if planes is not None else _all_cacheado("planes")
     filas = []
     for aid, a in avisos_raw.items():
         neg = negocios.get(a.get("negocio_id"), {})
