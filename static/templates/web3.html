@@ -5,78 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MiLogo | Plantilla 3 — Minimalista · Talcadatos</title>
 <meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#faf9f6; --surface:#ffffff; --text:#17181a; --text-muted:#6b6d70; --border:#e4e2dc; --accent:#5c6e4f;
+    --bg:#fbf5ef; --bg-alt:#f6e9e2; --surface:#ffffff; --text:#2a1e1a; --text-muted:#7a6a63;
+    --border:#ecdfd4; --accent:#9c3b4e; --accent-dark:#7a2c3c; --accent-soft:#f1dde1;
+    --shadow:0 10px 28px rgba(42,30,26,.10); --shadow-lg:0 26px 60px rgba(42,30,26,.18);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+  body{font-family:"Inter",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
   img{max-width:100%;display:block}
   a{color:inherit;text-decoration:none}
   ul{list-style:none}
-  .container{max-width:920px;margin:0 auto;padding:0 24px}
-  section{padding:96px 0}
-  h1,h2,h3{line-height:1.15;font-weight:700;letter-spacing:-.02em}
-  .ph{color:var(--accent);font-style:italic}
-  .eyebrow{display:block;font-size:.74rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
-  .guide-banner{background:#17181a;color:#fff;text-align:center;padding:12px 18px;font-size:.85rem}
-  .guide-banner strong{color:#b9c7ac}
+  .container{max-width:960px;margin:0 auto;padding:0 24px}
+  section{padding:88px 0}
+  h1,h2,h3,h4{font-family:"Fraunces",Georgia,serif;line-height:1.15;font-weight:600;letter-spacing:-.01em}
+  .ph{color:var(--accent-dark);font-style:italic}
+  .eyebrow{display:block;font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+  .guide-banner{background:#2a1e1a;color:#fff;text-align:center;padding:12px 18px;font-size:.85rem}
+  .guide-banner strong{color:#f0b3c0}
 
-  header{padding:28px 0;border-bottom:1px solid var(--border)}
-  .nav{display:flex;align-items:center;justify-content:space-between;max-width:920px;margin:0 auto;padding:0 24px}
-  .logo{font-weight:700;font-size:1.1rem;letter-spacing:.02em}
-  nav.links{display:flex;gap:34px;align-items:center}
+  header{padding:26px 0;border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;justify-content:space-between;max-width:960px;margin:0 auto;padding:0 24px}
+  .logo{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:1.25rem;letter-spacing:-.01em}
+  nav.links{display:flex;gap:32px;align-items:center}
   nav.links a{font-weight:500;font-size:.88rem;color:var(--text-muted)}
   nav.links a:hover{color:var(--text)}
-  .link-arrow{font-weight:700;color:var(--text);border-bottom:1.5px solid var(--text);padding-bottom:2px}
+  .link-arrow{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.9rem;color:#fff;background:var(--accent);padding:11px 20px;border-radius:999px;transition:background .15s,transform .15s}
+  .link-arrow:hover{background:var(--accent-dark);transform:translateY(-1px)}
+  .link-quiet{font-weight:600;color:var(--text);border-bottom:1.5px solid var(--border)}
+  .link-quiet:hover{border-color:var(--accent)}
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text)}
 
-  .hero{padding:110px 0 90px;text-align:center}
-  .hero h1{font-size:clamp(2.2rem,5.4vw,3.8rem);max-width:760px;margin:0 auto 26px}
-  .hero p{font-size:1.12rem;color:var(--text-muted);max-width:560px;margin:0 auto 34px}
-  .hero .cta-row{display:flex;gap:24px;justify-content:center;align-items:center;flex-wrap:wrap}
-  .rule{width:56px;height:2px;background:var(--accent);margin:0 auto 34px}
+  .hero{padding:74px 0 88px}
+  .hero-panel{background:linear-gradient(155deg,var(--bg-alt),var(--bg) 70%);border-radius:32px;padding:88px 48px;text-align:center;position:relative;overflow:hidden}
+  .hero-panel::before{content:"";position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,var(--accent-soft),transparent 70%)}
+  .hero-panel h1{font-size:clamp(2.3rem,5.6vw,3.9rem);max-width:760px;margin:0 auto 24px;position:relative}
+  .hero-panel p{font-size:1.12rem;color:var(--text-muted);max-width:540px;margin:0 auto 34px;position:relative}
+  .hero .cta-row{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;position:relative}
 
-  .about{border-top:1px solid var(--border)}
-  .about-grid{display:grid;grid-template-columns:.9fr 1.4fr;gap:56px;align-items:center}
-  .portrait{aspect-ratio:3/4;border-radius:6px;background:linear-gradient(160deg,#e4e2dc,#cfd6c6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--text-muted)}
-  .portrait .ic{font-size:2rem}
-  .portrait small{max-width:180px;font-size:.78rem;font-style:italic}
-  .about h2{font-size:clamp(1.5rem,3vw,2rem);margin-bottom:18px}
+  .about{background:var(--bg-alt)}
+  .about-grid{display:grid;grid-template-columns:.85fr 1.4fr;gap:56px;align-items:center}
+  .portrait{aspect-ratio:3/4;border-radius:20px;background:linear-gradient(160deg,var(--accent),var(--accent-dark));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#fff;box-shadow:var(--shadow-lg)}
+  .portrait .ic{font-size:2.2rem}
+  .portrait small{max-width:180px;font-size:.78rem;font-style:italic;color:rgba(255,255,255,.85)}
+  .about h2{font-size:clamp(1.6rem,3vw,2.1rem);margin-bottom:18px}
   .about p{color:var(--text-muted);margin-bottom:14px;font-size:1.02rem}
 
-  .services{border-top:1px solid var(--border)}
-  .services .section-head{margin-bottom:50px}
-  .services .section-head h2{font-size:clamp(1.5rem,3vw,2rem)}
-  .s-row{display:grid;grid-template-columns:60px 1fr;gap:24px;padding:28px 0;border-bottom:1px solid var(--border)}
+  .services{background:var(--surface)}
+  .services .section-head{margin-bottom:46px;text-align:center}
+  .services .section-head h2{font-size:clamp(1.6rem,3vw,2.1rem)}
+  .s-row{display:grid;grid-template-columns:56px 1fr;gap:22px;padding:26px 8px;border-bottom:1px solid var(--border);transition:background .15s}
   .s-row:first-of-type{border-top:1px solid var(--border)}
-  .s-row .n{font-size:.85rem;color:var(--accent);font-weight:700;padding-top:4px}
-  .s-row h3{font-size:1.2rem;margin-bottom:8px}
+  .s-row:hover{background:var(--bg-alt)}
+  .s-row .n{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--accent-soft);color:var(--accent-dark);font-weight:700;font-size:.88rem}
+  .s-row h3{font-size:1.2rem;margin-bottom:6px;font-weight:600}
   .s-row p{color:var(--text-muted)}
 
-  .process{border-top:1px solid var(--border)}
-  .process-list{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
-  .p-item .n{font-size:.85rem;color:var(--accent);font-weight:700;margin-bottom:10px;display:block}
-  .p-item h4{font-size:1.05rem;margin-bottom:8px}
+  .process{background:var(--bg)}
+  .process .section-head{text-align:center;margin-bottom:50px}
+  .process-list{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
+  .p-item{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px;box-shadow:var(--shadow)}
+  .p-item .n{font-family:"Fraunces",Georgia,serif;font-size:1.6rem;color:var(--accent);margin-bottom:12px;display:block;font-weight:600}
+  .p-item h4{font-size:1.05rem;margin-bottom:8px;font-weight:600}
   .p-item p{color:var(--text-muted);font-size:.92rem}
 
-  .quote-section{border-top:1px solid var(--border);text-align:center}
-  .quote-section blockquote{font-size:clamp(1.3rem,2.6vw,1.8rem);font-weight:500;max-width:680px;margin:0 auto 20px;line-height:1.45}
-  .quote-section .who{color:var(--text-muted);font-size:.92rem}
+  .quote-section{background:var(--bg-alt)}
+  .quote-card{background:var(--surface);border-radius:26px;padding:56px;text-align:center;box-shadow:var(--shadow-lg);max-width:760px;margin:0 auto}
+  .quote-card .mark{font-family:"Fraunces",Georgia,serif;font-size:3.2rem;color:var(--accent-soft);line-height:0;display:block;margin-bottom:6px}
+  .quote-card blockquote{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.3rem,2.6vw,1.7rem);font-weight:500;margin:0 auto 18px;line-height:1.4}
+  .quote-card .who{color:var(--text-muted);font-size:.9rem}
 
-  .cta-section{border-top:1px solid var(--border);text-align:center}
-  .cta-section h2{font-size:clamp(1.6rem,3.4vw,2.2rem);margin-bottom:18px;max-width:560px;margin-left:auto;margin-right:auto}
-  .cta-section p{color:var(--text-muted);max-width:480px;margin:0 auto 30px}
+  .cta-section{background:var(--accent);color:#fff}
+  .cta-section .eyebrow{color:#f2c9d1}
+  .cta-section h2{color:#fff;font-size:clamp(1.7rem,3.6vw,2.3rem);margin-bottom:16px;max-width:560px;margin-left:auto;margin-right:auto}
+  .cta-section p{color:rgba(255,255,255,.85);max-width:480px;margin:0 auto 30px}
+  .cta-section{text-align:center}
+  .cta-section .link-arrow{background:#fff;color:var(--accent-dark)}
+  .cta-section .link-arrow:hover{background:var(--accent-soft)}
 
-  footer{border-top:1px solid var(--border);padding:36px 0}
-  .footer-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:.85rem;color:var(--text-muted)}
+  footer{background:#2a1e1a;color:#cbb9b1;padding:34px 0}
+  .footer-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:.85rem}
+  .footer-row .logo{color:#fff}
 
-  .wa-float{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;background:var(--text);color:#fff;font-size:.85rem;font-weight:600;box-shadow:0 10px 24px rgba(0,0,0,.2)}
+  .wa-float{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;align-items:center;gap:8px;padding:13px 20px;border-radius:999px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;box-shadow:0 10px 26px rgba(156,59,78,.4)}
+  .wa-float:hover{background:var(--accent-dark)}
   .wa-float svg{width:18px;height:18px;fill:#fff}
 
   @media(max-width:900px){
-    nav.links{position:fixed;top:64px;left:0;right:0;background:var(--bg);flex-direction:column;padding:20px 24px;border-bottom:1px solid var(--border);display:none;gap:16px}
+    nav.links{position:fixed;top:70px;left:0;right:0;background:var(--bg);flex-direction:column;padding:22px 24px;border-bottom:1px solid var(--border);display:none;gap:16px}
     nav.links.is-open{display:flex}
     [data-menu-toggle]{display:block}
   }
@@ -86,9 +106,11 @@
     .process-list{grid-template-columns:1fr}
   }
   @media(max-width:680px){
-    section{padding:64px 0}
-    .hero{padding:70px 0 56px}
+    section{padding:60px 0}
+    .hero{padding:50px 0 60px}
+    .hero-panel{padding:56px 24px;border-radius:24px}
     .s-row{grid-template-columns:40px 1fr;gap:16px}
+    .quote-card{padding:36px 26px}
   }
 </style>
 </head>
@@ -103,7 +125,7 @@
       <a href="#servicios">Servicios</a>
       <a href="#sobre-mi">Sobre mí</a>
       <a href="#proceso">Cómo trabajo</a>
-      <a href="#contacto" class="link-arrow">Contactar →</a>
+      <a href="#contacto" class="link-arrow">Contactar</a>
     </nav>
     <button data-menu-toggle aria-label="Abrir menú">☰</button>
   </div>
@@ -111,12 +133,14 @@
 
 <section class="hero" id="top">
   <div class="container">
-    <span class="eyebrow ph"><em>[Tu rubro — ej. Consultoría, Diseño, Clases particulares]</em></span>
-    <h1 class="ph"><em>[Una frase clara sobre lo que haces y para quién]</em></h1>
-    <p class="ph"><em>Un párrafo breve, en primera persona, explicando cómo ayudas a tus clientes y qué te distingue.</em></p>
-    <div class="cta-row">
-      <a href="#contacto" class="link-arrow">Escríbeme →</a>
-      <a href="#servicios">Ver qué ofrezco</a>
+    <div class="hero-panel">
+      <span class="eyebrow ph"><em>[Tu rubro — ej. Consultoría, Diseño, Clases particulares]</em></span>
+      <h1 class="ph"><em>[Una frase clara sobre lo que haces y para quién]</em></h1>
+      <p class="ph"><em>Un párrafo breve, en primera persona, explicando cómo ayudas a tus clientes y qué te distingue.</em></p>
+      <div class="cta-row">
+        <a href="#contacto" class="link-arrow">Escríbeme →</a>
+        <a href="#servicios" class="link-quiet">Ver qué ofrezco</a>
+      </div>
     </div>
   </div>
 </section>
@@ -156,18 +180,20 @@
       <h2 class="ph"><em>[Título: qué pasa cuando me escribes]</em></h2>
     </div>
     <div class="process-list">
-      <div class="p-item"><span class="n">Paso 1</span><h4 class="ph"><em>[Qué pasa primero]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
-      <div class="p-item"><span class="n">Paso 2</span><h4 class="ph"><em>[Qué pasa después]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
-      <div class="p-item"><span class="n">Paso 3</span><h4 class="ph"><em>[Cómo termina]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
+      <div class="p-item"><span class="n">1</span><h4 class="ph"><em>[Qué pasa primero]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
+      <div class="p-item"><span class="n">2</span><h4 class="ph"><em>[Qué pasa después]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
+      <div class="p-item"><span class="n">3</span><h4 class="ph"><em>[Cómo termina]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
     </div>
   </div>
 </section>
 
 <section class="quote-section">
   <div class="container">
-    <span class="eyebrow" style="text-align:center;display:block">Un cliente dice</span>
-    <blockquote class="ph"><em>"[Aquí va un testimonio real, con las palabras textuales de tu cliente — que sea específico, no genérico."]</em></blockquote>
-    <p class="who ph"><em>— [Nombre del cliente]</em></p>
+    <div class="quote-card">
+      <span class="mark">"</span>
+      <blockquote class="ph"><em>[Aquí va un testimonio real, con las palabras textuales de tu cliente — que sea específico, no genérico.]</em></blockquote>
+      <p class="who ph"><em>— [Nombre del cliente]</em></p>
+    </div>
   </div>
 </section>
 
@@ -182,7 +208,7 @@
 
 <footer>
   <div class="container footer-row">
-    <span>MiLogo</span>
+    <span class="logo">MiLogo</span>
     <span class="ph"><em>© 2026 [Nombre] · [Tu correo] · Sitio creado con Talcadatos</em></span>
   </div>
 </footer>
