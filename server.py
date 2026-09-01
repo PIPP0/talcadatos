@@ -641,10 +641,8 @@ def _quieromiweb_intro_body(errores=None, form=None):
 </section>
 
 <section class="section" id="empezar" data-reveal>
-  <div class="need-form-wrap">
-    <div class="section-head" style="justify-content:center; text-align:center;">
-      <div><span class="eyebrow">Último paso</span><h2>Empecemos</h2></div>
-    </div>
+  <div class="section-head"><div><span class="eyebrow">Último paso</span><h2>Empecemos</h2></div></div>
+  <div class="empezar-grid">
     <div class="panel need-form-panel">
       {errors_html}
       <form method="post" action="/quieromiweb" class="form" id="quieromiweb-form">
@@ -670,13 +668,14 @@ def _quieromiweb_intro_body(errores=None, form=None):
         <p class="hint">Después de enviar el formulario te llega un correo con el link para pagar — puedes
           continuar de inmediato o volver más tarde.</p>
       </form>
-      <div class="need-form-buscar">
-        <p><strong>¿Ya enviaste tu solicitud?</strong> Busca con tu correo el link para continuar o pagar.</p>
-        <form method="post" action="/quieromiweb/buscar" class="form form-inline">
-          <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
-          <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
-        </form>
-      </div>
+    </div>
+    <div class="panel need-form-panel" style="text-align:center;">
+      <h2 style="font-size:1.15rem; margin-top:0">¿Ya enviaste tu solicitud?</h2>
+      <p class="hint">Busca con tu correo el link para continuar o pagar.</p>
+      <form method="post" action="/quieromiweb/buscar" class="form">
+        <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
+        <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
+      </form>
     </div>
   </div>
 </section>
