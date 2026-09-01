@@ -586,21 +586,6 @@ def _quieromiweb_intro_body(errores=None, form=None):
   <a class="btn btn-primary btn-lg" href="#empezar">Quiero mi sitio →</a>
 </section>
 
-<section class="trust-strip" data-reveal aria-label="Beneficios de tu sitio web" style="margin-bottom:14px">
-  <div style="--trust-accent:#1DA851">
-    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
-    <p><strong>Diseño a tu medida</strong><small>Adaptado a tu rubro y listo para celular.</small></p>
-  </div>
-  <div style="--trust-accent:#0AA39A">
-    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 19a4.5 4.5 0 0 1-.4-8.98A6 6 0 0 1 17.8 8.1 4 4 0 0 1 17 16H6.5Z"/></svg></span>
-    <p><strong>Hosting incluido</strong><small>No pagas aparte por alojar tu sitio.</small></p>
-  </div>
-  <div style="--trust-accent:#2B80D8">
-    <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5Z"/></svg></span>
-    <p><strong>Contacto directo</strong><small>Botón a tu WhatsApp, sin intermediarios.</small></p>
-  </div>
-</section>
-
 <section class="section section-tight" data-reveal>
   <div class="section-head" style="margin-bottom:12px"><div><span class="eyebrow">Así de simple</span><h2>¿Cómo funciona?</h2></div></div>
   <div class="how-compact">
