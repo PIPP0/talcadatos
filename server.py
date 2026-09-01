@@ -593,6 +593,9 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     <div class="detalle-negocio">{t.esc(aviso['negocio_nombre'])} {verificado_html}</div>
     <p class="detalle-desc">{t.esc(aviso['descripcion'])}</p>
     {f'<p class="detalle-horario"><strong>Horario:</strong> {t.esc(aviso["horario"])}</p>' if aviso["horario"] else ""}
+    {f'<p class="detalle-horario"><strong>Dirección:</strong> {t.esc(aviso["direccion"])}</p>' if aviso.get("direccion") else ""}
+    {f'<p class="detalle-horario"><strong>Web:</strong> <a href="{t.esc(aviso["web"])}" target="_blank" rel="noopener nofollow">{t.esc(aviso["web"])}</a></p>'
+     if aviso.get("web") and re.match(r"^https?://", aviso["web"], re.I) else ""}
     {reportado_html}
     <a class="btn btn-whatsapp btn-lg" href="{wa}" target="_blank" rel="noopener"
        data-aviso-id="{aviso['id']}" data-wa-click="1">
@@ -683,6 +686,12 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
         <option value="A convenir por WhatsApp">A convenir por WhatsApp</option>
       </select>
       <input name="horario" placeholder="Ej: Lun a Vie 9:00-13:00 y 15:00-19:00" value="{v('horario')}">
+    </label>
+    <label>Dirección (opcional)
+      <input name="direccion" maxlength="150" placeholder="Ej: 1 Sur 1234, Talca" value="{v('direccion')}">
+    </label>
+    <label>Página web (opcional)
+      <input name="web" type="url" maxlength="200" placeholder="https://tunegocio.cl" value="{v('web')}">
     </label>
     <label class="check-label">
       <input type="checkbox" name="acepto_terminos" required{' checked' if form.get('acepto_terminos') else ''}>
@@ -835,10 +844,13 @@ def publicar_submit(handler, form, foto=None):
         form.get("nombre_negocio", "").strip()[:120], form.get("whatsapp", "").strip(),
         plan_id=plan_id, terminos_ip=_client_ip(handler), email=form.get("email", "").strip()[:200],
         verificado=(plan_id == "premium"))
+    web = form.get("web", "").strip()[:200]
+    if web and not re.match(r"^https?://", web, re.I):
+        web = f"https://{web}"
     aviso_id = db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
-        foto_url=foto_url)
+        foto_url=foto_url, direccion=form.get("direccion", "").strip()[:150] or None, web=web or None)
     if sub_token:
         db.actualizar_suscripcion_pendiente(sub_token, negocio_id=negocio_id)
     negocio = db.get_negocio(negocio_id)
@@ -1440,6 +1452,8 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     <label>Categoría <select name="categoria_id">{cat_options}</select></label>
     <label>Comuna <input name="comuna" value="{t.esc(aviso['comuna'])}"></label>
     <label>Horario <input name="horario" value="{t.esc(aviso['horario'] or '')}"></label>
+    <label>Dirección <input name="direccion" maxlength="150" value="{t.esc(aviso.get('direccion') or '')}"></label>
+    <label>Página web <input name="web" type="url" maxlength="200" value="{t.esc(aviso.get('web') or '')}"></label>
     <label>Estado <select name="estado">{estado_options}</select></label>
     <label class="campo-imagen">Foto del aviso
       {foto_preview}
@@ -1492,9 +1506,13 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     elif form.get("quitar_foto"):
         foto_url = ""
     nuevo_estado = form.get("estado", actual["estado"])
+    web = form.get("web", "").strip()[:200]
+    if web and not re.match(r"^https?://", web, re.I):
+        web = f"https://{web}"
     ok = db.editar_aviso(
         aviso_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
-        form.get("categoria_id"), form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url)
+        form.get("categoria_id"), form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url,
+        direccion=form.get("direccion", "").strip()[:150] or None, web=web or None)
     if not ok:
         if ajax:
             return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)

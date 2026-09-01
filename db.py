@@ -406,19 +406,20 @@ def get_comunas_activas():
 
 
 def crear_aviso(negocio_id, titulo, descripcion, categoria_slug, comuna, horario, color, estado="pendiente",
-                 foto_url=None, es_demo=False):
+                 foto_url=None, es_demo=False, direccion=None, web=None):
     aid = _next_id("avisos")
     _fs().collection("avisos").document(aid).set({
         "negocio_id": negocio_id, "titulo": titulo, "descripcion": descripcion,
         "categoria_slug": categoria_slug, "comuna": comuna, "horario": horario,
         "color": color, "estado": estado, "vistas_total": 0, "contactos_total": 0,
-        "foto_url": foto_url, "es_demo": bool(es_demo),
+        "foto_url": foto_url, "es_demo": bool(es_demo), "direccion": direccion, "web": web,
         "publicado_en": now() if estado == "activo" else None, "creado_en": now(),
     })
     return aid
 
 
-def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario, estado, foto_url=None):
+def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario, estado, foto_url=None,
+                  direccion=None, web=None):
     ref = _fs().collection("avisos").document(str(aviso_id))
     actual = ref.get().to_dict()
     if not actual:
@@ -429,6 +430,7 @@ def editar_aviso(aviso_id, titulo, descripcion, categoria_slug, comuna, horario,
     datos = {
         "titulo": titulo, "descripcion": descripcion, "categoria_slug": categoria_slug,
         "comuna": comuna, "horario": horario, "estado": estado, "publicado_en": publicado_en,
+        "direccion": direccion, "web": web,
     }
     if foto_url is not None:
         datos["foto_url"] = foto_url
