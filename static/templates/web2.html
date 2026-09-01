@@ -44,7 +44,7 @@
   .btn-light{background:#fff;color:var(--ink)}
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--ink)}
 
-  .hero{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);background:linear-gradient(160deg,var(--surface-alt),var(--alum) 145%);overflow:hidden}
+  .hero{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);background-color:var(--surface-alt);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat;overflow:hidden}
   .hero-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.16;color:var(--primary);pointer-events:none}
   .hero-watermark svg{width:9rem;height:9rem;animation:watermark-pulse 5s ease-in-out infinite}
   @keyframes watermark-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
