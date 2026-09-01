@@ -586,7 +586,7 @@ def _quieromiweb_intro_body(errores=None, form=None):
   <a class="btn btn-primary btn-lg" href="#empezar">Quiero mi sitio →</a>
 </section>
 
-<section class="trust-strip" data-reveal aria-label="Beneficios de tu sitio web">
+<section class="trust-strip" data-reveal aria-label="Beneficios de tu sitio web" style="margin-bottom:14px">
   <div style="--trust-accent:#1DA851">
     <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
     <p><strong>Diseño a tu medida</strong><small>Adaptado a tu rubro y listo para celular.</small></p>
@@ -601,15 +601,15 @@ def _quieromiweb_intro_body(errores=None, form=None):
   </div>
 </section>
 
-<section class="section" data-reveal>
-  <div class="section-head"><div><span class="eyebrow">Así de simple</span><h2>¿Cómo funciona?</h2></div></div>
-  <div class="how">
-    <div class="how-step"><span class="how-n">1</span><h3>Cuéntanos de tu negocio</h3>
-      <p>Nombre, rubro, logo y fotos, y qué quieres mostrar — o te ayudamos a redactarlo.</p></div>
-    <div class="how-step"><span class="how-n">2</span><h3>Pagas la creación</h3>
-      <p>Un pago único de ${money(WEB_PRECIO_CREACION)} y empezamos a diseñar tu sitio.</p></div>
-    <div class="how-step"><span class="how-n">3</span><h3>Publicamos tu sitio</h3>
-      <p>Con hosting y soporte mensual incluido desde ${money(WEB_PRECIO_SOPORTE)}/mes.</p></div>
+<section class="section section-tight" data-reveal>
+  <div class="section-head" style="margin-bottom:12px"><div><span class="eyebrow">Así de simple</span><h2>¿Cómo funciona?</h2></div></div>
+  <div class="how-compact">
+    <div><span class="how-n">1</span><div><h3>Cuéntanos de tu negocio</h3>
+      <p>Nombre, rubro, logo y fotos, y qué quieres mostrar — o te ayudamos a redactarlo.</p></div></div>
+    <div><span class="how-n">2</span><div><h3>Pagas la creación</h3>
+      <p>Un pago único de ${money(WEB_PRECIO_CREACION)} y empezamos a diseñar tu sitio.</p></div></div>
+    <div><span class="how-n">3</span><div><h3>Publicamos tu sitio</h3>
+      <p>Con hosting y soporte mensual incluido desde ${money(WEB_PRECIO_SOPORTE)}/mes.</p></div></div>
   </div>
 </section>
 
