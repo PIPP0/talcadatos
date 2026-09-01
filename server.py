@@ -971,11 +971,7 @@ def api_buscar(handler, body):
 def api_favoritos(handler, body):
     data = json.loads(body or "{}")
     ids = [str(i) for i in (data.get("ids") or [])][:60]
-    avisos = []
-    for aviso_id in ids:
-        a = db.get_aviso(aviso_id)
-        if a and a["estado"] == "activo":
-            avisos.append(a)
+    avisos = [a for a in db.get_avisos_por_ids(ids) if a["estado"] == "activo"]
     resultados = [{
         "id": a["id"], "titulo": a["titulo"], "negocio": a["negocio_nombre"],
         "comuna": a["comuna"], "categoria": a["categoria_nombre"], "icono": a["icono"],

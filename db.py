@@ -417,6 +417,16 @@ def get_aviso(aviso_id):
     return filas[0] if filas else None
 
 
+def get_avisos_por_ids(ids):
+    """Trae varios avisos por id en un solo viaje a Firestore (en vez de un
+    get_aviso() por cada uno, que hacia 4 lecturas separadas por aviso --
+    esto era lo que hacia lenta la pagina de favoritos)."""
+    ids = [str(i) for i in ids]
+    todos = _all("avisos")
+    subset = {aid: todos[aid] for aid in ids if aid in todos}
+    return _denormalizar_avisos(subset)
+
+
 def get_comunas_activas():
     comunas = {a["comuna"] for a in _all("avisos").values() if a.get("estado") == "activo"}
     return sorted(comunas)
