@@ -908,14 +908,27 @@ def get_dashboard_stats(dias):
     }
 
 
+_cache_terminos_buscados = {}  # limit -> (timestamp, resultado)
+
+
 def get_terminos_mas_buscados(limit=15):
+    """`eventos` es la coleccion mas grande y mas escrita del sitio (un
+    documento por cada vista/click), y esto se leia completa en cada carga
+    del home -- de lejos lo mas lento de esa pagina. Se cachea el resultado
+    ya calculado (no la coleccion completa, para no acumular memoria) un
+    minuto: las tendencias de busqueda no necesitan ser al segundo."""
+    entrada = _cache_terminos_buscados.get(limit)
+    if entrada and (time.monotonic() - entrada[0]) < 60:
+        return entrada[1]
     conteo = {}
     for e in _all("eventos").values():
         if e.get("tipo") == "click_resultado_busqueda" and e.get("termino_busqueda"):
             conteo[e["termino_busqueda"]] = conteo.get(e["termino_busqueda"], 0) + 1
     filas = [{"termino_busqueda": k, "n": v} for k, v in conteo.items()]
     filas.sort(key=lambda f: f["n"], reverse=True)
-    return filas[:limit]
+    resultado = filas[:limit]
+    _cache_terminos_buscados[limit] = (time.monotonic(), resultado)
+    return resultado
 
 
 def get_terminos_sin_resultado(limit=15):
