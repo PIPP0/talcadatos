@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiLogo | Plantilla 3 — Minimalista · Talcadatos</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#faf9f6; --surface:#ffffff; --text:#17181a; --text-muted:#6b6d70; --border:#e4e2dc; --accent:#5c6e4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  ul{list-style:none}
+  .container{max-width:920px;margin:0 auto;padding:0 24px}
+  section{padding:96px 0}
+  h1,h2,h3{line-height:1.15;font-weight:700;letter-spacing:-.02em}
+  .ph{color:var(--accent);font-style:italic}
+  .eyebrow{display:block;font-size:.74rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+  .guide-banner{background:#17181a;color:#fff;text-align:center;padding:12px 18px;font-size:.85rem}
+  .guide-banner strong{color:#b9c7ac}
+
+  header{padding:28px 0;border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;justify-content:space-between;max-width:920px;margin:0 auto;padding:0 24px}
+  .logo{font-weight:700;font-size:1.1rem;letter-spacing:.02em}
+  nav.links{display:flex;gap:34px;align-items:center}
+  nav.links a{font-weight:500;font-size:.88rem;color:var(--text-muted)}
+  nav.links a:hover{color:var(--text)}
+  .link-arrow{font-weight:700;color:var(--text);border-bottom:1.5px solid var(--text);padding-bottom:2px}
+  [data-menu-toggle]{display:none;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text)}
+
+  .hero{padding:110px 0 90px;text-align:center}
+  .hero h1{font-size:clamp(2.2rem,5.4vw,3.8rem);max-width:760px;margin:0 auto 26px}
+  .hero p{font-size:1.12rem;color:var(--text-muted);max-width:560px;margin:0 auto 34px}
+  .hero .cta-row{display:flex;gap:24px;justify-content:center;align-items:center;flex-wrap:wrap}
+  .rule{width:56px;height:2px;background:var(--accent);margin:0 auto 34px}
+
+  .about{border-top:1px solid var(--border)}
+  .about-grid{display:grid;grid-template-columns:.9fr 1.4fr;gap:56px;align-items:center}
+  .portrait{aspect-ratio:3/4;border-radius:6px;background:linear-gradient(160deg,#e4e2dc,#cfd6c6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--text-muted)}
+  .portrait .ic{font-size:2rem}
+  .portrait small{max-width:180px;font-size:.78rem;font-style:italic}
+  .about h2{font-size:clamp(1.5rem,3vw,2rem);margin-bottom:18px}
+  .about p{color:var(--text-muted);margin-bottom:14px;font-size:1.02rem}
+
+  .services{border-top:1px solid var(--border)}
+  .services .section-head{margin-bottom:50px}
+  .services .section-head h2{font-size:clamp(1.5rem,3vw,2rem)}
+  .s-row{display:grid;grid-template-columns:60px 1fr;gap:24px;padding:28px 0;border-bottom:1px solid var(--border)}
+  .s-row:first-of-type{border-top:1px solid var(--border)}
+  .s-row .n{font-size:.85rem;color:var(--accent);font-weight:700;padding-top:4px}
+  .s-row h3{font-size:1.2rem;margin-bottom:8px}
+  .s-row p{color:var(--text-muted)}
+
+  .process{border-top:1px solid var(--border)}
+  .process-list{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
+  .p-item .n{font-size:.85rem;color:var(--accent);font-weight:700;margin-bottom:10px;display:block}
+  .p-item h4{font-size:1.05rem;margin-bottom:8px}
+  .p-item p{color:var(--text-muted);font-size:.92rem}
+
+  .quote-section{border-top:1px solid var(--border);text-align:center}
+  .quote-section blockquote{font-size:clamp(1.3rem,2.6vw,1.8rem);font-weight:500;max-width:680px;margin:0 auto 20px;line-height:1.45}
+  .quote-section .who{color:var(--text-muted);font-size:.92rem}
+
+  .cta-section{border-top:1px solid var(--border);text-align:center}
+  .cta-section h2{font-size:clamp(1.6rem,3.4vw,2.2rem);margin-bottom:18px;max-width:560px;margin-left:auto;margin-right:auto}
+  .cta-section p{color:var(--text-muted);max-width:480px;margin:0 auto 30px}
+
+  footer{border-top:1px solid var(--border);padding:36px 0}
+  .footer-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:.85rem;color:var(--text-muted)}
+
+  .wa-float{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;background:var(--text);color:#fff;font-size:.85rem;font-weight:600;box-shadow:0 10px 24px rgba(0,0,0,.2)}
+  .wa-float svg{width:18px;height:18px;fill:#fff}
+
+  @media(max-width:900px){
+    nav.links{position:fixed;top:64px;left:0;right:0;background:var(--bg);flex-direction:column;padding:20px 24px;border-bottom:1px solid var(--border);display:none;gap:16px}
+    nav.links.is-open{display:flex}
+    [data-menu-toggle]{display:block}
+  }
+  @media(max-width:780px){
+    .about-grid{grid-template-columns:1fr}
+    .portrait{max-width:280px;margin:0 auto}
+    .process-list{grid-template-columns:1fr}
+  }
+  @media(max-width:680px){
+    section{padding:64px 0}
+    .hero{padding:70px 0 56px}
+    .s-row{grid-template-columns:40px 1fr;gap:16px}
+  }
+</style>
+</head>
+<body>
+
+<div class="guide-banner">🧩 Plantilla de ejemplo — el texto <strong>en cursiva</strong> muestra qué información va en cada parte. No es tu sitio real todavía.</div>
+
+<header>
+  <div class="nav">
+    <a href="#top" class="logo">MiLogo</a>
+    <nav class="links" data-menu>
+      <a href="#servicios">Servicios</a>
+      <a href="#sobre-mi">Sobre mí</a>
+      <a href="#proceso">Cómo trabajo</a>
+      <a href="#contacto" class="link-arrow">Contactar →</a>
+    </nav>
+    <button data-menu-toggle aria-label="Abrir menú">☰</button>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <div class="container">
+    <span class="eyebrow ph"><em>[Tu rubro — ej. Consultoría, Diseño, Clases particulares]</em></span>
+    <h1 class="ph"><em>[Una frase clara sobre lo que haces y para quién]</em></h1>
+    <p class="ph"><em>Un párrafo breve, en primera persona, explicando cómo ayudas a tus clientes y qué te distingue.</em></p>
+    <div class="cta-row">
+      <a href="#contacto" class="link-arrow">Escríbeme →</a>
+      <a href="#servicios">Ver qué ofrezco</a>
+    </div>
+  </div>
+</section>
+
+<section class="about" id="sobre-mi">
+  <div class="container about-grid">
+    <div class="portrait">
+      <span class="ic">📷</span>
+      <small>Tu foto — de frente, buena luz, transmite confianza y cercanía.</small>
+    </div>
+    <div>
+      <span class="eyebrow">Sobre mí</span>
+      <h2 class="ph"><em>[Tu nombre]</em></h2>
+      <p class="ph"><em>Cuenta brevemente quién eres, tu experiencia y por qué haces lo que haces. Un tono cercano y personal funciona mejor que uno corporativo.</em></p>
+      <p class="ph"><em>[Puedes agregar un segundo párrafo con tu formación, años de experiencia o algo que te distinga.]</em></p>
+    </div>
+  </div>
+</section>
+
+<section class="services" id="servicios">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Qué ofrezco</span>
+      <h2 class="ph"><em>[Título de la sección]</em></h2>
+    </div>
+    <div class="s-row"><span class="n">01</span><div><h3 class="ph"><em>[Servicio 1]</em></h3><p class="ph"><em>Describe en 1-2 líneas en qué consiste y a quién le sirve.</em></p></div></div>
+    <div class="s-row"><span class="n">02</span><div><h3 class="ph"><em>[Servicio 2]</em></h3><p class="ph"><em>Describe en 1-2 líneas en qué consiste y a quién le sirve.</em></p></div></div>
+    <div class="s-row"><span class="n">03</span><div><h3 class="ph"><em>[Servicio 3]</em></h3><p class="ph"><em>Describe en 1-2 líneas en qué consiste y a quién le sirve.</em></p></div></div>
+    <div class="s-row"><span class="n">04</span><div><h3 class="ph"><em>[Servicio 4]</em></h3><p class="ph"><em>Describe en 1-2 líneas en qué consiste y a quién le sirve.</em></p></div></div>
+  </div>
+</section>
+
+<section class="process" id="proceso">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Cómo trabajo</span>
+      <h2 class="ph"><em>[Título: qué pasa cuando me escribes]</em></h2>
+    </div>
+    <div class="process-list">
+      <div class="p-item"><span class="n">Paso 1</span><h4 class="ph"><em>[Qué pasa primero]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
+      <div class="p-item"><span class="n">Paso 2</span><h4 class="ph"><em>[Qué pasa después]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
+      <div class="p-item"><span class="n">Paso 3</span><h4 class="ph"><em>[Cómo termina]</em></h4><p class="ph"><em>Explica brevemente.</em></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-section">
+  <div class="container">
+    <span class="eyebrow" style="text-align:center;display:block">Un cliente dice</span>
+    <blockquote class="ph"><em>"[Aquí va un testimonio real, con las palabras textuales de tu cliente — que sea específico, no genérico."]</em></blockquote>
+    <p class="who ph"><em>— [Nombre del cliente]</em></p>
+  </div>
+</section>
+
+<section class="cta-section" id="contacto">
+  <div class="container">
+    <span class="eyebrow" style="text-align:center;display:block">Contacto</span>
+    <h2 class="ph"><em>[Título de cierre invitando a escribir]</em></h2>
+    <p class="ph"><em>[Tu WhatsApp o correo, y en qué horario respondes.]</em></p>
+    <a href="#" class="link-arrow">Escríbeme por WhatsApp →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-row">
+    <span>MiLogo</span>
+    <span class="ph"><em>© 2026 [Nombre] · [Tu correo] · Sitio creado con Talcadatos</em></span>
+  </div>
+</footer>
+
+<a class="wa-float" href="#" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5-.1-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2 3 4.8 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3 0-.1-.2-.2-.4-.3z"/><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+  WhatsApp
+</a>
+
+<script src="/static/templates/plantilla.js"></script>
+</body>
+</html>

@@ -3336,6 +3336,12 @@ class Handler(BaseHTTPRequestHandler):
                 return favoritos(self)
             if path == "/quieromiweb":
                 return quieromiweb_form(self, query)
+            if path == "/quieromiweb/web1template":
+                return self._static("/static/templates/web1.html")
+            if path == "/quieromiweb/web2template":
+                return self._static("/static/templates/web2.html")
+            if path == "/quieromiweb/web3template":
+                return self._static("/static/templates/web3.html")
 
             return not_found(self)
         except BrokenPipeError:
@@ -3468,7 +3474,8 @@ class Handler(BaseHTTPRequestHandler):
                 "application/javascript" if full.endswith(".js") else \
                 "application/manifest+json" if full.endswith(".webmanifest") else \
                 "image/jpeg" if full.endswith((".jpg", ".jpeg")) else \
-                "image/png" if full.endswith(".png") else "application/octet-stream"
+                "image/png" if full.endswith(".png") else \
+                "text/html; charset=utf-8" if full.endswith(".html") else "application/octet-stream"
         with open(full, "rb") as f:
             data = f.read()
         self.send_response(200)
