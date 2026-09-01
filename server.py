@@ -589,26 +589,29 @@ def _quieromiweb_intro_body(errores=None, form=None):
       <span>✓ Hosting y soporte incluidos</span></div>
   </div>
 
+  <div class="need-page-content">
   <div class="panel">
-    <h2>¿Qué incluye?</h2>
-    <ul class="plan-beneficios">
-      <li>✓ Sitio de una o varias secciones (inicio, servicios/productos, contacto)</li>
-      <li>✓ Diseño adaptado a tu rubro, optimizado para que se vea bien en el celular</li>
-      <li>✓ Botón directo a tu WhatsApp para que te contacten sin fricción</li>
-      <li>✓ Conectamos tu dominio si ya tienes uno (o te ayudamos a conseguir uno)</li>
-    </ul>
-  </div>
-
-  <div class="panel">
-    <h2>¿Qué información necesitamos de ti?</h2>
-    <p>Con esto ya podemos partir con el diseño:</p>
-    <ul class="plan-beneficios">
-      <li>✓ Nombre del negocio, rubro y una descripción breve de lo que ofreces</li>
-      <li>✓ Logo (si ya tienes uno) y fotos de tu local, productos o trabajos</li>
-      <li>✓ Textos o ideas de lo que quieres mostrar (o lo redactamos por ti)</li>
-      <li>✓ WhatsApp, dirección y redes sociales para el contacto</li>
-      <li>✓ Si ya tienes un dominio comprado, o si necesitas que te ayudemos a conseguir uno</li>
-    </ul>
+    <h2>¿Cómo funciona?</h2>
+    <div class="quieromiweb-como-grid">
+      <div>
+        <h3>Qué incluye</h3>
+        <ul class="plan-beneficios">
+          <li>✓ Sitio de una o varias secciones (inicio, servicios/productos, contacto)</li>
+          <li>✓ Diseño adaptado a tu rubro, listo para celular</li>
+          <li>✓ Botón directo a tu WhatsApp para que te contacten sin fricción</li>
+          <li>✓ Conectamos tu dominio si ya tienes uno (o te ayudamos a conseguir uno)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Qué necesitamos de ti</h3>
+        <ul class="plan-beneficios">
+          <li>✓ Nombre del negocio, rubro y una descripción breve de lo que ofreces</li>
+          <li>✓ Logo (si tienes) y fotos de tu local, productos o trabajos</li>
+          <li>✓ Textos o ideas de lo que quieres mostrar (o lo redactamos por ti)</li>
+          <li>✓ WhatsApp, dirección y redes sociales para el contacto</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <div class="panel">
@@ -659,8 +662,19 @@ def _quieromiweb_intro_body(errores=None, form=None):
         <textarea name="descripcion" maxlength="600" rows="4" placeholder="Ej: Somos una peluquería en el centro de Talca, queremos mostrar nuestros servicios y precios.">{value("descripcion")}</textarea>
       </label>
       <button class="btn btn-primary btn-lg" type="submit">Continuar</button>
-      <p class="hint">Después de enviar el formulario vas a poder pagar la creación del sitio.</p>
+      <p class="hint">Después de enviar el formulario te llega un correo con el link para pagar — puedes
+        continuar de inmediato o volver más tarde.</p>
     </form>
+  </div>
+
+  <div class="panel need-form-panel">
+    <h2>¿Ya enviaste tu solicitud?</h2>
+    <p class="lede">Busca con tu correo el link para continuar o pagar.</p>
+    <form method="post" action="/quieromiweb/buscar" class="form form-inline">
+      <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
+      <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
+    </form>
+  </div>
   </div>
 </section>
 """
@@ -732,6 +746,43 @@ def _quieromiweb_pagar_body(solicitud, token, pago=None):
 """
 
 
+def _quieromiweb_resultados_body(email, solicitudes):
+    def estado_texto(s):
+        partes = []
+        partes.append("Creación pagada ✓" if s.get("estado") == "creacion_pagada" else "Creación pendiente de pago")
+        if s.get("estado_soporte") == "activa":
+            partes.append("Soporte mensual activo ✓")
+        return " · ".join(partes)
+
+    filas = "".join(f"""
+<div class="plan-card">
+  <h3>{t.esc(s.get('negocio', ''))}</h3>
+  <p class="hint">{t.esc((s.get('creado_en') or '')[:10])} · {estado_texto(s)}</p>
+  <a class="btn btn-primary btn-lg" href="/quieromiweb?token={quote(s['token'])}">Continuar</a>
+</div>""" for s in solicitudes)
+
+    if not solicitudes:
+        contenido = f"""
+<p class="lede">No encontramos ninguna solicitud con el correo <strong>{t.esc(email)}</strong>.</p>
+<a class="btn btn-primary btn-lg" href="/quieromiweb">Enviar una solicitud nueva</a>"""
+    else:
+        contenido = f"""
+<p class="lede">Encontramos {len(solicitudes)} solicitud{"es" if len(solicitudes) != 1 else ""} con ese correo.</p>
+<div class="planes-grid">{filas}</div>
+<p class="hint">¿Es para otro negocio? <a href="/quieromiweb">Envía una solicitud nueva</a>.</p>"""
+
+    return f"""
+<section class="need-page">
+  <div class="need-page-content">
+  <div class="panel panel-suscripcion">
+    <h1>Tus solicitudes</h1>
+    {contenido}
+  </div>
+  </div>
+</section>
+"""
+
+
 def quieromiweb_form(handler, query=""):
     sitio = db.get_contenido_sitio()
     params = qs(query)
@@ -747,12 +798,6 @@ def quieromiweb_form(handler, query=""):
 def quieromiweb_submit(handler, form):
     if _es_bot(form):
         return redirect(handler, "/quieromiweb")
-    if not db.verificar_limite(_client_ip(handler), "quieromiweb"):
-        return render(handler, t.layout(
-            "Quiero mi sitio web",
-            _quieromiweb_intro_body(form=form, errores=[
-                "Ya enviaste varias solicitudes seguidas. Espera un poco antes de volver a intentar."]),
-            active="quieromiweb", site=db.get_contenido_sitio()))
     nombre = form.get("nombre", "").strip()
     negocio = form.get("negocio", "").strip()
     whatsapp = form.get("whatsapp", "").strip()
@@ -771,13 +816,34 @@ def quieromiweb_submit(handler, form):
         return render(handler, t.layout(
             "Quiero mi sitio web", _quieromiweb_intro_body(form=form, errores=errores),
             active="quieromiweb", site=db.get_contenido_sitio()))
+    # El limite de envios se revisa recien aqui, con el formulario ya validado:
+    # si se revisara antes, alguien corrigiendo un error de tipeo (whatsapp,
+    # correo) podia gastar sus intentos sin haber logrado enviar nada todavia.
+    if not db.verificar_limite(_client_ip(handler), "quieromiweb", maximo=15):
+        return render(handler, t.layout(
+            "Quiero mi sitio web",
+            _quieromiweb_intro_body(form=form, errores=[
+                "Ya enviaste varias solicitudes seguidas. Espera un poco antes de volver a intentar."]),
+            active="quieromiweb", site=db.get_contenido_sitio()))
 
     token = f"web_{secrets.token_urlsafe(16)}"
     db.crear_solicitud_web(token, nombre[:120], negocio[:120], email[:200], whatsapp[:40], descripcion[:600])
     solicitud = db.get_solicitud_web(token)
     origin = _origin(handler)
     threading.Thread(target=_enviar_correo_solicitud_web, args=(solicitud, token, origin), daemon=True).start()
+    threading.Thread(target=_enviar_correo_confirmacion_solicitud_web, args=(solicitud, token, origin), daemon=True).start()
     redirect(handler, f"/quieromiweb?token={quote(token)}")
+
+
+def quieromiweb_buscar_submit(handler, form):
+    email = form.get("email", "").strip()
+    sitio = db.get_contenido_sitio()
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        body = _quieromiweb_intro_body(errores=["Ingresa un correo electrónico válido para buscar tu solicitud."])
+        return render(handler, t.layout("Quiero mi sitio web", body, active="quieromiweb", site=sitio))
+    solicitudes = db.get_solicitudes_web_por_email(email)
+    body = _quieromiweb_resultados_body(email, solicitudes)
+    render(handler, t.layout("Quiero mi sitio web", body, active="quieromiweb", site=sitio))
 
 
 def quieromiweb_pagar_creacion_submit(handler, form):
@@ -2023,6 +2089,40 @@ def _enviar_correo_solicitud_web(solicitud, token, origin):
         urllib.request.urlopen(req, timeout=10)
     except Exception as exc:
         sys.stderr.write(f"ERROR enviando correo de solicitud web (token {token}): {exc!r}\n")
+
+
+def _enviar_correo_confirmacion_solicitud_web(solicitud, token, origin):
+    """A diferencia de _enviar_correo_solicitud_web (que avisa al equipo),
+    este le llega al cliente con el link para pagar -- asi no depende de
+    quedarse en esa pestaña ni de recordar el link para volver despues."""
+    destinatario = solicitud.get("email") or ""
+    if not RESEND_API_KEY or not destinatario:
+        return
+    link = f"{origin}/quieromiweb?token={quote(token)}"
+    html = f"""
+<p>Hola {t.esc(solicitud.get('nombre', ''))},</p>
+<p>Recibimos tu solicitud de sitio web para <strong>{t.esc(solicitud.get('negocio', ''))}</strong>.</p>
+<p>Guarda este link: es donde vas a pagar la creación del sitio y, más adelante, activar el soporte mensual.</p>
+<p><a href="{t.esc(link)}">{t.esc(link)}</a></p>
+<p>Si en algún momento pierdes este correo, puedes volver a buscarlo en
+<a href="{t.esc(origin)}/quieromiweb">talcadatos.cl/quieromiweb</a> ingresando este mismo correo.</p>
+<p>El equipo de Talcadatos</p>
+"""
+    payload = json.dumps({
+        "from": RESEND_FROM_EMAIL, "to": [destinatario], "reply_to": RESEND_REPLY_TO,
+        "subject": "Tu solicitud de sitio web en Talcadatos", "html": html,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.resend.com/emails", data=payload, method="POST",
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json",
+            "User-Agent": "Talcadatos/1.0",
+        },
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as exc:
+        sys.stderr.write(f"ERROR enviando correo de confirmacion solicitud web (token {token}): {exc!r}\n")
 
 
 def admin_aviso_foto_agregar_submit(handler, aviso_id, form, archivos=None):
@@ -3280,6 +3380,8 @@ class Handler(BaseHTTPRequestHandler):
                 return necesito_submit(self, self._form())
             if path == "/quieromiweb":
                 return quieromiweb_submit(self, self._form())
+            if path == "/quieromiweb/buscar":
+                return quieromiweb_buscar_submit(self, self._form())
             if path == "/quieromiweb/pagar-creacion":
                 return quieromiweb_pagar_creacion_submit(self, self._form())
             if path == "/quieromiweb/suscribir-soporte":

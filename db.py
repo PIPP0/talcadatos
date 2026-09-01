@@ -285,6 +285,23 @@ def actualizar_solicitud_web(token, **campos):
     _fs().collection("solicitudes_web").document(token).set(campos, merge=True)
 
 
+def get_solicitudes_web_por_email(email):
+    """Un mismo correo puede tener mas de una solicitud (por ejemplo, dos
+    negocios distintos) -- por eso esto devuelve una lista, no un solo
+    resultado."""
+    email = (email or "").strip().lower()
+    if not email:
+        return []
+    filas = []
+    for token, s in _all("solicitudes_web").items():
+        if (s.get("email") or "").strip().lower() == email:
+            row = dict(s)
+            row["token"] = token
+            filas.append(row)
+    filas.sort(key=lambda r: r.get("creado_en") or "", reverse=True)
+    return filas
+
+
 def get_solicitudes_web():
     filas = []
     for token, s in _all("solicitudes_web").items():

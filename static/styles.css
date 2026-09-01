@@ -347,6 +347,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .plan-beneficios li{line-height:1.4;}
 .plan-card .btn{width:100%;}
 @media (max-width:800px){.planes-grid{grid-template-columns:1fr;}}
+.quieromiweb-como-grid{display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:14px;}
+.quieromiweb-como-grid h3{margin:0 0 10px; font-size:1.02rem;}
+@media (max-width:640px){.quieromiweb-como-grid{grid-template-columns:1fr; gap:22px;}}
 .form{display:flex; flex-direction:column; gap:16px; margin-top:16px;}
 .form label{display:flex; flex-direction:column; gap:6px; font-size:.88rem; font-weight:600; color:var(--ink-soft);}
 .hp-field{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;}
