@@ -1,9 +1,15 @@
+/* Prefijo de ruta cuando el sitio se sirve bajo /espaciodeprueba_01 (ver
+   render() en server.py); "" en el sitio real, así que el resto del archivo
+   funciona igual en ambos. */
+var BASE_PATH = document.body.getAttribute("data-base-path") || "";
+var HOME_PATH = BASE_PATH + "/";
+
 /* El logo y "Inicio" siempre llevan arriba del todo, aunque ya estés en "/"
    (si no, un clic ahí no hace nada porque la URL no cambia). */
 document.addEventListener("click", function (e) {
-  var link = e.target.closest('a[href="/"]');
+  var link = e.target.closest('a[href="' + HOME_PATH + '"]');
   if (!link) return;
-  if (location.pathname === "/" && !location.search && !location.hash) {
+  if (location.pathname === HOME_PATH && !location.search && !location.hash) {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -411,9 +417,9 @@ if ("serviceWorker" in navigator) {
 function logEvento(tipo, avisoId, termino) {
   var payload = JSON.stringify({ tipo: tipo, aviso_id: avisoId || null, termino_busqueda: termino || null });
   if (navigator.sendBeacon) {
-    navigator.sendBeacon("/api/evento", new Blob([payload], { type: "application/json" }));
+    navigator.sendBeacon(BASE_PATH + "/api/evento", new Blob([payload], { type: "application/json" }));
   } else {
-    fetch("/api/evento", { method: "POST", body: payload, keepalive: true });
+    fetch(BASE_PATH + "/api/evento", { method: "POST", body: payload, keepalive: true });
   }
 }
 
@@ -441,13 +447,13 @@ document.addEventListener("click", function (e) {
 
   function render(items, query) {
     if (!items.length) {
-      results.innerHTML = '<div class="search-empty">Sin coincidencias todavía para "' + query + '". Prueba con otra palabra o <a href="/publicar">publica tu negocio</a> si nadie lo ofrece aún.</div>';
+      results.innerHTML = '<div class="search-empty">Sin coincidencias todavía para "' + query + '". Prueba con otra palabra o <a href="' + BASE_PATH + '/publicar">publica tu negocio</a> si nadie lo ofrece aún.</div>';
       results.hidden = false;
       return;
     }
     results.innerHTML = items.map(function (a) {
       var badge = a.destacado ? '<span class="search-badge">Destacado</span>' : "";
-      return '<a class="search-item" href="/avisos/' + a.id + '" data-aviso-id="' + a.id + '" data-termino="' +
+      return '<a class="search-item" href="' + BASE_PATH + '/avisos/' + a.id + '" data-aviso-id="' + a.id + '" data-termino="' +
         query.replace(/"/g, "&quot;") + '">' +
         '<span class="search-item-icon">' + a.icono + '</span>' +
         '<span class="search-item-body"><strong>' + a.titulo + '</strong>' +
@@ -466,7 +472,7 @@ document.addEventListener("click", function (e) {
     timer = setTimeout(function () {
       results.hidden = false;
       results.innerHTML = '<div class="search-loading"><span></span>Buscando en Talca…</div>';
-      fetch("/api/buscar", {
+      fetch(BASE_PATH + "/api/buscar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ q: q }),
@@ -486,7 +492,7 @@ document.addEventListener("click", function (e) {
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var q = input.value.trim();
-    window.location.href = "/avisos?q=" + encodeURIComponent(q);
+    window.location.href = BASE_PATH + "/avisos?q=" + encodeURIComponent(q);
   });
 })();
 
@@ -496,7 +502,7 @@ document.addEventListener("click", function (e) {
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var whatsapp = form.whatsapp.value.trim();
-    fetch("/api/alerta", {
+    fetch(BASE_PATH + "/api/alerta", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ termino: form.getAttribute("data-termino"), whatsapp: whatsapp }),
@@ -550,11 +556,11 @@ document.addEventListener("click", function (e) {
     }
     return (
       '<article class="card" style="--card-accent:' + escHtml(d.color) + '">' +
-      '<a class="card-photo' + (d.foto_url ? " has-foto" : "") + '" href="/avisos/' + d.id + '">' + foto + badge + "</a>" +
+      '<a class="card-photo' + (d.foto_url ? " has-foto" : "") + '" href="' + BASE_PATH + '/avisos/' + d.id + '">' + foto + badge + "</a>" +
       chevrones +
       '<button class="fav-btn is-fav" type="button" data-fav-id="' + d.id + '" title="Quitar de favoritos">★</button>' +
       '<div class="card-body">' +
-      '<a class="card-title" href="/avisos/' + d.id + '">' + escHtml(d.titulo) + "</a>" +
+      '<a class="card-title" href="' + BASE_PATH + '/avisos/' + d.id + '">' + escHtml(d.titulo) + "</a>" +
       '<div class="card-meta"><span>' + escHtml(d.negocio) + " " + verificado + "</span>" +
       '<span class="dot">·</span><span>' + escHtml(d.comuna) + "</span></div>" +
       '<div class="card-cat mono">' + d.icono + " " + escHtml(d.categoria) + "</div>" +
@@ -602,7 +608,7 @@ document.addEventListener("click", function (e) {
       mount.innerHTML = vacioHtml;
     } else {
       mount.innerHTML = '<p class="fav-empty">Cargando tus favoritos…</p>';
-      fetch("/api/favoritos", {
+      fetch(BASE_PATH + "/api/favoritos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: ids }),
@@ -774,7 +780,7 @@ document.addEventListener("click", function (e) {
         cerrar();
         return;
       }
-      fetch("/api/encuesta", {
+      fetch(BASE_PATH + "/api/encuesta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tipo: tipo, aviso_id: avisoId, calificacion: calificacion, comentario: comentario }),

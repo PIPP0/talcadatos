@@ -106,11 +106,28 @@ def _cookie_headers(set_cookie=None, clear_cookie=False, flash=None, clear_flash
     return headers
 
 
+ESPACIO_PRUEBA_PREFIJO = "/espaciodeprueba_01"
+# Estas dos rutas son de solo lectura (no crean/editan avisos ni negocios
+# reales), asi que se dejan pasar dentro del espacio de pruebas.
+ESPACIO_PRUEBA_POST_PERMITIDAS = {"/api/buscar", "/api/favoritos"}
+ESPACIO_PRUEBA_BANNER = (
+    '<div style="position:sticky;top:0;z-index:99999;background:#16181d;color:#fff;'
+    'text-align:center;padding:8px 12px;font:600 13px/1.4 -apple-system,BlinkMacSystemFont,'
+    'sans-serif">🧪 Espacio de pruebas — los cambios aquí no afectan el sitio real</div>'
+)
+
+
 def render(handler, html, status=200, set_cookie=None, clear_cookie=False, clear_flash=False):
+    modo_prueba = getattr(handler, "_modo_prueba", False)
+    if modo_prueba:
+        html = re.sub(r'((?:href|src|action)=")(/(?!espaciodeprueba_01))', r'\1' + ESPACIO_PRUEBA_PREFIJO + r'\2', html)
+        html = re.sub(r'<body([^>]*)>', r'<body\1 data-base-path="' + ESPACIO_PRUEBA_PREFIJO + r'">' + ESPACIO_PRUEBA_BANNER, html, count=1)
     body = html.encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "text/html; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
+    if modo_prueba:
+        handler.send_header("X-Robots-Tag", "noindex, nofollow")
     for k, v in _cookie_headers(set_cookie, clear_cookie, clear_flash=clear_flash):
         handler.send_header(k, v)
     handler.end_headers()
@@ -154,6 +171,8 @@ def money(n):
 
 
 def redirect(handler, location, set_cookie=None, clear_cookie=False, flash=None):
+    if getattr(handler, "_modo_prueba", False) and location.startswith("/") and not location.startswith(ESPACIO_PRUEBA_PREFIJO):
+        location = ESPACIO_PRUEBA_PREFIJO + location
     handler.send_response(302)
     handler.send_header("Location", location)
     for k, v in _cookie_headers(set_cookie, clear_cookie, flash=flash):
@@ -164,6 +183,26 @@ def redirect(handler, location, set_cookie=None, clear_cookie=False, flash=None)
 def not_found(handler):
     render(handler, t.layout("No encontrado", "<div class='panel'><h1>404</h1><p>Esa página no existe.</p>"
                               "<a class='btn' href='/'>Volver al inicio</a></div>"), status=404)
+
+
+def _bloqueado_modo_prueba(handler):
+    """El espacio de pruebas es de solo lectura: cualquier accion que guarde
+    datos (publicar, moderar, admin, encuestas, etc.) se bloquea aqui para
+    no tocar nunca los avisos/negocios reales."""
+    mensaje = "Espacio de pruebas: esta acción guarda datos y está desactivada aquí."
+    if handler.headers.get("X-Requested-With") == "fetch":
+        body = mensaje.encode("utf-8")
+        handler.send_response(403)
+        handler.send_header("Content-Type", "text/plain; charset=utf-8")
+        handler.send_header("Content-Length", str(len(body)))
+        handler.end_headers()
+        handler.wfile.write(body)
+        return
+    handler._modo_prueba = True
+    render(handler, t.layout(
+        "Espacio de pruebas",
+        f"<div class='panel'><h1>🧪 Espacio de pruebas</h1><p>{mensaje}</p>"
+        f"<a class='btn' href='{ESPACIO_PRUEBA_PREFIJO}'>Volver al inicio</a></div>"), status=403)
 
 
 def server_error(handler, exc):
@@ -2677,7 +2716,8 @@ def qr_aviso(handler, aviso_id):
 
 
 def robots_txt(handler):
-    body = f"User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: {_origin(handler)}/sitemap.xml\n"
+    body = (f"User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /espaciodeprueba_01\n"
+            f"Sitemap: {_origin(handler)}/sitemap.xml\n")
     data = body.encode("utf-8")
     handler.send_response(200)
     handler.send_header("Content-Type", "text/plain; charset=utf-8")
@@ -2761,6 +2801,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parts = urlsplit(self.path)
         path, query = parts.path, parts.query
+
+        if path == ESPACIO_PRUEBA_PREFIJO or path.startswith(ESPACIO_PRUEBA_PREFIJO + "/"):
+            self._modo_prueba = True
+            path = path[len(ESPACIO_PRUEBA_PREFIJO):] or "/"
 
         segs = [s for s in path.split("/") if s != ""]
 
@@ -2858,6 +2902,13 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parts = urlsplit(self.path)
         path = parts.path
+
+        if path == ESPACIO_PRUEBA_PREFIJO or path.startswith(ESPACIO_PRUEBA_PREFIJO + "/"):
+            stripped = path[len(ESPACIO_PRUEBA_PREFIJO):] or "/"
+            if stripped not in ESPACIO_PRUEBA_POST_PERMITIDAS:
+                return _bloqueado_modo_prueba(self)
+            self._modo_prueba = True
+            path = stripped
 
         segs = [s for s in path.split("/") if s != ""]
 
