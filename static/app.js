@@ -9,6 +9,19 @@ document.addEventListener("click", function (e) {
   }
 });
 
+/* Botón X sobre la foto actual (en editar aviso / campos de imagen del admin):
+   la oculta y marca el checkbox oculto "quitar_foto" para que el servidor la borre. */
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-quitar-foto]");
+  if (!btn) return;
+  var campo = btn.closest("label") || btn.closest(".form");
+  if (!campo) return;
+  var flag = campo.querySelector("[data-quitar-foto-flag]");
+  if (flag) flag.checked = true;
+  var wrap = btn.closest(".campo-imagen-preview-wrap");
+  if (wrap) wrap.remove();
+});
+
 document.addEventListener("click", function (e) {
   var arrow = e.target.closest(".carousel-arrow");
   if (!arrow) return;

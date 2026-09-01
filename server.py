@@ -1406,10 +1406,12 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
         for e in ("pendiente", "activo", "pausado", "rechazado"))
 
     foto_url = aviso.get("foto_url")
-    foto_preview = f'<img src="{t.esc(foto_url)}" alt="" class="campo-imagen-preview">' if foto_url else \
+    foto_preview = f'''<div class="campo-imagen-preview-wrap">
+      <img src="{t.esc(foto_url)}" alt="" class="campo-imagen-preview">
+      <button type="button" class="campo-imagen-quitar" data-quitar-foto aria-label="Quitar foto actual" title="Quitar foto actual">✕</button>
+    </div>
+    <input type="checkbox" name="quitar_foto" data-quitar-foto-flag hidden>''' if foto_url else \
         '<p class="hint">Este aviso no tiene foto — se muestra el ícono del rubro.</p>'
-    foto_quitar = ('<label class="check-label"><input type="checkbox" name="quitar_foto">'
-                   '<span>Quitar la foto actual (vuelve a mostrar el ícono del rubro)</span></label>') if foto_url else ""
     errores_html = ("<div class='form-errors'><ul>" + "".join(f"<li>{t.esc(e)}</li>" for e in errores) +
                      "</ul></div>") if errores else ""
     fotos_extra = aviso.get("fotos_extra") or []
@@ -1460,7 +1462,6 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
       <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
       <span class="hint">JPG, PNG o WebP, máx. 5 MB. Deja vacío para no cambiarla.</span>
     </label>
-    {foto_quitar}
     <div class="form-actions">
       <a class="btn btn-ghost btn-lg" href="/admin/avisos">Cancelar</a>
       <button class="btn btn-primary btn-lg" type="submit">Guardar cambios</button>

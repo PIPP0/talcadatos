@@ -643,6 +643,12 @@ tr:last-child td{border-bottom:none;}
 .form-grid label:has(textarea){grid-column:span 2;}
 .form-grid label:has(.campo-imagen-preview),.form-grid label.campo-imagen{grid-column:span 2;}
 .campo-imagen-preview{width:100%; max-width:320px; height:140px; object-fit:cover; border-radius:12px; border:1px solid var(--line); margin:2px 0 4px; display:block;}
+.campo-imagen-preview-wrap{position:relative; max-width:320px; margin:2px 0 4px;}
+.campo-imagen-preview-wrap .campo-imagen-preview{margin:0;}
+.campo-imagen-quitar{position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%; border:none;
+  background:rgba(20,20,20,.65); color:#fff; font-size:.9rem; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background-color .15s ease;}
+.campo-imagen-quitar:hover{background:var(--brick);}
 .cms-save{position:sticky; bottom:16px; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 16px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.93); box-shadow:var(--shadow); backdrop-filter:blur(10px);}
 
 /* ---- editor visual del sitio ---- */
