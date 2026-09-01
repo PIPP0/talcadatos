@@ -621,7 +621,7 @@ def _quieromiweb_intro_body(errores=None, form=None):
       </ul>
     </div>
   </div>
-  <p class="hint">Los ${money(WEB_PRECIO_CREACION)} son solo el diseño de tu sitio. Para que quede publicado en un
+  <p class="hint" style="margin-top:22px">Los ${money(WEB_PRECIO_CREACION)} son solo el diseño de tu sitio. Para que quede publicado en un
     dominio real necesitas además la suscripción mensual de ${money(WEB_PRECIO_SOPORTE)} — ese pago es el que cubre
     el hosting, así que sin él el sitio no se puede subir.</p>
 </section>
