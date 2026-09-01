@@ -615,6 +615,10 @@ tr:last-child td{border-bottom:none;}
 .need-page-intro h1{max-width:13ch; font-size:clamp(2.2rem,4.4vw,3.6rem);}
 .trust-points{display:flex; flex-direction:column; gap:10px; margin-top:28px; color:var(--teal); font-weight:700; font-size:.9rem;}
 .need-form-panel{margin:0; padding:30px;}
+.need-form-wrap{max-width:640px; margin:0 auto;}
+.need-form-buscar{margin-top:22px; padding-top:22px; border-top:1px solid var(--line); text-align:center;}
+.need-form-buscar p{margin:0 0 10px; font-size:.88rem; color:var(--ink-soft);}
+.need-form-buscar .form-inline{justify-content:center;}
 .form-split{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
 .success-icon{display:flex; align-items:center; justify-content:center; width:52px; height:52px; margin:0 auto 14px; border-radius:50%; color:#fff; background:var(--teal); font-size:1.6rem; font-weight:800;}
 

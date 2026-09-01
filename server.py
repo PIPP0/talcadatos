@@ -641,44 +641,43 @@ def _quieromiweb_intro_body(errores=None, form=None):
 </section>
 
 <section class="section" id="empezar" data-reveal>
-  <div class="section-head"><div><span class="eyebrow">Último paso</span><h2>Empecemos</h2></div></div>
-  <div class="panel need-form-panel" style="max-width:640px; margin:0 auto;">
-    {errors_html}
-    <form method="post" action="/quieromiweb" class="form" id="quieromiweb-form">
-      {HONEYPOT_HTML}
-      <div class="form-grid-2col">
-        <label>Tu nombre
-          <input name="nombre" required maxlength="120" value="{value("nombre")}">
+  <div class="need-form-wrap">
+    <div class="section-head" style="justify-content:center; text-align:center;">
+      <div><span class="eyebrow">Último paso</span><h2>Empecemos</h2></div>
+    </div>
+    <div class="panel need-form-panel">
+      {errors_html}
+      <form method="post" action="/quieromiweb" class="form" id="quieromiweb-form">
+        {HONEYPOT_HTML}
+        <div class="form-grid-2col">
+          <label>Tu nombre
+            <input name="nombre" required maxlength="120" value="{value("nombre")}">
+          </label>
+          <label>Nombre de tu negocio
+            <input name="negocio" required maxlength="120" value="{value("negocio")}">
+          </label>
+          <label>WhatsApp
+            <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
+          </label>
+          <label>Correo electrónico
+            <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl" value="{value("email")}">
+          </label>
+        </div>
+        <label>Cuéntanos brevemente qué quieres mostrar en tu sitio
+          <textarea name="descripcion" maxlength="600" rows="3" placeholder="Ej: Somos una peluquería en el centro de Talca, queremos mostrar nuestros servicios y precios.">{value("descripcion")}</textarea>
         </label>
-        <label>Nombre de tu negocio
-          <input name="negocio" required maxlength="120" value="{value("negocio")}">
-        </label>
-        <label>WhatsApp
-          <input name="whatsapp" required inputmode="tel" placeholder="+56 9 1234 5678" value="{value("whatsapp")}">
-        </label>
-        <label>Correo electrónico
-          <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl" value="{value("email")}">
-        </label>
+        <button class="btn btn-primary btn-lg" type="submit">Continuar</button>
+        <p class="hint">Después de enviar el formulario te llega un correo con el link para pagar — puedes
+          continuar de inmediato o volver más tarde.</p>
+      </form>
+      <div class="need-form-buscar">
+        <p><strong>¿Ya enviaste tu solicitud?</strong> Busca con tu correo el link para continuar o pagar.</p>
+        <form method="post" action="/quieromiweb/buscar" class="form form-inline">
+          <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
+          <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
+        </form>
       </div>
-      <label>Cuéntanos brevemente qué quieres mostrar en tu sitio
-        <textarea name="descripcion" maxlength="600" rows="3" placeholder="Ej: Somos una peluquería en el centro de Talca, queremos mostrar nuestros servicios y precios.">{value("descripcion")}</textarea>
-      </label>
-      <button class="btn btn-primary btn-lg" type="submit">Continuar</button>
-      <p class="hint">Después de enviar el formulario te llega un correo con el link para pagar — puedes
-        continuar de inmediato o volver más tarde. ¿Ya enviaste tu solicitud?
-        <a href="#buscar">Búscala con tu correo</a>.</p>
-    </form>
-  </div>
-</section>
-
-<section class="section" id="buscar" data-reveal>
-  <div class="panel" style="max-width:480px; margin:0 auto; text-align:center;">
-    <h2 style="font-size:1.15rem; margin-top:0">¿Ya enviaste tu solicitud?</h2>
-    <p class="hint">Busca con tu correo el link para continuar o pagar.</p>
-    <form method="post" action="/quieromiweb/buscar" class="form form-inline" style="justify-content:center;">
-      <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
-      <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
-    </form>
+    </div>
   </div>
 </section>
 """
