@@ -219,6 +219,17 @@ def _origin(handler):
     return f"{proto}://{host}"
 
 
+PRODUCCION_HOST = "talcadatos.cl"
+
+
+def _es_produccion(handler):
+    """Solo el dominio real puede iniciar un cobro de verdad en Mercado Pago
+    -- ni la URL de preview de un deploy ni /espaciodeprueba_01 deben poder
+    generar cobros reales, aunque alguien llame la ruta directamente."""
+    host = (handler.headers.get("Host") or "").split(":")[0].lower()
+    return host in (PRODUCCION_HOST, f"www.{PRODUCCION_HOST}")
+
+
 # ------------------------------------------------------- modo "en construcción"
 # El sitio publico muestra una portada generica mientras se sigue afinando.
 
@@ -774,6 +785,8 @@ def quieromiweb_pagar_creacion_submit(handler, form):
     solicitud = db.get_solicitud_web(token)
     if not solicitud:
         return redirect(handler, "/quieromiweb")
+    if not _es_produccion(handler):
+        return redirect(handler, f"/quieromiweb?token={quote(token)}&pago=error")
     origin = _origin(handler)
     back_url = f"{origin}/quieromiweb?token={quote(token)}"
     try:
@@ -793,6 +806,8 @@ def quieromiweb_suscribir_soporte_submit(handler, form):
     solicitud = db.get_solicitud_web(token)
     if not solicitud:
         return redirect(handler, "/quieromiweb")
+    if not _es_produccion(handler):
+        return redirect(handler, f"/quieromiweb?token={quote(token)}&pago=error")
     origin = _origin(handler)
     back_url = f"{origin}/quieromiweb?token={quote(token)}"
     try:
@@ -1154,6 +1169,9 @@ def suscripcion_iniciar_submit(handler, form):
     sitio = db.get_contenido_sitio()
     if _es_bot(form):
         return redirect(handler, "/publicar")
+    if not _es_produccion(handler):
+        body = _paywall_body(error="Los pagos solo están disponibles en talcadatos.cl.")
+        return render(handler, t.layout("Publica tu negocio", body, active="publicar", site=sitio))
     email = form.get("email", "").strip()[:200]
     plan = PLANES_SUSCRIPCION_POR_ID.get(form.get("plan", ""))
     if not plan:
