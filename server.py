@@ -606,23 +606,24 @@ def _quieromiweb_intro_body(errores=None, form=None):
       <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_CREACION)}</span></div>
       <ul class="plan-beneficios">
         <li>✓ Pago único, se paga al confirmar tu solicitud</li>
-        <li>✓ Diseño completo de tu sitio</li>
-        <li>✓ Publicación en línea cuando esté listo</li>
+        <li>✓ Diseño completo de tu sitio, listo para revisar</li>
+        <li>✓ No incluye publicarlo en un dominio — para eso necesitas el soporte mensual →</li>
       </ul>
     </div>
     <div class="plan-card plan-card-recomendado">
-      <span class="plan-ribbon">Incluye hosting</span>
-      <h3>Soporte mensual</h3>
+      <span class="plan-ribbon">Necesario para publicar</span>
+      <h3>Hosting y soporte mensual</h3>
       <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
       <ul class="plan-beneficios">
-        <li>✓ Hosting de tu sitio incluido (no pagas aparte)</li>
+        <li>✓ Cubre el hosting: sin este pago tu sitio no se puede subir a un dominio</li>
         <li>✓ Hasta 2 cambios de contenido o imágenes al mes</li>
         <li>✓ Cancelas cuando quieras</li>
       </ul>
     </div>
   </div>
-  <p class="hint">Primero se paga la creación del sitio; la suscripción de soporte mensual se activa cuando tu
-    sitio ya está listo y publicado.</p>
+  <p class="hint">Los ${money(WEB_PRECIO_CREACION)} son solo el diseño de tu sitio. Para que quede publicado en un
+    dominio real necesitas además la suscripción mensual de ${money(WEB_PRECIO_SOPORTE)} — ese pago es el que cubre
+    el hosting, así que sin él el sitio no se puede subir.</p>
 </section>
 
 <section class="section" id="empezar" data-reveal>
@@ -684,7 +685,8 @@ def _quieromiweb_pagar_body(solicitud, token, pago=None):
 <div class="plan-card">
   <h3>Creación del sitio</h3>
   <p class="flash" style="margin-top:8px">✓ Pagada</p>
-  <p class="hint">Ya estamos trabajando en tu sitio. Te contactamos por WhatsApp para coordinar los detalles.</p>
+  <p class="hint">Ya estamos trabajando en el diseño. Te contactamos por WhatsApp para coordinar los detalles —
+    recuerda que para publicarlo en un dominio necesitas activar el soporte mensual.</p>
 </div>"""
         return f"""
 <div class="plan-card">
@@ -701,17 +703,18 @@ def _quieromiweb_pagar_body(solicitud, token, pago=None):
         if soporte_activo:
             return """
 <div class="plan-card plan-card-recomendado">
-  <h3>Soporte mensual</h3>
+  <h3>Hosting y soporte mensual</h3>
   <p class="flash" style="margin-top:8px">✓ Suscripción activa</p>
 </div>"""
         deshabilitado = "" if creacion_pagada else " disabled"
         nota = "" if creacion_pagada else '<p class="hint">Se activa cuando ya pagaste la creación del sitio.</p>'
         return f"""
 <div class="plan-card plan-card-recomendado">
-  <span class="plan-ribbon">Incluye hosting</span>
-  <h3>Soporte mensual</h3>
+  <span class="plan-ribbon">Necesario para publicar</span>
+  <h3>Hosting y soporte mensual</h3>
   <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
-  <p class="hint">Hosting incluido + hasta 2 cambios de contenido o imágenes al mes.</p>
+  <p class="hint">Cubre el hosting: sin este pago tu sitio no se puede subir a un dominio. Incluye hasta
+    2 cambios de contenido o imágenes al mes.</p>
   {nota}
   <form method="post" action="/quieromiweb/suscribir-soporte">
     <input type="hidden" name="token" value="{t.esc(token)}">
