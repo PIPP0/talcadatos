@@ -798,7 +798,7 @@ def quieromiweb_suscribir_soporte_submit(handler, form):
     try:
         resp = _crear_preapproval(
             solicitud.get("email"), token, origin, WEB_PRECIO_SOPORTE, "Soporte mensual sitio web",
-            reason="Talcadatos - Soporte mensual de sitio web (hosting + 2 cambios al mes)", back_url=back_url)
+            reason="Talcadatos - Soporte mensual de sitio web", back_url=back_url)
         init_point = resp.get("init_point") or resp.get("sandbox_init_point")
     except Exception as exc:
         sys.stderr.write(f"ERROR creando preapproval MP (quieromiweb {token}): {exc!r}\n")
