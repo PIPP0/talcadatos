@@ -239,7 +239,9 @@ def home(handler):
     sitio = db.get_contenido_sitio()
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
-    recientes = db.get_avisos(estado="activo", orden="recientes", limit=8)
+    destacados_ids = {a["id"] for a in destacados}
+    recientes_todos = db.get_avisos(estado="activo", orden="recientes")
+    recientes = [a for a in recientes_todos if a["id"] not in destacados_ids][:8]
     tendencias = db.get_terminos_mas_buscados(4)
     if not tendencias:
         tendencias = [
@@ -317,7 +319,7 @@ def home(handler):
 
 <section class="section" data-reveal>
   <div class="section-head">
-    <div><span class="eyebrow">Nuevos en Talcadatos</span><h2>Recién publicados</h2></div>
+    <div><span class="eyebrow">Avisos en Talcadatos</span><h2>Publicados</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
   {t.cards_grid(recientes, badge_mode="nuevo")}
