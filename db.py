@@ -285,16 +285,21 @@ def actualizar_solicitud_web(token, **campos):
     _fs().collection("solicitudes_web").document(token).set(campos, merge=True)
 
 
-def get_solicitudes_web_por_email(email):
-    """Un mismo correo puede tener mas de una solicitud (por ejemplo, dos
-    negocios distintos) -- por eso esto devuelve una lista, no un solo
+def get_solicitudes_web_por_contacto(valor):
+    """Busca por correo o por WhatsApp (lo que haya escrito la persona).
+    Un mismo correo o WhatsApp puede tener mas de una solicitud (por ejemplo,
+    dos negocios distintos) -- por eso esto devuelve una lista, no un solo
     resultado."""
-    email = (email or "").strip().lower()
-    if not email:
+    valor = (valor or "").strip().lower()
+    digitos = "".join(c for c in valor if c.isdigit())
+    if not valor:
         return []
     filas = []
     for token, s in _all("solicitudes_web").items():
-        if (s.get("email") or "").strip().lower() == email:
+        email_coincide = (s.get("email") or "").strip().lower() == valor
+        whatsapp_coincide = bool(digitos) and digitos in "".join(
+            c for c in (s.get("whatsapp") or "") if c.isdigit())
+        if email_coincide or whatsapp_coincide:
             row = dict(s)
             row["token"] = token
             filas.append(row)

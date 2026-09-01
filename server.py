@@ -658,9 +658,9 @@ def _quieromiweb_intro_body(errores=None, form=None):
     </div>
     <div class="panel need-form-panel" style="text-align:center;">
       <h2 style="font-size:1.15rem; margin-top:0">¿Ya enviaste tu solicitud?</h2>
-      <p class="hint">Busca con tu correo el link para continuar o pagar.</p>
+      <p class="hint">Busca con tu correo o WhatsApp el link para continuar o pagar.</p>
       <form method="post" action="/quieromiweb/buscar" class="form">
-        <input name="email" type="email" required placeholder="tucorreo@ejemplo.cl">
+        <input name="contacto" required placeholder="tucorreo@ejemplo.cl o tu WhatsApp">
         <button class="btn btn-ghost btn-sm" type="submit">Buscar</button>
       </form>
     </div>
@@ -735,7 +735,7 @@ def _quieromiweb_pagar_body(solicitud, token, pago=None):
 """
 
 
-def _quieromiweb_resultados_body(email, solicitudes):
+def _quieromiweb_resultados_body(contacto, solicitudes):
     def estado_texto(s):
         partes = []
         partes.append("Creación pagada ✓" if s.get("estado") == "creacion_pagada" else "Creación pendiente de pago")
@@ -752,11 +752,11 @@ def _quieromiweb_resultados_body(email, solicitudes):
 
     if not solicitudes:
         contenido = f"""
-<p class="lede">No encontramos ninguna solicitud con el correo <strong>{t.esc(email)}</strong>.</p>
+<p class="lede">No encontramos ninguna solicitud con <strong>{t.esc(contacto)}</strong>.</p>
 <a class="btn btn-primary btn-lg" href="/quieromiweb">Enviar una solicitud nueva</a>"""
     else:
         contenido = f"""
-<p class="lede">Encontramos {len(solicitudes)} solicitud{"es" if len(solicitudes) != 1 else ""} con ese correo.</p>
+<p class="lede">Encontramos {len(solicitudes)} solicitud{"es" if len(solicitudes) != 1 else ""} con ese correo o WhatsApp.</p>
 <div class="planes-grid">{filas}</div>
 <p class="hint">¿Es para otro negocio? <a href="/quieromiweb">Envía una solicitud nueva</a>.</p>"""
 
@@ -821,13 +821,15 @@ def quieromiweb_submit(handler, form):
 
 
 def quieromiweb_buscar_submit(handler, form):
-    email = form.get("email", "").strip()
+    contacto = form.get("contacto", "").strip()
     sitio = db.get_contenido_sitio()
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        body = _quieromiweb_intro_body(errores=["Ingresa un correo electrónico válido para buscar tu solicitud."])
+    es_email = re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", contacto)
+    es_whatsapp = len("".join(c for c in contacto if c.isdigit())) >= 8
+    if not (es_email or es_whatsapp):
+        body = _quieromiweb_intro_body(errores=["Ingresa el correo o el WhatsApp con el que enviaste tu solicitud."])
         return render(handler, t.layout("Quiero mi sitio web", body, active="quieromiweb", site=sitio))
-    solicitudes = db.get_solicitudes_web_por_email(email)
-    body = _quieromiweb_resultados_body(email, solicitudes)
+    solicitudes = db.get_solicitudes_web_por_contacto(contacto)
+    body = _quieromiweb_resultados_body(contacto, solicitudes)
     render(handler, t.layout("Quiero mi sitio web", body, active="quieromiweb", site=sitio))
 
 
