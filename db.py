@@ -353,6 +353,24 @@ def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None
     return filas
 
 
+def _ordenar_avisos(filas, orden):
+    if orden == "recientes":
+        filas.sort(key=lambda a: a.get("publicado_en") or "", reverse=True)
+    elif orden == "populares":
+        filas.sort(key=lambda a: a.get("contactos_total", 0), reverse=True)
+    elif orden == "vistas":
+        filas.sort(key=lambda a: a.get("vistas_total", 0), reverse=True)
+    elif orden == "creado_asc":
+        filas.sort(key=lambda a: a.get("creado_en") or "")
+    elif orden == "destacados" or orden == "relevancia":
+        filas.sort(key=lambda a: a.get("publicado_en") or "", reverse=True)
+        filas.sort(key=lambda a: a.get("plan_prioridad", 0), reverse=True)
+        filas.sort(key=lambda a: a.get("orden_manual") if a.get("orden_manual") is not None else float("inf"))
+    else:  # "creado"
+        filas.sort(key=lambda a: a.get("creado_en") or "", reverse=True)
+    return filas
+
+
 def get_avisos(estado=None, estado_ne=None, categoria_slug=None, comuna=None,
                negocio_id=None, excluir_id=None, orden="creado", limit=None):
     filas = _denormalizar_avisos(_all("avisos"))
@@ -370,21 +388,23 @@ def get_avisos(estado=None, estado_ne=None, categoria_slug=None, comuna=None,
     if excluir_id:
         filas = [a for a in filas if a["id"] != excluir_id]
 
-    if orden == "recientes":
-        filas.sort(key=lambda a: a.get("publicado_en") or "", reverse=True)
-    elif orden == "populares":
-        filas.sort(key=lambda a: a.get("contactos_total", 0), reverse=True)
-    elif orden == "vistas":
-        filas.sort(key=lambda a: a.get("vistas_total", 0), reverse=True)
-    elif orden == "creado_asc":
-        filas.sort(key=lambda a: a.get("creado_en") or "")
-    elif orden == "destacados" or orden == "relevancia":
-        filas.sort(key=lambda a: a.get("publicado_en") or "", reverse=True)
-        filas.sort(key=lambda a: a.get("plan_prioridad", 0), reverse=True)
-        filas.sort(key=lambda a: a.get("orden_manual") if a.get("orden_manual") is not None else float("inf"))
-    else:  # "creado"
-        filas.sort(key=lambda a: a.get("creado_en") or "", reverse=True)
+    filas = _ordenar_avisos(filas, orden)
 
+    if limit:
+        filas = filas[:limit]
+    return filas
+
+
+def filtrar_avisos(filas, categoria_slug=None, comuna=None, orden="creado", limit=None):
+    """Filtra/ordena una lista de avisos ya traida (por ejemplo con
+    get_avisos()), sin volver a leer Firestore. Sirve para paginas como el
+    listado publico que necesitan la lista completa (para sacar comunas
+    disponibles) y ademas una version filtrada -- asi solo se lee una vez."""
+    if categoria_slug:
+        filas = [a for a in filas if a["categoria_slug"] == categoria_slug]
+    if comuna:
+        filas = [a for a in filas if a["comuna"] == comuna]
+    filas = _ordenar_avisos(list(filas), orden)
     if limit:
         filas = filas[:limit]
     return filas
@@ -406,13 +426,11 @@ def get_aviso(aviso_id):
         return None
     a = doc.to_dict()
     negocio = get_negocio(a.get("negocio_id")) or {}
-    categoria = get_categoria(a.get("categoria_slug")) or {}
-    plan = get_plan(negocio.get("plan_id", "gratis")) or {}
     filas = _denormalizar_avisos(
         {doc.id: a},
         negocios={a.get("negocio_id"): negocio},
-        categorias={a.get("categoria_slug"): categoria},
-        planes={negocio.get("plan_id", "gratis"): plan},
+        categorias=_all_cacheado("categorias"),
+        planes=_all_cacheado("planes"),
     )
     return filas[0] if filas else None
 

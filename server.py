@@ -421,14 +421,14 @@ def listado(handler, query):
     orden = params.get("orden", "relevancia")
 
     categorias = db.get_categorias()
-    comunas = db.get_comunas_activas()
+    todos_activos = db.get_avisos(estado="activo")
+    comunas = sorted({a["comuna"] for a in todos_activos})
 
     if q:
-        avisos = search.buscar_avisos(db.get_avisos(estado="activo"), db.get_sinonimos_por_categoria(), q, limite=40)
+        avisos = search.buscar_avisos(todos_activos, db.get_sinonimos_por_categoria(), q, limite=40)
         titulo_pagina = f'Resultados para "{q}"'
     else:
-        avisos = db.get_avisos(estado="activo", categoria_slug=categoria_slug or None,
-                                comuna=comuna or None, orden=orden)
+        avisos = db.filtrar_avisos(todos_activos, categoria_slug or None, comuna or None, orden)
         titulo_pagina = "Avisos en Talca"
 
     def opt(value, current, label):
