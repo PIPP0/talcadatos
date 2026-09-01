@@ -95,6 +95,10 @@
   .wa-float:hover{background:var(--accent-dark)}
   .wa-float svg{width:18px;height:18px;fill:#fff}
 
+  @keyframes icon-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .portrait .ic svg{width:2.1rem;height:2.1rem}
+  .portrait .ic{display:inline-flex;animation:icon-bob 3.2s ease-in-out infinite}
+
   @media(max-width:900px){
     nav.links{position:fixed;top:70px;left:0;right:0;background:var(--bg);flex-direction:column;padding:22px 24px;border-bottom:1px solid var(--border);display:none;gap:16px}
     nav.links.is-open{display:flex}
@@ -148,7 +152,7 @@
 <section class="about" id="sobre-mi">
   <div class="container about-grid">
     <div class="portrait">
-      <span class="ic">📷</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></span>
       <small>Tu foto — de frente, buena luz, transmite confianza y cercanía.</small>
     </div>
     <div>

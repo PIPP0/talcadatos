@@ -45,7 +45,9 @@
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--ink)}
 
   .hero{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;background:linear-gradient(160deg,#141b22,#e8391f 130%);overflow:hidden}
-  .hero::before{content:"📷";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8rem;opacity:.12}
+  .hero-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.12;pointer-events:none}
+  .hero-watermark svg{width:9rem;height:9rem;animation:watermark-pulse 5s ease-in-out infinite}
+  @keyframes watermark-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
   .hero-inner{position:relative;max-width:640px;padding:0 24px}
   .hero-inner .eyebrow{color:#ffb199}
   .hero-inner h1{font-family:Georgia,serif;font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;margin-bottom:18px}
@@ -102,6 +104,19 @@
   .wa-float{position:fixed;bottom:24px;right:24px;z-index:200;width:56px;height:56px;border-radius:50%;background:var(--whatsapp);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(37,211,102,.45)}
   .wa-float svg{width:26px;height:26px;fill:#fff}
 
+  @keyframes icon-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .ph-photo .ic svg,.m-photo svg,.g-item svg,.hours-grid .h-item .ic svg{width:2rem;height:2rem}
+  .ph-photo .ic,.m-photo svg,.g-item svg{animation:icon-bob 3.2s ease-in-out infinite}
+  .m-card:nth-child(2) svg{animation-delay:.2s}
+  .m-card:nth-child(3) svg{animation-delay:.4s}
+  .m-card:nth-child(4) svg{animation-delay:.6s}
+  .m-card:nth-child(5) svg{animation-delay:.8s}
+  .m-card:nth-child(6) svg{animation-delay:1s}
+  .m-card:hover svg,.g-item:hover svg{animation-play-state:paused;transform:scale(1.15) rotate(-6deg)}
+  .m-photo svg,.g-item svg{transition:transform .25s ease}
+  .hours-grid .h-item .ic{display:inline-flex;transition:transform .25s ease}
+  .hours-grid .h-item:hover .ic{transform:scale(1.15) rotate(-6deg)}
+
   @media(max-width:980px){
     .about-grid{grid-template-columns:1fr}
     .ph-photo{max-width:360px;margin:0 auto}
@@ -155,6 +170,7 @@
 </header>
 
 <section class="hero" id="top">
+  <span class="hero-watermark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></span>
   <div class="hero-inner">
     <span class="eyebrow ph"><em>[Tu rubro — ej. Cocina casera, Pastelería, Boutique]</em></span>
     <h1 class="ph"><em>[Nombre de tu negocio, en grande]</em></h1>
@@ -170,7 +186,7 @@
 <section class="about" id="sobre-nosotros">
   <div class="container about-grid">
     <div class="ph-photo">
-      <span class="ic">📷</span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></span>
       <strong>Foto tuya o de tu equipo</strong>
       <small>Una foto real genera más confianza que cualquier texto.</small>
     </div>
@@ -191,12 +207,12 @@
       <p class="ph"><em>Muestra entre 3 y 6 productos con tu mejor foto y precio.</em></p>
     </div>
     <div class="menu-grid">
-      <div class="m-card"><div class="m-photo">📷</div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 1]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
-      <div class="m-card"><div class="m-photo">📷</div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 2]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
-      <div class="m-card"><div class="m-photo">📷</div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 3]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
-      <div class="m-card"><div class="m-photo">📷</div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 4]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
-      <div class="m-card"><div class="m-photo">📷</div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 5]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
-      <div class="m-card"><div class="m-photo">📷</div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 6]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
+      <div class="m-card"><div class="m-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 1]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
+      <div class="m-card"><div class="m-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 2]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
+      <div class="m-card"><div class="m-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 3]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
+      <div class="m-card"><div class="m-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 4]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
+      <div class="m-card"><div class="m-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 5]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
+      <div class="m-card"><div class="m-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="m-body"><div class="m-head"><h3 class="ph"><em>[Producto 6]</em></h3><span class="m-price ph"><em>[$ Precio]</em></span></div><p class="ph"><em>Breve descripción del producto.</em></p></div></div>
     </div>
   </div>
 </section>
@@ -209,8 +225,8 @@
       <p class="ph"><em>4 a 8 fotos reales, cuadradas, buena luz natural.</em></p>
     </div>
     <div class="gallery-grid">
-      <div class="g-item">📷</div><div class="g-item">📷</div><div class="g-item">📷</div><div class="g-item">📷</div>
-      <div class="g-item">📷</div><div class="g-item">📷</div><div class="g-item">📷</div><div class="g-item">📷</div>
+      <div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div>
+      <div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div><div class="g-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg></div>
     </div>
   </div>
 </section>
@@ -218,9 +234,9 @@
 <section class="hours-strip" id="horario">
   <div class="container">
     <div class="hours-grid">
-      <div class="h-item"><div class="ic">📍</div><strong>Dónde estamos</strong><span class="ph"><em>[Tu dirección o comuna]</em></span></div>
-      <div class="h-item"><div class="ic">🕒</div><strong>Horario</strong><span class="ph"><em>[Tus días y horas de atención]</em></span></div>
-      <div class="h-item"><div class="ic">📱</div><strong>Pedidos</strong><span class="ph"><em>[Tu WhatsApp]</em></span></div>
+      <div class="h-item"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/></svg></div><strong>Dónde estamos</strong><span class="ph"><em>[Tu dirección o comuna]</em></span></div>
+      <div class="h-item"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div><strong>Horario</strong><span class="ph"><em>[Tus días y horas de atención]</em></span></div>
+      <div class="h-item"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4V5Z"/></svg></div><strong>Pedidos</strong><span class="ph"><em>[Tu WhatsApp]</em></span></div>
     </div>
   </div>
 </section>
