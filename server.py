@@ -166,6 +166,25 @@ def render_csv(handler, filename, header, rows):
     handler.wfile.write(data)
 
 
+def plantilla_web(handler, filename):
+    """Sirve una plantilla estatica de /quieromiweb/webNtemplate. A diferencia
+    de _static(), manda no-store: son paginas que edito seguido y algun cache
+    intermedio (delante del dominio principal) no estaba respetando el
+    Cache-Control:no-cache que usa _static(), asi que quedaban sirviendo una
+    version vieja."""
+    full = os.path.join(STATIC_DIR, "templates", filename)
+    if not os.path.isfile(full):
+        return not_found(handler)
+    with open(full, "rb") as f:
+        data = f.read()
+    handler.send_response(200)
+    handler.send_header("Content-Type", "text/html; charset=utf-8")
+    handler.send_header("Content-Length", str(len(data)))
+    handler.send_header("Cache-Control", "no-store")
+    handler.end_headers()
+    handler.wfile.write(data)
+
+
 def money(n):
     return f"{n:,}".replace(",", ".")
 
@@ -3337,11 +3356,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/quieromiweb":
                 return quieromiweb_form(self, query)
             if path == "/quieromiweb/web1template":
-                return self._static("/static/templates/web1.html")
+                return plantilla_web(self, "web1.html")
             if path == "/quieromiweb/web2template":
-                return self._static("/static/templates/web2.html")
+                return plantilla_web(self, "web2.html")
             if path == "/quieromiweb/web3template":
-                return self._static("/static/templates/web3.html")
+                return plantilla_web(self, "web3.html")
 
             return not_found(self)
         except BrokenPipeError:
