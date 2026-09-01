@@ -334,7 +334,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .panel-suscripcion .form>label{max-width:380px; margin:0 auto; text-align:left;}
 .precio-tachado{color:var(--ink-faint); text-decoration:line-through; font-size:1.05rem; margin-right:8px;}
 .precio-actual{color:var(--ink); font-size:1.9rem; font-weight:800; letter-spacing:-0.02em;}
-.planes-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:24px; text-align:left; align-items:stretch;}
+.planes-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin-top:24px; text-align:left; align-items:stretch;}
 .plan-card{position:relative; display:flex; flex-direction:column; gap:14px; background:var(--paper-raised);
   border:1px solid var(--line); border-radius:18px; padding:26px 22px; box-shadow:var(--shadow);}
 .plan-card-recomendado{border-color:var(--accent); box-shadow:0 14px 34px -18px rgba(232,93,93,.45);}

@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260901-4">
+<link rel="stylesheet" href="/static/styles.css?v=20260901-5">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
