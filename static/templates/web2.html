@@ -44,16 +44,17 @@
   .btn-light{background:#fff;color:var(--ink)}
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--ink)}
 
-  .hero{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;background:linear-gradient(160deg,#141b22,#e8391f 130%);overflow:hidden}
-  .hero-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.12;pointer-events:none}
+  .hero{position:relative;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);background:linear-gradient(160deg,var(--surface-alt),var(--alum) 145%);overflow:hidden}
+  .hero-watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.16;color:var(--primary);pointer-events:none}
   .hero-watermark svg{width:9rem;height:9rem;animation:watermark-pulse 5s ease-in-out infinite}
   @keyframes watermark-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
   .hero-inner{position:relative;max-width:640px;padding:0 24px}
-  .hero-inner .eyebrow{color:#ffb199}
+  .hero-inner .eyebrow{color:var(--text-muted)}
   .hero-inner h1{font-family:Georgia,serif;font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;margin-bottom:18px}
-  .hero-inner p{font-size:1.1rem;color:rgba(255,255,255,.88);margin-bottom:30px;font-family:"Segoe UI",sans-serif}
+  .hero-inner p{font-size:1.1rem;color:var(--text-muted);margin-bottom:30px;font-family:"Segoe UI",sans-serif}
   .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-  .hero-note{margin-top:22px;font-size:.8rem;color:rgba(255,255,255,.7);font-family:"Segoe UI",sans-serif;font-style:italic}
+  .hero-actions .btn-light{border:1px solid var(--border)}
+  .hero-note{margin-top:22px;font-size:.8rem;color:var(--text-muted);opacity:.8;font-family:"Segoe UI",sans-serif;font-style:italic}
 
   .about{background:var(--surface)}
   .about-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:52px;align-items:center}
