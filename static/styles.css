@@ -140,8 +140,11 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 /* Señales de confianza: se leen en un vistazo antes de empezar a explorar. */
 .web-promo{display:flex; align-items:center; gap:16px; margin:22px 0 28px; padding:14px 22px; border:1px solid var(--line); border-radius:999px; background:var(--paper-raised); box-shadow:0 1px 3px rgba(23,23,23,.05); text-decoration:none; color:inherit; transition:background-color .2s ease, box-shadow .2s ease;}
 .web-promo:hover{background:color-mix(in srgb, var(--accent) 6%, var(--paper-raised)); box-shadow:0 3px 10px rgba(23,23,23,.08);}
-.web-promo-icon{display:grid; place-items:center; flex:0 0 auto; width:40px; height:40px; border-radius:50%; color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, white);}
-.web-promo-icon svg{width:20px; height:20px;}
+.web-promo-icon{display:grid; place-items:center; flex:0 0 auto; width:40px; height:40px; border-radius:50%; color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, white); perspective:200px;}
+.web-promo-icon-flip{position:relative; width:20px; height:20px; transform-style:preserve-3d; animation:icon-flip 5s ease-in-out infinite;}
+.web-promo-icon .icon-face{position:absolute; inset:0; width:20px; height:20px; backface-visibility:hidden;}
+.web-promo-icon .icon-face-back{transform:rotateY(180deg);}
+@keyframes icon-flip{0%,38%{transform:rotateY(0deg);} 50%,88%{transform:rotateY(180deg);} 100%{transform:rotateY(360deg);}}
 .web-promo-text{flex:1; display:flex; flex-wrap:wrap; align-items:baseline; gap:6px; min-width:0;}
 .web-promo-text strong{font-size:.92rem; letter-spacing:-.01em;}
 .web-promo-text span{color:var(--ink-soft); font-size:.86rem;}

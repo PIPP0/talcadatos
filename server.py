@@ -346,7 +346,10 @@ def home(handler):
 </section>
 
 <a href="/quieromiweb" class="web-promo" data-reveal aria-label="¿Necesitas una página web para tu negocio? Te la creamos, simple y profesional">
-  <span class="web-promo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-6-4-9s1.5-6.4 4-9Z"/></svg></span>
+  <span class="web-promo-icon"><span class="web-promo-icon-flip">
+    <svg class="icon-face" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-6-4-9s1.5-6.4 4-9Z"/></svg>
+    <svg class="icon-face icon-face-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+  </span></span>
   <span class="web-promo-text"><strong>¿Necesitas una página web para tu negocio?</strong><span>Te la creamos, simple y profesional.</span></span>
   <span class="web-promo-cta">Conoce más →</span>
 </a>
