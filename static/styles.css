@@ -154,6 +154,15 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .trust-strip strong{font-size:.92rem; letter-spacing:-.01em;}
 .trust-strip small{color:var(--ink-soft); font-size:.79rem;}
 
+.web-promo{display:flex; align-items:center; gap:16px; margin:0 0 28px; padding:14px 22px; border:1px solid var(--line); border-radius:999px; background:var(--paper-raised); box-shadow:0 1px 3px rgba(23,23,23,.05); text-decoration:none; color:inherit; transition:background-color .2s ease, box-shadow .2s ease;}
+.web-promo:hover{background:color-mix(in srgb, var(--accent) 6%, var(--paper-raised)); box-shadow:0 3px 10px rgba(23,23,23,.08);}
+.web-promo-icon{display:grid; place-items:center; flex:0 0 auto; width:40px; height:40px; border-radius:50%; color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, white);}
+.web-promo-icon svg{width:20px; height:20px;}
+.web-promo-text{flex:1; display:flex; flex-wrap:wrap; align-items:baseline; gap:6px; min-width:0;}
+.web-promo-text strong{font-size:.92rem; letter-spacing:-.01em;}
+.web-promo-text span{color:var(--ink-soft); font-size:.86rem;}
+.web-promo-cta{flex:0 0 auto; font-weight:700; font-size:.88rem; color:var(--accent-deep); white-space:nowrap;}
+
 
 /* ---- como funciona ---- */
 .how{display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin:64px 0;}
@@ -722,6 +731,8 @@ tr:last-child td{border-bottom:none;}
   .trust-strip{grid-template-columns:1fr; margin-top:18px;}
   .trust-strip>div{min-height:62px; padding:12px 14px; border-right:0; border-bottom:1px solid var(--line);}
   .trust-strip>div:last-child{border-bottom:0;}
+  .web-promo{flex-wrap:wrap; border-radius:20px; padding:16px 18px;}
+  .web-promo-cta{width:100%; margin-left:56px;}
   .local-story{margin:44px 0; border-radius:20px;}
   .local-story-visual{min-height:280px;}
   .local-story-visual::after{background:linear-gradient(0deg, rgba(39,36,38,.35), transparent 54%);}
