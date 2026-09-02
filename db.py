@@ -654,12 +654,12 @@ def contar_avisos_por_negocio():
 
 # ----------------------------------------------------------------- eventos
 
-def registrar_evento(tipo, aviso_id=None, termino_busqueda=None):
+def registrar_evento(tipo, aviso_id=None, termino_busqueda=None, sesion=None):
     _fs().collection("eventos").add({
         "aviso_id": str(aviso_id) if aviso_id else None,
         "tipo": tipo,
         "termino_busqueda": termino_busqueda,
-        "sesion_hash": secrets.token_hex(4),
+        "sesion_hash": sesion or secrets.token_hex(4),
         "creado_en": now(),
     })
 
@@ -970,17 +970,24 @@ def get_terminos_mas_buscados(limit=15, dias=14):
 
     Se limita a los ultimos `dias` dias (por defecto 14): sin esto, un pico
     de clicks de hace meses (ej. datos de prueba) queda dominando "lo mas
-    buscado" para siempre y deja de reflejar actividad real."""
+    buscado" para siempre y deja de reflejar actividad real.
+
+    Ademas cuenta sesiones de navegador distintas, no clicks sueltos: si
+    alguien busca el mismo termino varias veces solo suma 1, para que no
+    ensucie el ranking una sola persona insistiendo con la misma palabra."""
     cache_key = (limit, dias)
     entrada = _cache_terminos_buscados.get(cache_key)
     if entrada and (time.monotonic() - entrada[0]) < 60:
         return entrada[1]
     cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=dias)).isoformat()
-    conteo = {}
+    sesiones_por_termino = {}
     for e in _all("eventos").values():
         if (e.get("tipo") == "click_resultado_busqueda" and e.get("termino_busqueda")
                 and e.get("creado_en", "") >= cutoff):
-            conteo[e["termino_busqueda"]] = conteo.get(e["termino_busqueda"], 0) + 1
+            termino = e["termino_busqueda"]
+            clave_sesion = e.get("sesion_hash") or id(e)
+            sesiones_por_termino.setdefault(termino, set()).add(clave_sesion)
+    conteo = {k: len(v) for k, v in sesiones_por_termino.items()}
     filas = [{"termino_busqueda": k, "n": v} for k, v in conteo.items()]
     filas.sort(key=lambda f: f["n"], reverse=True)
     resultado = filas[:limit]

@@ -414,8 +414,27 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+/* Id estable por navegador (no por persona) para poder distinguir, en
+   metricas como "lo mas buscado", a alguien que repite la misma busqueda
+   varias veces de gente distinta buscando lo mismo. No identifica a nadie. */
+function sesionNavegador() {
+  var KEY = "talca_sesion";
+  try {
+    var v = localStorage.getItem(KEY);
+    if (!v) {
+      v = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(KEY, v);
+    }
+    return v;
+  } catch (e) {
+    return "";
+  }
+}
+
 function logEvento(tipo, avisoId, termino) {
-  var payload = JSON.stringify({ tipo: tipo, aviso_id: avisoId || null, termino_busqueda: termino || null });
+  var payload = JSON.stringify({
+    tipo: tipo, aviso_id: avisoId || null, termino_busqueda: termino || null, sesion: sesionNavegador(),
+  });
   if (navigator.sendBeacon) {
     navigator.sendBeacon(BASE_PATH + "/api/evento", new Blob([payload], { type: "application/json" }));
   } else {

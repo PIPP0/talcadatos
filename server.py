@@ -1353,9 +1353,11 @@ def api_evento(handler, body):
     tipo = data.get("tipo")
     aviso_id = data.get("aviso_id")
     termino = data.get("termino_busqueda")
+    sesion = data.get("sesion")
+    sesion = str(sesion)[:40] if isinstance(sesion, str) and sesion else None
     if tipo not in ("click_whatsapp", "click_resultado_busqueda"):
         return render_json(handler, {"ok": False}, status=400)
-    db.registrar_evento(tipo, aviso_id=aviso_id, termino_busqueda=termino)
+    db.registrar_evento(tipo, aviso_id=aviso_id, termino_busqueda=termino, sesion=sesion)
     if tipo == "click_whatsapp" and aviso_id:
         db.incrementar_contactos(aviso_id)
     render_json(handler, {"ok": True})
