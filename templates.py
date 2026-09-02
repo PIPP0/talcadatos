@@ -289,13 +289,18 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
   <button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>""" if es_carrusel else "")
     return f"""
 <article class="card" style="--card-accent:{esc(aviso['color'])}"{click_attr} data-aviso-id="{aviso['id']}">
-  <a class="card-photo{' has-foto' if foto_url else ''}" href="/avisos/{aviso['id']}">
+  <a class="card-photo{' has-foto' if foto_url else ''}" href="{'/publicar' if aviso.get('es_demo') else f"/avisos/{aviso['id']}"}">
     {foto_html}
     {badge_html}
   </a>{chevrones_html}
   <button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
-    <a class="card-title" href="/avisos/{aviso['id']}">{esc(aviso['titulo'])}</a>
+    {f'''<a class="card-title" href="/publicar">Publica tu negocio y hazlo crecer</a>
+    <div class="card-meta"><span>Encuentra tu categoría</span></div>
+    <p class="card-desc">Miles de personas en Talca buscan y contactan negocios cada semana. Publícate hoy.</p>
+    <a class="btn btn-whatsapp btn-block" href="/publicar">
+      Publicar mi negocio →
+    </a>''' if aviso.get('es_demo') else f'''<a class="card-title" href="/avisos/{aviso['id']}">{esc(aviso['titulo'])}</a>
     <div class="card-meta">
       <span>{esc(aviso['negocio_nombre'])} {verificado_html}</span>
       <span class="dot">·</span>
@@ -305,7 +310,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     <p class="card-desc">{esc(extracto(aviso.get('descripcion')))}</p>
     <a class="btn btn-whatsapp btn-block" href="/avisos/{aviso['id']}">
       Ver detalle
-    </a>
+    </a>'''}
   </div>
 </article>"""
 
