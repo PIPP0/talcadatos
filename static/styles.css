@@ -243,8 +243,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .card-cat{font-size:.76rem; color:var(--ink-faint);}
 .card-desc{font-size:.85rem; color:var(--ink-soft); line-height:1.4; margin:0;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
-.check{display:inline-flex; align-items:center; vertical-align:-6px;}
-.check svg{width:30px; height:30px; display:block;}
+.check{display:inline-flex; align-items:center; vertical-align:-3px;}
+.check svg{width:18px; height:18px; display:block;}
 
 /* ---- favoritos ---- */
 .fav-btn{position:absolute; top:12px; left:12px; width:32px; height:32px; border-radius:50%; border:none;
