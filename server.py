@@ -1343,6 +1343,7 @@ def api_favoritos(handler, body):
         "color": a["color"], "foto_url": a.get("foto_url") or "",
         "fotos_extra": a.get("fotos_extra") or [],
         "verificado": a["verificado"], "plan": a["plan_nombre"],
+        "es_demo": bool(a.get("es_demo", False)),
     } for a in avisos]
     render_json(handler, {"resultados": resultados})
 

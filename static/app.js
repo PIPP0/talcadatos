@@ -531,9 +531,13 @@ document.addEventListener("click", function (e) {
     });
   }
 
+  var VERIFICADO_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+    '<path fill="#5B9EE8" d="M22.9 12.0 L22.62 12.7 L21.86 13.3 L20.83 13.76 L19.78 14.08 L18.96 14.36 L18.56 14.72 L18.6 15.25 L18.97 16.02 L19.48 17.0 L19.89 18.06 L20.0 19.02 L19.71 19.71 L19.02 20.0 L18.06 19.89 L17.0 19.48 L16.03 18.97 L15.25 18.6 L14.72 18.56 L14.36 18.96 L14.08 19.78 L13.76 20.83 L13.3 21.86 L12.7 22.62 L12.0 22.9 L11.3 22.62 L10.7 21.86 L10.24 20.83 L9.92 19.78 L9.64 18.96 L9.28 18.56 L8.75 18.6 L7.98 18.97 L7.0 19.48 L5.94 19.89 L4.98 20.0 L4.29 19.71 L4.0 19.02 L4.11 18.06 L4.52 17.0 L5.03 16.02 L5.4 15.25 L5.44 14.72 L5.04 14.36 L4.22 14.08 L3.17 13.76 L2.14 13.3 L1.38 12.7 L1.1 12.0 L1.38 11.3 L2.14 10.7 L3.17 10.24 L4.22 9.92 L5.04 9.64 L5.44 9.28 L5.4 8.75 L5.03 7.98 L4.52 7.0 L4.11 5.94 L4.0 4.98 L4.29 4.29 L4.98 4.0 L5.94 4.11 L7.0 4.52 L7.97 5.03 L8.75 5.4 L9.28 5.44 L9.64 5.04 L9.92 4.22 L10.24 3.17 L10.7 2.14 L11.3 1.38 L12.0 1.1 L12.7 1.38 L13.3 2.14 L13.76 3.17 L14.08 4.22 L14.36 5.04 L14.72 5.44 L15.25 5.4 L16.02 5.03 L17.0 4.52 L18.06 4.11 L19.02 4.0 L19.71 4.29 L20.0 4.98 L19.89 5.94 L19.48 7.0 L18.97 7.97 L18.6 8.75 L18.56 9.28 L18.96 9.64 L19.78 9.92 L20.83 10.24 L21.86 10.7 L22.62 11.3 Z"/>' +
+    '<path fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6.26 12.82L9.54 16.1L17.74 7.9"/></svg>';
+  var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12 2l2.9 6.6 7.1.7-5.5 4.8 1.7 6.9L12 17.3l-6.2 3.7 1.7-6.9L2 9.3l7.1-.7L12 2z"/></svg>';
+
   function tarjetaHtml(d) {
-    var badge = d.plan && d.plan !== "Gratis" ? '<span class="badge badge-gold">' + escHtml(d.plan) + "</span>" : "";
-    var verificado = d.verificado ? '<span class="check">✔</span>' : "";
     var fotos = d.foto_url ? [d.foto_url].concat(d.fotos_extra || []) : [];
     var chevrones = "";
     var foto;
@@ -554,17 +558,29 @@ document.addEventListener("click", function (e) {
     } else {
       foto = '<span class="icon-tile"><span class="card-icon">' + d.icono + "</span></span>";
     }
+    var cuerpo;
+    if (d.es_demo) {
+      cuerpo =
+        '<a class="card-title" href="' + BASE_PATH + '/publicar">¡Publícate hoy y empieza a vender más!</a>' +
+        '<div class="card-meta eyebrow-star">' + STAR_SVG + '<span>Encuentra tu categoría</span></div>' +
+        '<p class="card-desc">Miles de personas en Talca buscan y contactan negocios cada semana. Publícate hoy.</p>' +
+        '<a class="btn btn-primary btn-block" href="' + BASE_PATH + '/publicar">Publicar mi negocio →</a>';
+    } else {
+      var verificado = d.verificado ? '<span class="check" title="Negocio verificado">' + VERIFICADO_SVG + "</span>" : "";
+      cuerpo =
+        '<a class="card-title" href="' + BASE_PATH + '/avisos/' + d.id + '">' + escHtml(d.titulo) + "</a>" +
+        '<div class="card-meta"><span>' + escHtml(d.negocio) + " " + verificado + "</span>" +
+        '<span class="dot">·</span><span>' + escHtml(d.comuna) + "</span></div>" +
+        '<div class="card-cat mono">' + d.icono + " " + escHtml(d.categoria) + "</div>";
+    }
+    var fotoHref = d.es_demo ? BASE_PATH + "/publicar" : BASE_PATH + "/avisos/" + d.id;
+    var fotoBadge = !d.es_demo && d.plan && d.plan !== "Gratis" ? '<span class="badge badge-gold">' + escHtml(d.plan) + "</span>" : "";
     return (
       '<article class="card" style="--card-accent:' + escHtml(d.color) + '">' +
-      '<a class="card-photo' + (d.foto_url ? " has-foto" : "") + '" href="' + BASE_PATH + '/avisos/' + d.id + '">' + foto + badge + "</a>" +
+      '<a class="card-photo' + (d.foto_url ? " has-foto" : "") + '" href="' + fotoHref + '">' + foto + fotoBadge + "</a>" +
       chevrones +
       '<button class="fav-btn is-fav" type="button" data-fav-id="' + d.id + '" title="Quitar de favoritos">★</button>' +
-      '<div class="card-body">' +
-      '<a class="card-title" href="' + BASE_PATH + '/avisos/' + d.id + '">' + escHtml(d.titulo) + "</a>" +
-      '<div class="card-meta"><span>' + escHtml(d.negocio) + " " + verificado + "</span>" +
-      '<span class="dot">·</span><span>' + escHtml(d.comuna) + "</span></div>" +
-      '<div class="card-cat mono">' + d.icono + " " + escHtml(d.categoria) + "</div>" +
-      "</div></article>"
+      '<div class="card-body">' + cuerpo + "</div></article>"
     );
   }
 
