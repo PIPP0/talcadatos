@@ -298,7 +298,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     {f'''<a class="card-title" href="/publicar">¡Publícate hoy y empieza a vender más!</a>
     <div class="card-meta eyebrow-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.6 7.1.7-5.5 4.8 1.7 6.9L12 17.3l-6.2 3.7 1.7-6.9L2 9.3l7.1-.7L12 2z"/></svg><span>Encuentra tu categoría</span></div>
     <p class="card-desc">Miles de personas en Talca buscan y contactan negocios cada semana. Publícate hoy.</p>
-    <a class="btn btn-whatsapp btn-block" href="/publicar">
+    <a class="btn btn-primary btn-block" href="/publicar">
       Publicar mi negocio →
     </a>''' if aviso.get('es_demo') else f'''<a class="card-title" href="/avisos/{aviso['id']}">{esc(aviso['titulo'])}</a>
     <div class="card-meta">
