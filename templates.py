@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260901-12">
+<link rel="stylesheet" href="/static/styles.css?v=20260901-13">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -295,8 +295,8 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
   </a>{chevrones_html}
   <button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
   <div class="card-body">
-    {f'''<a class="card-title" href="/publicar">Publica tu negocio y hazlo crecer</a>
-    <div class="card-meta"><span>Encuentra tu categoría</span></div>
+    {f'''<a class="card-title" href="/publicar">Publica hoy y empieza a vender más</a>
+    <div class="card-meta eyebrow-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.6 7.1.7-5.5 4.8 1.7 6.9L12 17.3l-6.2 3.7 1.7-6.9L2 9.3l7.1-.7L12 2z"/></svg><span>Encuentra tu categoría</span></div>
     <p class="card-desc">Miles de personas en Talca buscan y contactan negocios cada semana. Publícate hoy.</p>
     <a class="btn btn-whatsapp btn-block" href="/publicar">
       Publicar mi negocio →

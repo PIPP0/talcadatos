@@ -895,10 +895,10 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
         return not_found(handler)
 
     if aviso.get("es_demo"):
-        titulo_demo = "Publica tu negocio y hazlo crecer"
+        titulo_demo = "Publica hoy y empieza a vender más"
         body_demo = f"""
 <section class="need-cta" data-reveal>
-  <div><span class="eyebrow">Encuentra tu categoría</span><h2>{titulo_demo}</h2>
+  <div><span class="eyebrow eyebrow-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.6 7.1.7-5.5 4.8 1.7 6.9L12 17.3l-6.2 3.7 1.7-6.9L2 9.3l7.1-.7L12 2z"/></svg>Encuentra tu categoría</span><h2>{titulo_demo}</h2>
   <p>Miles de personas en Talca buscan y contactan negocios cada semana. Publícate hoy.</p></div>
   <a class="btn btn-primary btn-lg" href="/publicar">Publicar mi negocio →</a>
 </section>

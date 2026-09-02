@@ -170,6 +170,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .section-head h2{margin:0;}
 .section-head a{font-size:.92rem; font-weight:600; white-space:nowrap;}
 .eyebrow{display:block; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); margin-bottom:6px;}
+.eyebrow-star{display:inline-flex; align-items:center; gap:6px;}
+.eyebrow-star svg{width:14px; height:14px; flex:none; animation:star-twinkle 2.2s ease-in-out infinite;}
+@keyframes star-twinkle{0%,100%{transform:scale(1) rotate(0deg);} 50%{transform:scale(1.18) rotate(10deg);}}
 .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(290px,1fr)); gap:24px;}
 
 /* ---- vitrina de destacados: banda propia, más presencia ---- */
