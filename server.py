@@ -1322,7 +1322,8 @@ def api_buscar(handler, body):
     q = (data.get("q") or "").strip()
     if len(q) < 2:
         return render_json(handler, {"resultados": []})
-    avisos = search.buscar_avisos(db.get_avisos(estado="activo"), db.get_sinonimos_por_categoria(), q, limite=6)
+    reales = [a for a in db.get_avisos(estado="activo") if not a.get("es_demo")]
+    avisos = search.buscar_avisos(reales, db.get_sinonimos_por_categoria(), q, limite=6)
     if not avisos:
         db.registrar_evento("busqueda_sin_resultado", termino_busqueda=q)
     resultados = [{
