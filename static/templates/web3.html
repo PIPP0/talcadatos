@@ -40,9 +40,8 @@
   .link-quiet:hover{border-color:var(--accent)}
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text)}
 
-  .hero{padding:24px 0 32px}
-  .hero-panel{background:linear-gradient(155deg,var(--bg-alt),var(--bg) 70%);border-radius:32px;padding:36px 32px;text-align:center;position:relative;overflow:hidden}
-  .hero-panel::before{content:"";position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,var(--accent-soft),transparent 70%)}
+  .hero{padding:24px 0 32px;background-color:var(--bg-alt);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat}
+  .hero-panel{padding:36px 32px;text-align:center;position:relative}
   .hero-panel h1{font-size:clamp(1.8rem,4.2vw,2.8rem);max-width:760px;margin:0 auto 14px;position:relative}
   .hero-panel p{font-size:1.02rem;color:var(--text-muted);max-width:540px;margin:0 auto 18px;position:relative}
   .hero .cta-row{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;position:relative}
@@ -112,7 +111,7 @@
   @media(max-width:680px){
     section{padding:60px 0}
     .hero{padding:20px 0 28px}
-    .hero-panel{padding:28px 20px;border-radius:24px}
+    .hero-panel{padding:28px 20px}
     .s-row{grid-template-columns:40px 1fr;gap:16px}
     .quote-card{padding:36px 26px}
   }
