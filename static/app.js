@@ -632,7 +632,7 @@ document.addEventListener("click", function (e) {
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          var items = data.resultados || [];
+          var items = (data.resultados || []).filter(function (d) { return !d.es_demo; });
           var vigentes = {};
           items.forEach(function (d) { vigentes[d.id] = true; });
           guardar(vigentes);
