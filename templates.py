@@ -84,7 +84,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
 {mobile_nav}
-<script src="/static/app.js?v=20260901-3"></script>
+<script src="/static/app.js?v=20260901-4"></script>
 </body>
 </html>"""
 
@@ -293,7 +293,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     {foto_html}
     {badge_html}
   </a>{chevrones_html}
-  <button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>
+  {"" if aviso.get('es_demo') else f'<button class="fav-btn" type="button" {fav_attrs} title="Guardar en favoritos" aria-label="Guardar en favoritos">☆</button>'}
   <div class="card-body">
     {f'''<a class="card-title" href="/publicar">¡Publícate hoy y empieza a vender más!</a>
     <div class="card-meta eyebrow-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.9 6.6 7.1.7-5.5 4.8 1.7 6.9L12 17.3l-6.2 3.7 1.7-6.9L2 9.3l7.1-.7L12 2z"/></svg><span>Encuentra tu categoría</span></div>

@@ -575,11 +575,12 @@ document.addEventListener("click", function (e) {
     }
     var fotoHref = d.es_demo ? BASE_PATH + "/publicar" : BASE_PATH + "/avisos/" + d.id;
     var fotoBadge = !d.es_demo && d.plan && d.plan !== "Gratis" ? '<span class="badge badge-gold">' + escHtml(d.plan) + "</span>" : "";
+    var favBtn = d.es_demo ? "" :
+      '<button class="fav-btn is-fav" type="button" data-fav-id="' + d.id + '" title="Quitar de favoritos">★</button>';
     return (
       '<article class="card" style="--card-accent:' + escHtml(d.color) + '">' +
       '<a class="card-photo' + (d.foto_url ? " has-foto" : "") + '" href="' + fotoHref + '">' + foto + fotoBadge + "</a>" +
-      chevrones +
-      '<button class="fav-btn is-fav" type="button" data-fav-id="' + d.id + '" title="Quitar de favoritos">★</button>' +
+      chevrones + favBtn +
       '<div class="card-body">' + cuerpo + "</div></article>"
     );
   }
