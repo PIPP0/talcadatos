@@ -626,7 +626,7 @@ def _quieromiweb_intro_body(errores=None, form=None):
       <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
       <ul class="plan-beneficios">
         <li>✓ Cubre el hosting: sin este pago tu sitio no se puede subir a un dominio</li>
-        <li>✓ Hasta 2 cambios de contenido o imágenes al mes</li>
+        <li>✓ Hasta 2 cambios de texto o imágenes al mes</li>
         <li>✓ Cancelas cuando quieras</li>
       </ul>
     </div>
@@ -725,7 +725,7 @@ def _quieromiweb_pagar_body(solicitud, token, pago=None):
   <h3>Hosting y soporte mensual</h3>
   <div class="plan-precio"><span class="precio-actual">${money(WEB_PRECIO_SOPORTE)}/mes</span></div>
   <p class="hint">Cubre el hosting: sin este pago tu sitio no se puede subir a un dominio. Incluye hasta
-    2 cambios de contenido o imágenes al mes.</p>
+    2 cambios de texto o imágenes al mes.</p>
   {nota}
   <form method="post" action="/quieromiweb/suscribir-soporte">
     <input type="hidden" name="token" value="{t.esc(token)}">
@@ -2503,7 +2503,7 @@ def admin_quieromiweb(handler):
     body = f"""
 <div class="listado-head"><h1>Quiero mi sitio web</h1></div>
 <p class="lede">Solicitudes recibidas en /quieromiweb. "Creación" es el pago único; "Soporte" es la
-  suscripción mensual (hosting + 2 cambios al mes).</p>
+  suscripción mensual (hosting + 2 cambios de texto o imágenes al mes).</p>
 <div class="tbl-wrap" data-reveal><table>
   <tr><th>Fecha</th><th>Nombre</th><th>Negocio</th><th>WhatsApp</th><th>Correo</th><th>Creación</th><th>Soporte</th></tr>
   {filas or "<tr><td colspan='7' class='empty-state'>Sin solicitudes todavía.</td></tr>"}
