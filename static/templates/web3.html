@@ -42,8 +42,15 @@
   .link-quiet:hover{border-color:var(--accent)}
   [data-menu-toggle]{display:none;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text)}
 
-  .hero{padding:24px 0 32px;background-color:var(--bg-alt);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-repeat:repeat}
-  .hero-panel{padding:36px 32px;text-align:center;position:relative}
+  .hero{padding:24px 0 32px;position:relative;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;z-index:0}
+  .hero-bg-layer{position:absolute;inset:0;opacity:0;background-repeat:repeat;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");animation:hero-crossfade 18s ease-in-out infinite}
+  .hero-bg-layer.l1{background-color:var(--bg-alt);animation-delay:0s}
+  .hero-bg-layer.l2{background-color:#f5efe9;animation-delay:-6s}
+  .hero-bg-layer.l3{background-color:var(--accent-soft);animation-delay:-12s}
+  @keyframes hero-crossfade{0%,28%{opacity:1}38%,88%{opacity:0}100%{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.hero-bg-layer{animation:none}.hero-bg-layer.l1{opacity:1}}
+  .hero-panel{padding:36px 32px;text-align:center;position:relative;z-index:1}
   .hero-panel h1{font-size:clamp(1.8rem,4.2vw,2.8rem);max-width:760px;margin:0 auto 14px;position:relative}
   .hero-panel p{font-size:1.02rem;color:var(--text-muted);max-width:540px;margin:0 auto 18px;position:relative}
   .hero .cta-row{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;position:relative}
@@ -137,6 +144,11 @@
 </header>
 
 <section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true">
+    <span class="hero-bg-layer l1"></span>
+    <span class="hero-bg-layer l2"></span>
+    <span class="hero-bg-layer l3"></span>
+  </div>
   <div class="container">
     <div class="hero-panel">
       <span class="eyebrow ph"><em>[Tu rubro — ej. Consultoría, Diseño, Clases particulares]</em></span>
