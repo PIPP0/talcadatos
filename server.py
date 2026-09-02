@@ -899,8 +899,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
         body_demo = f"""
 <section class="need-cta" data-reveal>
   <div><h2>{titulo_demo}</h2>
-  <p>Miles de personas en Talca buscan negocios como el tuyo. Publica gratis y empieza a recibir
-     contactos por WhatsApp.</p></div>
+  <p>Miles de personas en Talca buscan y contactan negocios cada semana. Publícate hoy.</p></div>
   <a class="btn btn-primary btn-lg" href="/publicar">Publicar mi negocio →</a>
 </section>
 """
