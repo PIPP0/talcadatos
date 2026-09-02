@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260901-7">
+<link rel="stylesheet" href="/static/styles.css?v=20260901-8">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -261,7 +261,11 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
         badge_html = plan_badge(aviso["plan_nombre"])
     elif badge_mode == "nuevo" and es_nuevo(aviso):
         badge_html = badge("Nuevo", "ok")
-    verificado_html = '<span class="check" title="Negocio verificado">✔</span>' if aviso["verificado"] else ""
+    verificado_html = ('<span class="check" title="Negocio verificado">'
+        '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
+        '<path fill="#22c55e" d="M22.7 12.0 L22.18 12.67 L20.92 13.17 L19.65 13.52 L19.05 13.89 L19.38 14.51 L20.31 15.44 L21.15 16.51 L21.27 17.35 L20.48 17.67 L19.14 17.48 L17.86 17.14 L17.16 17.16 L17.14 17.86 L17.48 19.14 L17.67 20.48 L17.35 21.27 L16.51 21.15 L15.44 20.31 L14.51 19.38 L13.89 19.05 L13.52 19.65 L13.17 20.92 L12.67 22.18 L12.0 22.7 L11.33 22.18 L10.83 20.92 L10.48 19.65 L10.11 19.05 L9.49 19.38 L8.56 20.31 L7.49 21.15 L6.65 21.27 L6.33 20.48 L6.52 19.14 L6.86 17.86 L6.84 17.16 L6.14 17.14 L4.86 17.48 L3.52 17.67 L2.73 17.35 L2.85 16.51 L3.69 15.44 L4.62 14.51 L4.95 13.89 L4.35 13.52 L3.08 13.17 L1.82 12.67 L1.3 12.0 L1.82 11.33 L3.08 10.83 L4.35 10.48 L4.95 10.11 L4.62 9.49 L3.69 8.56 L2.85 7.49 L2.73 6.65 L3.52 6.33 L4.86 6.52 L6.14 6.86 L6.84 6.84 L6.86 6.14 L6.52 4.86 L6.33 3.52 L6.65 2.73 L7.49 2.85 L8.56 3.69 L9.49 4.62 L10.11 4.95 L10.48 4.35 L10.83 3.08 L11.33 1.82 L12.0 1.3 L12.67 1.82 L13.17 3.08 L13.52 4.35 L13.89 4.95 L14.51 4.62 L15.44 3.69 L16.51 2.85 L17.35 2.73 L17.67 3.52 L17.48 4.86 L17.14 6.14 L17.16 6.84 L17.86 6.86 L19.14 6.52 L20.48 6.33 L21.27 6.65 L21.15 7.49 L20.31 8.56 L19.38 9.49 L19.05 10.11 L19.65 10.48 L20.92 10.83 L22.18 11.33 Z"/>'
+        '<path fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6.26 12.82L9.54 16.1L17.74 7.9"/>'
+        '</svg></span>') if aviso["verificado"] else ""
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
     fav_attrs = f'data-fav-id="{aviso["id"]}"'
     foto_url = aviso.get("foto_url")
