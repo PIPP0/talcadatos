@@ -305,13 +305,40 @@ def require_role(handler, roles):
 
 # --------------------------------------------------------------- publico
 
-def home(handler):
+PUBLICADOS_POR_PAGINA_HOME = 12
+
+
+def home(handler, query=""):
     sitio = db.get_contenido_sitio()
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
     destacados_ids = {a["id"] for a in destacados}
     recientes_todos = sorted(activos, key=lambda a: a.get("publicado_en") or "", reverse=True)
-    recientes = [a for a in recientes_todos if a["id"] not in destacados_ids][:8]
+    recientes = [a for a in recientes_todos if a["id"] not in destacados_ids]
+
+    try:
+        pagina_pub = max(1, int(qs(query).get("pagina_pub", "1")))
+    except ValueError:
+        pagina_pub = 1
+    total_pub_paginas = max(1, math.ceil(len(recientes) / PUBLICADOS_POR_PAGINA_HOME))
+    pagina_pub = min(pagina_pub, total_pub_paginas)
+    inicio_pub = (pagina_pub - 1) * PUBLICADOS_POR_PAGINA_HOME
+    recientes_pagina = recientes[inicio_pub:inicio_pub + PUBLICADOS_POR_PAGINA_HOME]
+
+    publicados_paginacion_html = ""
+    if total_pub_paginas > 1:
+        prev_pub = (f'<a class="btn btn-ghost btn-sm" href="/?pagina_pub={pagina_pub - 1}#publicados">‹ Anterior</a>'
+                    if pagina_pub > 1 else '<span class="btn btn-ghost btn-sm is-disabled">‹ Anterior</span>')
+        next_pub = (f'<a class="btn btn-ghost btn-sm" href="/?pagina_pub={pagina_pub + 1}#publicados">Siguiente ›</a>'
+                    if pagina_pub < total_pub_paginas else
+                    '<span class="btn btn-ghost btn-sm is-disabled">Siguiente ›</span>')
+        publicados_paginacion_html = f"""
+<div class="paginacion">
+  {prev_pub}
+  <span class="paginacion-info">Página {pagina_pub} de {total_pub_paginas}</span>
+  {next_pub}
+</div>"""
+
     tendencias = db.get_terminos_mas_buscados(4)
     if not tendencias:
         tendencias = [
@@ -381,12 +408,13 @@ def home(handler):
   </div>
 </section>
 
-<section class="section" data-reveal>
+<section class="section" id="publicados" data-reveal>
   <div class="section-head">
     <div><span class="eyebrow">Avisos en Talcadatos</span><h2>Publicados</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
-  {t.cards_grid(recientes, badge_mode="nuevo")}
+  {t.cards_grid(recientes_pagina, badge_mode="nuevo")}
+  {publicados_paginacion_html}
 </section>
 
 <section class="section local-story" data-reveal>
@@ -3319,7 +3347,7 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             if path == "/":
-                return home(self)
+                return home(self, query)
             if path == "/explorar":
                 return redirect(self, "/avisos")
             if path == "/avisos":
