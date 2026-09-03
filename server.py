@@ -413,8 +413,10 @@ def home(handler, query=""):
     <div><span class="eyebrow">Avisos en Talcadatos</span><h2>Publicados</h2></div>
     <a href="/avisos">Ver todos →</a>
   </div>
+  <div id="publicados-resultados">
   {t.cards_grid(recientes_pagina, badge_mode="nuevo")}
   {publicados_paginacion_html}
+  </div>
 </section>
 
 <section class="section local-story" data-reveal>

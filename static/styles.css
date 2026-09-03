@@ -480,6 +480,8 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .paginacion{display:flex; align-items:center; justify-content:center; gap:14px; margin:28px 0 16px;}
 .paginacion-info{font-family:"IBM Plex Mono"; font-size:.78rem; color:var(--ink-faint);}
 .paginacion .is-disabled{opacity:.4; pointer-events:none;}
+[id$="-resultados"]{transition:opacity .18s ease;}
+.paginacion-cargando{opacity:.35;}
 table{border-collapse:collapse; width:100%; min-width:600px;}
 th,td{text-align:left; padding:10px 14px; font-size:.87rem; border-bottom:1px solid var(--line); vertical-align:middle;}
 th{font-family:"IBM Plex Mono"; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); background:var(--paper);}

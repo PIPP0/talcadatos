@@ -77,6 +77,36 @@ document.addEventListener("click", function (e) {
   });
 })();
 
+/* Paginacion sin recarga completa: al hacer clic en Anterior/Siguiente se
+   trae solo el HTML nuevo y se reemplaza el contenedor con un fundido, en
+   vez del salto brusco (recarga + salto al ancla) que se sentia antes. Sirve
+   para cualquier bloque paginado que tenga id propio (hoy /avisos y
+   "Publicados" del home; sigue funcionando igual si se agregan mas a futuro). */
+document.addEventListener("click", function (e) {
+  var link = e.target.closest(".paginacion a");
+  if (!link) return;
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  var contenedor = link.closest("[id]");
+  if (!contenedor) return;
+  e.preventDefault();
+  var contenedorId = contenedor.id;
+  var url = link.href;
+  contenedor.classList.add("paginacion-cargando");
+  fetch(url)
+    .then(function (r) { return r.text(); })
+    .then(function (html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var nuevo = doc.getElementById(contenedorId);
+      if (!nuevo) { window.location.href = url; return; }
+      contenedor.innerHTML = nuevo.innerHTML;
+      contenedor.classList.remove("paginacion-cargando");
+      history.pushState({}, "", url);
+      iniciarCarousels();
+      if (window.actualizarFavoritosBotones) window.actualizarFavoritosBotones();
+    })
+    .catch(function () { window.location.href = url; });
+});
+
 /* Reemplaza atributos onchange/onclick/onsubmit inline, bloqueados por la
    Content-Security-Policy (script-src 'self' no permite inline handlers). */
 document.addEventListener("change", function (e) {
@@ -652,6 +682,9 @@ document.addEventListener("click", function (e) {
   }
 
   document.querySelectorAll(".fav-btn[data-fav-id]").forEach(actualizarBoton);
+  window.actualizarFavoritosBotones = function () {
+    document.querySelectorAll(".fav-btn[data-fav-id]").forEach(actualizarBoton);
+  };
 
   document.addEventListener("click", function (e) {
     var btn = e.target.closest(".fav-btn[data-fav-id]");
