@@ -477,7 +477,7 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .orden-info{display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;}
 .orden-titulo{font-weight:600; font-size:.9rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .orden-negocio{font-size:.78rem; color:var(--ink-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.paginacion{display:flex; align-items:center; justify-content:center; gap:14px; margin:-4px 0 16px;}
+.paginacion{display:flex; align-items:center; justify-content:center; gap:14px; margin:28px 0 16px;}
 .paginacion-info{font-family:"IBM Plex Mono"; font-size:.78rem; color:var(--ink-faint);}
 .paginacion .is-disabled{opacity:.4; pointer-events:none;}
 table{border-collapse:collapse; width:100%; min-width:600px;}
