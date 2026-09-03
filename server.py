@@ -16,6 +16,7 @@ import io
 import re
 import csv
 import json
+import math
 import secrets
 import datetime
 import threading
@@ -436,6 +437,9 @@ def home(handler):
                               og_image=f"{_origin(handler)}/og/default.png", site=sitio))
 
 
+AVISOS_POR_PAGINA_LISTADO = 24
+
+
 def listado(handler, query):
     sitio = db.get_contenido_sitio()
     params = qs(query)
@@ -443,6 +447,10 @@ def listado(handler, query):
     categoria_slug = params.get("categoria", "")
     comuna = params.get("comuna", "")
     orden = params.get("orden", "relevancia")
+    try:
+        pagina = max(1, int(params.get("pagina", "1")))
+    except ValueError:
+        pagina = 1
 
     categorias = db.get_categorias()
     todos_activos = db.get_avisos(estado="activo")
@@ -454,6 +462,12 @@ def listado(handler, query):
     else:
         avisos = db.filtrar_avisos(todos_activos, categoria_slug or None, comuna or None, orden)
         titulo_pagina = "Avisos en Talca"
+
+    total_avisos = len(avisos)
+    total_paginas = max(1, math.ceil(total_avisos / AVISOS_POR_PAGINA_LISTADO))
+    pagina = min(pagina, total_paginas)
+    inicio = (pagina - 1) * AVISOS_POR_PAGINA_LISTADO
+    avisos_pagina = avisos[inicio:inicio + AVISOS_POR_PAGINA_LISTADO]
 
     def opt(value, current, label):
         sel = " selected" if value == current else ""
@@ -467,6 +481,32 @@ def listado(handler, query):
         opt(v, orden, label) for v, label in
         [("relevancia", "Relevancia"), ("recientes", "Más recientes"), ("populares", "Más contactados")])
 
+    def pagina_href(n):
+        partes = []
+        if q:
+            partes.append(f"q={quote(q)}")
+        if categoria_slug:
+            partes.append(f"categoria={quote(categoria_slug)}")
+        if comuna:
+            partes.append(f"comuna={quote(comuna)}")
+        if orden != "relevancia":
+            partes.append(f"orden={quote(orden)}")
+        partes.append(f"pagina={n}")
+        return "/avisos?" + "&".join(partes)
+
+    paginacion_html = ""
+    if total_paginas > 1:
+        prev_html = (f'<a class="btn btn-ghost btn-sm" href="{pagina_href(pagina - 1)}">‹ Anterior</a>'
+                     if pagina > 1 else '<span class="btn btn-ghost btn-sm is-disabled">‹ Anterior</span>')
+        next_html = (f'<a class="btn btn-ghost btn-sm" href="{pagina_href(pagina + 1)}">Siguiente ›</a>'
+                     if pagina < total_paginas else '<span class="btn btn-ghost btn-sm is-disabled">Siguiente ›</span>')
+        paginacion_html = f"""
+<div class="paginacion">
+  {prev_html}
+  <span class="paginacion-info">Página {pagina} de {total_paginas}</span>
+  {next_html}
+</div>"""
+
     if q and not avisos:
         resultados_html = f"""
 <div class="empty-state alerta-box">
@@ -478,7 +518,7 @@ def listado(handler, query):
   </form>
 </div>"""
     else:
-        resultados_html = t.cards_grid(avisos, termino_busqueda=q or None, badge_mode="plan")
+        resultados_html = t.cards_grid(avisos_pagina, termino_busqueda=q or None, badge_mode="plan") + paginacion_html
 
     body = f"""
 <div class="listado-head">
