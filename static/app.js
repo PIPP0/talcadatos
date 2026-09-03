@@ -35,7 +35,47 @@ document.addEventListener("click", function (e) {
   if (!track) return;
   var paso = Math.round(track.clientWidth * 0.85) * (arrow.classList.contains("carousel-prev") ? -1 : 1);
   track.scrollBy({ left: paso, behavior: "smooth" });
+  if (window.pausarAutoCarousel) window.pausarAutoCarousel(track);
 });
+
+/* Avanza sola cada 4.5s mostrando el siguiente grupo de tarjetas (mismo paso
+   que las flechas), y al llegar al final vuelve al principio en vez de
+   quedarse pegada. Se detiene si el usuario interactua (flechas o scroll
+   manual) y respeta a quien prefiere menos movimiento en pantalla. */
+(function initAutoCarousel() {
+  var prefiereMenosMovimiento = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefiereMenosMovimiento) return;
+
+  var pausas = new WeakMap();
+
+  window.pausarAutoCarousel = function (track) {
+    var estado = pausas.get(track);
+    if (!estado) return;
+    clearTimeout(estado.reanudarTimer);
+    estado.pausado = true;
+    estado.reanudarTimer = setTimeout(function () { estado.pausado = false; }, 6000);
+  };
+
+  document.querySelectorAll(".carousel-track").forEach(function (track) {
+    var estado = { pausado: false, reanudarTimer: null };
+    pausas.set(track, estado);
+
+    track.addEventListener("mouseenter", function () { estado.pausado = true; });
+    track.addEventListener("mouseleave", function () { estado.pausado = false; });
+    track.addEventListener("touchstart", function () { pausarAutoCarousel(track); }, { passive: true });
+
+    setInterval(function () {
+      if (estado.pausado) return;
+      var alFinal = track.scrollLeft + track.clientWidth >= track.scrollWidth - 10;
+      if (alFinal) {
+        track.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        track.scrollBy({ left: Math.round(track.clientWidth * 0.85), behavior: "smooth" });
+      }
+    }, 4500);
+  });
+})();
 
 /* Reemplaza atributos onchange/onclick/onsubmit inline, bloqueados por la
    Content-Security-Policy (script-src 'self' no permite inline handlers). */
