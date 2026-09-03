@@ -38,7 +38,7 @@ document.addEventListener("click", function (e) {
   if (window.pausarAutoCarousel) window.pausarAutoCarousel(track);
 });
 
-/* Avanza sola cada 4.5s mostrando el siguiente grupo de tarjetas (mismo paso
+/* Avanza sola cada 6s mostrando el siguiente grupo de tarjetas (mismo paso
    que las flechas), y al llegar al final vuelve al principio en vez de
    quedarse pegada. Se detiene si el usuario interactua (flechas o scroll
    manual) y respeta a quien prefiere menos movimiento en pantalla. */
@@ -73,7 +73,7 @@ document.addEventListener("click", function (e) {
       } else {
         track.scrollBy({ left: Math.round(track.clientWidth * 0.85), behavior: "smooth" });
       }
-    }, 4500);
+    }, 6000);
   });
 })();
 
