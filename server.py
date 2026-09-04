@@ -1847,14 +1847,18 @@ def admin_aviso_cc_submit(handler, aviso_id, form):
 
 def admin_orden(handler):
     avisos = db.get_avisos(estado="activo", orden="destacados")
+    destacados = [a for a in avisos if a["plan_prioridad"] > 0][:6]
+    destacados_ids = {a["id"] for a in destacados}
+
     filas = "".join(f"""
-<li class="orden-fila" data-orden-id="{a['id']}" data-orden-destacado="{'1' if a['plan_nombre'] in ('Destacado', 'Premium') else '0'}">
+<li class="orden-fila{' orden-fila-carrusel' if a['id'] in destacados_ids else ''}" data-orden-id="{a['id']}" data-orden-destacado="{'1' if a['plan_nombre'] in ('Destacado', 'Premium') else '0'}">
   <span class="orden-handle" aria-hidden="true">⠿</span>
   <span class="orden-foto">{f'<img src="{t.esc(a["foto_url"])}" alt="">' if a.get('foto_url') else f'<span class="orden-icono">{a["icono"]}</span>'}</span>
   <span class="orden-info">
     <span class="orden-titulo">{t.esc(a['titulo'])}</span>
     <span class="orden-negocio">{t.esc(a['negocio_nombre'])} · {t.esc(a['comuna'])}</span>
   </span>
+  {'<span class="orden-carrusel-tag">🎠 Carrusel</span>' if a['id'] in destacados_ids else ''}
   {t.plan_cc(a['plan_nombre'])}
 </li>""" for a in avisos)
     body = f"""
@@ -1868,7 +1872,9 @@ def admin_orden(handler):
   </div>
 </div>
 <p class="lede">Arrastra los avisos para cambiar el orden en que aparecen en el sitio (carrusel de destacados y
-  listado de avisos). Se guarda solo cuando sueltas.</p>
+  listado de avisos). Se guarda solo cuando sueltas. Los avisos resaltados en dorado con la etiqueta
+  "🎠 Va al carrusel" son los que van al carrusel de Destacados (los primeros {len(destacados)} avisos con plan
+  Destacado o Premium, sin importar dónde estén en esta lista) — el resto va al listado normal de avisos.</p>
 <ul class="orden-lista" id="orden-lista" data-orden-guardar-url="/admin/orden/guardar">
   {filas or "<p class='empty-state'>No hay avisos activos todavía.</p>"}
 </ul>

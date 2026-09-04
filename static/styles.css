@@ -473,6 +473,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
   transition:box-shadow .15s ease, background .15s ease;}
 .orden-fila.orden-arrastrando{box-shadow:0 10px 24px -8px rgba(0,0,0,.25); background:var(--paper); z-index:5; position:relative;}
 .orden-fila.orden-oculta{display:none;}
+.orden-fila.orden-fila-carrusel{border-color:#E5B84B; background:#FBF3DE;}
+.orden-carrusel-tag{font-size:.72rem; font-weight:600; color:#8A6512; background:#F3DFA0; border-radius:980px;
+  padding:4px 10px; white-space:nowrap; flex-shrink:0;}
 .orden-handle{cursor:grab; color:var(--ink-faint); font-size:1.2rem; line-height:1; padding:4px; touch-action:none;}
 .orden-fila.orden-arrastrando .orden-handle{cursor:grabbing;}
 .orden-foto{width:48px; height:48px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--paper);
@@ -482,6 +485,11 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .orden-info{display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;}
 .orden-titulo{font-weight:600; font-size:.9rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .orden-negocio{font-size:.78rem; color:var(--ink-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+@media (max-width:520px){
+  .orden-fila{flex-wrap:wrap;}
+  .orden-info{flex-basis:100%; order:1;}
+  .orden-carrusel-tag{order:2;}
+}
 .paginacion{display:flex; align-items:center; justify-content:center; gap:14px; margin:28px 0 16px;}
 .paginacion-info{font-family:"IBM Plex Mono"; font-size:.78rem; color:var(--ink-faint);}
 .paginacion .is-disabled{opacity:.4; pointer-events:none;}
