@@ -312,7 +312,7 @@ def home(handler, query=""):
     sitio = db.get_contenido_sitio()
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = activos[:6]
-    recientes = activos[6:]
+    recientes = sorted(activos[6:], key=lambda a: a["plan_prioridad"], reverse=True)
 
     try:
         pagina_pub = max(1, int(qs(query).get("pagina_pub", "1")))
