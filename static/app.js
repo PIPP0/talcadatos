@@ -453,7 +453,7 @@ function initReveals() {
       entry.target.querySelectorAll(".count-up").forEach(animarConteo);
       observer.unobserve(entry.target);
     });
-  }, { threshold: 0.12 });
+  }, { threshold: 0, rootMargin: "0px 0px 300px 0px" });
   blocks.forEach(function (block) {
     block.classList.add("reveal");
     observer.observe(block);
