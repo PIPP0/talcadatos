@@ -313,8 +313,7 @@ def home(handler, query=""):
     activos = db.get_avisos(estado="activo", orden="destacados")
     destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
     destacados_ids = {a["id"] for a in destacados}
-    recientes_todos = sorted(activos, key=lambda a: a.get("publicado_en") or "", reverse=True)
-    recientes = [a for a in recientes_todos if a["id"] not in destacados_ids]
+    recientes = [a for a in activos if a["id"] not in destacados_ids]
 
     try:
         pagina_pub = max(1, int(qs(query).get("pagina_pub", "1")))
