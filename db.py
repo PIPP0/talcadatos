@@ -565,6 +565,9 @@ def cambiar_estado_aviso(aviso_id, estado):
     datos = {"estado": estado}
     if estado == "activo":
         datos["publicado_en"] = now()
+        todos = _all("avisos")
+        ordenes = [a.get("orden_manual") for a in todos.values() if a.get("orden_manual") is not None]
+        datos["orden_manual"] = (min(ordenes) - 1) if ordenes else 0
     ref.update(datos)
 
 
