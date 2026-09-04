@@ -255,6 +255,23 @@ def whatsapp_url(whatsapp, negocio_nombre, titulo):
     return f"https://wa.me/{numero}?text={quote(mensaje)}"
 
 
+INSTAGRAM_ICON_SVG = (
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<rect x="3" y="3" width="18" height="18" rx="5"/>'
+    '<circle cx="12" cy="12" r="4"/>'
+    '<circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/>'
+    '</svg>'
+)
+
+
+def instagram_link_html(url):
+    if not url:
+        return ""
+    return (f'<a class="btn btn-icon btn-ghost" href="{esc(url)}" target="_blank" rel="noopener nofollow" '
+            f'title="Instagram" aria-label="Instagram">{INSTAGRAM_ICON_SVG}</a>')
+
+
 def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     badge_html = ""
     if badge_mode == "plan" and aviso["plan_nombre"] in ("Destacado", "Premium"):

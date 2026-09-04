@@ -1056,6 +1056,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" data-share-btn>Compartir aviso</button>
       {f'<a class="btn btn-ghost" href="{mapa_url}" target="_blank" rel="noopener">📍 Ver en el mapa</a>' if mapa_url else ''}
+      {t.instagram_link_html(aviso.get('instagram'))}
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
         <form method="post" action="/avisos/{aviso_id}/reportar" class="form report-form">
@@ -1145,6 +1146,9 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
     <label>Página web (opcional)
       <input name="web" type="url" maxlength="200" placeholder="https://tunegocio.cl" value="{v('web')}">
     </label>
+    <label>Instagram (opcional)
+      <input name="instagram" maxlength="200" placeholder="@tunegocio" value="{v('instagram')}">
+    </label>
     <label class="check-label">
       <input type="checkbox" name="acepto_terminos" required{' checked' if form.get('acepto_terminos') else ''}>
       <span>Declaro que la información de mi negocio es real y acepto los
@@ -1233,6 +1237,19 @@ def publicar_form(handler, ok=False, sub_token=None, form=None, errores=None):
     render(handler, t.layout("Publicar mi negocio", _publicar_body(categorias, sitio, form, errores), active="publicar", site=sitio))
 
 
+def _normalizar_instagram(valor):
+    valor = (valor or "").strip()
+    if not valor:
+        return None
+    if re.match(r"^https?://", valor, re.I):
+        return valor[:200]
+    valor = valor.lstrip("@")
+    valor = valor.split("instagram.com/")[-1].strip("/ ")
+    if not valor:
+        return None
+    return f"https://www.instagram.com/{valor}/"[:200]
+
+
 def _validar_publicar(form, categoria_ids):
     errores = []
     if not form.get("nombre_negocio", "").strip():
@@ -1299,10 +1316,12 @@ def publicar_submit(handler, form, foto=None):
     web = form.get("web", "").strip()[:200]
     if web and not re.match(r"^https?://", web, re.I):
         web = f"https://{web}"
+    instagram = _normalizar_instagram(form.get("instagram", ""))
     aviso_id = db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
-        foto_url=foto_url, direccion=form.get("direccion", "").strip()[:150] or None, web=web or None)
+        foto_url=foto_url, direccion=form.get("direccion", "").strip()[:150] or None, web=web or None,
+        instagram=instagram)
     if sub_token:
         db.actualizar_suscripcion_pendiente(sub_token, negocio_id=negocio_id)
     negocio = db.get_negocio(negocio_id)
@@ -1932,6 +1951,7 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     <label>Horario <input name="horario" value="{t.esc(aviso['horario'] or '')}"></label>
     <label>Dirección <input name="direccion" maxlength="150" value="{t.esc(aviso.get('direccion') or '')}"></label>
     <label>Página web <input name="web" type="url" maxlength="200" value="{t.esc(aviso.get('web') or '')}"></label>
+    <label>Instagram <input name="instagram" maxlength="200" placeholder="@tunegocio" value="{t.esc(aviso.get('instagram') or '')}"></label>
     <label>Estado <select name="estado">{estado_options}</select></label>
     <label class="campo-imagen">Foto del aviso
       {foto_preview}
@@ -1986,10 +2006,11 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     web = form.get("web", "").strip()[:200]
     if web and not re.match(r"^https?://", web, re.I):
         web = f"https://{web}"
+    instagram = _normalizar_instagram(form.get("instagram", ""))
     ok = db.editar_aviso(
         aviso_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         form.get("categoria_id"), form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url,
-        direccion=form.get("direccion", "").strip()[:150] or None, web=web or None)
+        direccion=form.get("direccion", "").strip()[:150] or None, web=web or None, instagram=instagram)
     if not ok:
         if ajax:
             return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
