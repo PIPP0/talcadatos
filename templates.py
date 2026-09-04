@@ -84,7 +84,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
 {mobile_nav}
-<script src="/static/app.js?v=20260901-11"></script>
+<script src="/static/app.js?v=20260901-12"></script>
 </body>
 </html>"""
 
@@ -286,11 +286,12 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     click_attr = f' data-termino="{esc(termino_busqueda)}"' if termino_busqueda else ""
     fav_attrs = f'data-fav-id="{aviso["id"]}"'
     foto_url = aviso.get("foto_url")
+    foto_style_attr = ' style="object-position:top"' if aviso.get("foto_posicion") == "arriba" else ""
     fotos = ([foto_url] + (aviso.get("fotos_extra") or [])) if foto_url else []
     es_carrusel = len(fotos) >= 2
     if es_carrusel:
         slides = "".join(
-            f'<img src="{esc(url)}" alt="{esc(aviso["titulo"])}" loading="eager" class="card-carousel-slide">'
+            f'<img src="{esc(url)}" alt="{esc(aviso["titulo"])}" loading="eager" class="card-carousel-slide"{foto_style_attr}>'
             for url in fotos)
         dots = "".join(
             f'<span class="card-carousel-dot{" is-active" if i == 0 else ""}"></span>' for i in range(len(fotos)))
@@ -298,7 +299,7 @@ def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
                      f'<div class="card-carousel-track">{slides}</div>'
                      f'<div class="card-carousel-dots">{dots}</div></div>')
     elif foto_url:
-        foto_html = f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}">'
+        foto_html = f'<img src="{esc(foto_url)}" alt="{esc(aviso["titulo"])}"{foto_style_attr}>'
     else:
         foto_html = f'<span class="icon-tile"><span class="card-icon">{aviso["icono"]}</span></span>'
     chevrones_html = ("""

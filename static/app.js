@@ -628,11 +628,12 @@ document.addEventListener("click", function (e) {
 
   function tarjetaHtml(d) {
     var fotos = d.foto_url ? [d.foto_url].concat(d.fotos_extra || []) : [];
+    var fotoStyleAttr = d.foto_posicion === "arriba" ? ' style="object-position:top"' : "";
     var chevrones = "";
     var foto;
     if (fotos.length >= 2) {
       var slides = fotos.map(function (u) {
-        return '<img src="' + escHtml(u) + '" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'" class="card-carousel-slide">';
+        return '<img src="' + escHtml(u) + '" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'" class="card-carousel-slide"' + fotoStyleAttr + '>';
       }).join("");
       var dots = fotos.map(function (u, i) {
         return '<span class="card-carousel-dot' + (i === 0 ? " is-active" : "") + '"></span>';
@@ -643,7 +644,7 @@ document.addEventListener("click", function (e) {
         '<button type="button" class="card-carousel-nav card-carousel-prev" data-carousel-prev aria-label="Foto anterior">‹</button>' +
         '<button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>';
     } else if (d.foto_url) {
-      foto = '<img src="' + escHtml(d.foto_url) + '" alt="">';
+      foto = '<img src="' + escHtml(d.foto_url) + '" alt=""' + fotoStyleAttr + '>';
     } else {
       foto = '<span class="icon-tile"><span class="card-icon">' + d.icono + "</span></span>";
     }

@@ -1008,12 +1008,13 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     }, ensure_ascii=False)
 
     foto_url = aviso.get("foto_url")
+    foto_style_attr = ' style="object-position:top"' if aviso.get("foto_posicion") == "arriba" else ""
     fotos_extra = aviso.get("fotos_extra") or []
     fotos = ([foto_url] + fotos_extra) if foto_url else []
     chevrones_html = ""
     if len(fotos) >= 2:
         slides = "".join(
-            f'<img src="{t.esc(u)}" alt="{t.esc(aviso["titulo"])}" loading="eager" class="card-carousel-slide">'
+            f'<img src="{t.esc(u)}" alt="{t.esc(aviso["titulo"])}" loading="eager" class="card-carousel-slide"{foto_style_attr}>'
             for u in fotos)
         dots = "".join(
             f'<span class="card-carousel-dot{" is-active" if i == 0 else ""}"></span>' for i in range(len(fotos)))
@@ -1024,7 +1025,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     <button type="button" class="card-carousel-nav card-carousel-prev" data-carousel-prev aria-label="Foto anterior">‹</button>
     <button type="button" class="card-carousel-nav card-carousel-next" data-carousel-next aria-label="Foto siguiente">›</button>"""
     elif foto_url:
-        foto_html = f'<img src="{t.esc(foto_url)}" alt="{t.esc(aviso["titulo"])}" loading="eager">'
+        foto_html = f'<img src="{t.esc(foto_url)}" alt="{t.esc(aviso["titulo"])}" loading="eager"{foto_style_attr}>'
     else:
         foto_html = f'<span class="icon-tile big"><span class="card-icon big">{aviso["icono"]}</span></span>'
     body = f"""
@@ -1433,7 +1434,7 @@ def api_favoritos(handler, body):
         "id": a["id"], "titulo": a["titulo"], "negocio": a["negocio_nombre"],
         "comuna": a["comuna"], "categoria": a["categoria_nombre"], "icono": a["icono"],
         "color": a["color"], "foto_url": a.get("foto_url") or "",
-        "fotos_extra": a.get("fotos_extra") or [],
+        "fotos_extra": a.get("fotos_extra") or [], "foto_posicion": a.get("foto_posicion") or "",
         "verificado": a["verificado"], "plan": a["plan_nombre"],
         "es_demo": bool(a.get("es_demo", False)),
     } for a in avisos]
@@ -1954,6 +1955,13 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     <label>Dirección <input name="direccion" maxlength="150" value="{t.esc(aviso.get('direccion') or '')}"></label>
     <label>Página web <input name="web" type="url" maxlength="200" value="{t.esc(aviso.get('web') or '')}"></label>
     <label>Instagram <input name="instagram" maxlength="200" placeholder="@tunegocio" value="{t.esc(aviso.get('instagram') or '')}"></label>
+    <label>Encuadre de la foto
+      <select name="foto_posicion">
+        <option value="">Centrado (normal)</option>
+        <option value="arriba"{' selected' if aviso.get('foto_posicion') == 'arriba' else ''}>Arriba (para logos o flyers con texto arriba)</option>
+      </select>
+      <span class="hint">Si la foto es un flyer o logo con texto en la parte de arriba, usa "Arriba" para que nunca se corte.</span>
+    </label>
     <label>Estado <select name="estado">{estado_options}</select></label>
     <label class="campo-imagen">Foto del aviso
       {foto_preview}
@@ -2009,10 +2017,12 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     if web and not re.match(r"^https?://", web, re.I):
         web = f"https://{web}"
     instagram = _normalizar_instagram(form.get("instagram", ""))
+    foto_posicion = "arriba" if form.get("foto_posicion") == "arriba" else None
     ok = db.editar_aviso(
         aviso_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         form.get("categoria_id"), form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url,
-        direccion=form.get("direccion", "").strip()[:150] or None, web=web or None, instagram=instagram)
+        direccion=form.get("direccion", "").strip()[:150] or None, web=web or None, instagram=instagram,
+        foto_posicion=foto_posicion)
     if not ok:
         if ajax:
             return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
