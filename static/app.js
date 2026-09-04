@@ -770,6 +770,13 @@ document.addEventListener("click", function (e) {
       .catch(function () { mostrarAviso("No se pudo guardar el orden.", "warn"); });
   }
 
+  var CUPOS_CARRUSEL = 6;
+  function actualizarCarrusel() {
+    Array.from(lista.querySelectorAll(".orden-fila")).forEach(function (fila, i) {
+      fila.classList.toggle("orden-fila-carrusel", i < CUPOS_CARRUSEL);
+    });
+  }
+
   var arrastrando = null;
   var puntoY = 0;
 
@@ -803,6 +810,7 @@ document.addEventListener("click", function (e) {
       else lista.appendChild(arrastrando);
       puntoY = e.clientY;
       arrastrando.style.transform = "translateY(0px)";
+      actualizarCarrusel();
     }
   });
 

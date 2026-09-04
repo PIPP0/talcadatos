@@ -474,8 +474,9 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .orden-fila.orden-arrastrando{box-shadow:0 10px 24px -8px rgba(0,0,0,.25); background:var(--paper); z-index:5; position:relative;}
 .orden-fila.orden-oculta{display:none;}
 .orden-fila.orden-fila-carrusel{border-color:#E5B84B; background:#FBF3DE;}
-.orden-carrusel-tag{font-size:.72rem; font-weight:600; color:#8A6512; background:#F3DFA0; border-radius:980px;
+.orden-carrusel-tag{display:none; font-size:.72rem; font-weight:600; color:#8A6512; background:#F3DFA0; border-radius:980px;
   padding:4px 10px; white-space:nowrap; flex-shrink:0;}
+.orden-fila.orden-fila-carrusel .orden-carrusel-tag{display:inline-flex; align-items:center; gap:4px;}
 .orden-handle{cursor:grab; color:var(--ink-faint); font-size:1.2rem; line-height:1; padding:4px; touch-action:none;}
 .orden-fila.orden-arrastrando .orden-handle{cursor:grabbing;}
 .orden-foto{width:48px; height:48px; border-radius:10px; overflow:hidden; flex-shrink:0; background:var(--paper);

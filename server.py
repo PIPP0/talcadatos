@@ -1865,7 +1865,7 @@ def admin_orden(handler):
     <span class="orden-titulo">{t.esc(titulo_mostrado)}</span>
     <span class="orden-negocio">{t.esc(negocio_mostrado)}</span>
   </span>
-  {'<span class="orden-carrusel-tag">🎠 Carrusel</span>' if es_carrusel else ''}
+  <span class="orden-carrusel-tag">🎠 Carrusel</span>
   {t.plan_cc_editable(a['id'], a['plan_nombre'])}
 </li>"""
     filas = "".join(_fila_html(a) for a in avisos)
