@@ -1850,17 +1850,26 @@ def admin_orden(handler):
     destacados = [a for a in avisos if a["plan_prioridad"] > 0][:6]
     destacados_ids = {a["id"] for a in destacados}
 
-    filas = "".join(f"""
-<li class="orden-fila{' orden-fila-carrusel' if a['id'] in destacados_ids else ''}" data-orden-id="{a['id']}" data-orden-destacado="{'1' if a['plan_nombre'] in ('Destacado', 'Premium') else '0'}">
+    def _fila_html(a):
+        es_carrusel = a["id"] in destacados_ids
+        if a.get("es_demo"):
+            titulo_mostrado = "Aviso demo"
+            negocio_mostrado = f"{a['icono']} {a['categoria_nombre']}"
+        else:
+            titulo_mostrado = a["titulo"]
+            negocio_mostrado = f"{a['negocio_nombre']} · {a['comuna']}"
+        return f"""
+<li class="orden-fila{' orden-fila-carrusel' if es_carrusel else ''}" data-orden-id="{a['id']}" data-orden-destacado="{'1' if a['plan_nombre'] in ('Destacado', 'Premium') else '0'}">
   <span class="orden-handle" aria-hidden="true">⠿</span>
   <span class="orden-foto">{f'<img src="{t.esc(a["foto_url"])}" alt="">' if a.get('foto_url') else f'<span class="orden-icono">{a["icono"]}</span>'}</span>
   <span class="orden-info">
-    <span class="orden-titulo">{t.esc(a['titulo'])}</span>
-    <span class="orden-negocio">{t.esc(a['negocio_nombre'])} · {t.esc(a['comuna'])}</span>
+    <span class="orden-titulo">{t.esc(titulo_mostrado)}</span>
+    <span class="orden-negocio">{t.esc(negocio_mostrado)}</span>
   </span>
-  {'<span class="orden-carrusel-tag">🎠 Carrusel</span>' if a['id'] in destacados_ids else ''}
+  {'<span class="orden-carrusel-tag">🎠 Carrusel</span>' if es_carrusel else ''}
   {t.plan_cc(a['plan_nombre'])}
-</li>""" for a in avisos)
+</li>"""
+    filas = "".join(_fila_html(a) for a in avisos)
     body = f"""
 <div class="listado-head">
   <h1>Orden de avisos</h1>
