@@ -1049,14 +1049,16 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
     {f'<p class="detalle-horario"><strong>Web:</strong> <a href="{t.esc(aviso["web"])}" target="_blank" rel="noopener nofollow">{t.esc(aviso["web"])}</a></p>'
      if aviso.get("web") and re.match(r"^https?://", aviso["web"], re.I) else ""}
     {reportado_html}
-    <a class="btn btn-whatsapp btn-lg" href="{wa}" target="_blank" rel="noopener"
-       data-aviso-id="{aviso['id']}" data-wa-click="1">
-       💬 Escribir por WhatsApp
-    </a>
+    <div class="detalle-contacto">
+      <a class="btn btn-whatsapp btn-lg" href="{wa}" target="_blank" rel="noopener"
+         data-aviso-id="{aviso['id']}" data-wa-click="1">
+         💬 Escribir por WhatsApp
+      </a>
+      {t.instagram_link_html(aviso.get('instagram'))}
+    </div>
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" data-share-btn>Compartir aviso</button>
       {f'<a class="btn btn-ghost" href="{mapa_url}" target="_blank" rel="noopener">📍 Ver en el mapa</a>' if mapa_url else ''}
-      {t.instagram_link_html(aviso.get('instagram'))}
       <details class="report-details">
         <summary class="btn btn-ghost report-summary">Reportar aviso</summary>
         <form method="post" action="/avisos/{aviso_id}/reportar" class="form report-form">

@@ -287,8 +287,13 @@ code{font-family:"IBM Plex Mono"; background:var(--accent-soft); padding:1px 6px
 .detalle-negocio{font-weight:600; color:var(--ink-soft); margin-bottom:14px; display:flex; gap:8px; align-items:center;}
 .detalle-desc{font-size:1.05rem; max-width:62ch;}
 .detalle-horario{color:var(--ink-soft); font-size:.92rem;}
-.btn-whatsapp.btn-lg{margin-top:10px;}
+.btn-whatsapp.btn-lg{margin-top:0;}
+.detalle-contacto{margin-top:10px; display:flex; gap:10px; align-items:stretch;}
+.detalle-contacto .btn-whatsapp{flex:1;}
+.instagram-btn{width:52px; padding:0; border-radius:14px; flex:0 0 auto;}
+.instagram-btn svg{width:22px; height:22px;}
 .detalle-share{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start;}
+@media (max-width:420px){ .detalle-contacto .btn-whatsapp{font-size:.88rem; padding:14px 14px;} }
 @media (max-width:800px){ .detalle{grid-template-columns:1fr;} .detalle-photo{height:220px;} }
 
 .report-details{position:relative;}

@@ -79,7 +79,7 @@ def layout(title, body, active="home", admin=False, description=None, og_image="
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=20260901-16">
+<link rel="stylesheet" href="/static/styles.css?v=20260901-17">
 </head>
 <body{active_attr}{' class="admin-body"' if admin else ''}>
 {contenido}
@@ -268,7 +268,7 @@ INSTAGRAM_ICON_SVG = (
 def instagram_link_html(url):
     if not url:
         return ""
-    return (f'<a class="btn btn-icon btn-ghost" href="{esc(url)}" target="_blank" rel="noopener nofollow" '
+    return (f'<a class="btn btn-ghost instagram-btn" href="{esc(url)}" target="_blank" rel="noopener nofollow" '
             f'title="Instagram" aria-label="Instagram">{INSTAGRAM_ICON_SVG}</a>')
 
 
