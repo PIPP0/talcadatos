@@ -661,7 +661,9 @@ document.addEventListener("click", function (e) {
         '<a class="card-title" href="' + BASE_PATH + '/avisos/' + d.id + '">' + escHtml(d.titulo) + "</a>" +
         '<div class="card-meta"><span>' + escHtml(d.negocio) + " " + verificado + "</span>" +
         '<span class="dot">·</span><span>' + escHtml(d.comuna) + "</span></div>" +
-        '<div class="card-cat mono">' + d.icono + " " + escHtml(d.categoria) + "</div>";
+        '<div class="card-cat mono">' + d.icono + " " + escHtml(d.categoria) + "</div>" +
+        '<p class="card-desc">' + escHtml(d.descripcion || "") + "</p>" +
+        '<a class="btn btn-whatsapp btn-block" href="' + BASE_PATH + '/avisos/' + d.id + '">Ver detalle</a>';
     }
     var fotoHref = d.es_demo ? BASE_PATH + "/publicar" : BASE_PATH + "/avisos/" + d.id;
     var fotoBadge = !d.es_demo && d.plan && d.plan !== "Gratis" ? '<span class="badge badge-gold">' + escHtml(d.plan) + "</span>" : "";

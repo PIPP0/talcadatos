@@ -1431,6 +1431,7 @@ def api_favoritos(handler, body):
     resultados = [{
         "id": a["id"], "titulo": a["titulo"], "negocio": a["negocio_nombre"],
         "comuna": a["comuna"], "categoria": a["categoria_nombre"], "icono": a["icono"],
+        "descripcion": t.extracto(a.get("descripcion")),
         "color": a["color"], "foto_url": a.get("foto_url") or "",
         "fotos_extra": a.get("fotos_extra") or [], "foto_posicion": a.get("foto_posicion") or "",
         "verificado": a["verificado"], "plan": a["plan_nombre"],
