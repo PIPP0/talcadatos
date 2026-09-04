@@ -311,9 +311,8 @@ PUBLICADOS_POR_PAGINA_HOME = 12
 def home(handler, query=""):
     sitio = db.get_contenido_sitio()
     activos = db.get_avisos(estado="activo", orden="destacados")
-    destacados = [a for a in activos if a["plan_prioridad"] > 0][:6]
-    destacados_ids = {a["id"] for a in destacados}
-    recientes = [a for a in activos if a["id"] not in destacados_ids]
+    destacados = activos[:6]
+    recientes = activos[6:]
 
     try:
         pagina_pub = max(1, int(qs(query).get("pagina_pub", "1")))
@@ -1847,7 +1846,7 @@ def admin_aviso_cc_submit(handler, aviso_id, form):
 
 def admin_orden(handler):
     avisos = db.get_avisos(estado="activo", orden="destacados")
-    destacados = [a for a in avisos if a["plan_prioridad"] > 0][:6]
+    destacados = avisos[:6]
     destacados_ids = {a["id"] for a in destacados}
 
     def _fila_html(a):
@@ -1867,7 +1866,7 @@ def admin_orden(handler):
     <span class="orden-negocio">{t.esc(negocio_mostrado)}</span>
   </span>
   {'<span class="orden-carrusel-tag">🎠 Carrusel</span>' if es_carrusel else ''}
-  {t.plan_cc(a['plan_nombre'])}
+  {t.plan_cc_editable(a['id'], a['plan_nombre'])}
 </li>"""
     filas = "".join(_fila_html(a) for a in avisos)
     body = f"""
@@ -1880,10 +1879,10 @@ def admin_orden(handler):
     </label>
   </div>
 </div>
-<p class="lede">Arrastra los avisos para cambiar el orden en que aparecen en el sitio (carrusel de destacados y
-  listado de avisos). Se guarda solo cuando sueltas. Los avisos resaltados en dorado con la etiqueta
-  "🎠 Va al carrusel" son los que van al carrusel de Destacados (los primeros {len(destacados)} avisos con plan
-  Destacado o Premium, sin importar dónde estén en esta lista) — el resto va al listado normal de avisos.</p>
+<p class="lede">Arrastra los avisos para cambiar el orden en que aparecen en el sitio. Los primeros 6 de esta lista
+  (resaltados en dorado, con la etiqueta "🎠 Carrusel") son siempre los que van al carrusel de Destacados —
+  el resto va al listado normal de avisos. Puedes cambiar la categoría de cliente (P/D/R) de cada uno haciendo
+  clic en su etiqueta.</p>
 <ul class="orden-lista" id="orden-lista" data-orden-guardar-url="/admin/orden/guardar">
   {filas or "<p class='empty-state'>No hay avisos activos todavía.</p>"}
 </ul>
