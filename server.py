@@ -1835,6 +1835,7 @@ def admin_aviso_cc_submit(handler, aviso_id, form):
             return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
         return not_found(handler)
     db.cambiar_plan_negocio(aviso["negocio_id"], plan_id, None)
+    db.reposicionar_por_plan(aviso_id)
     auditar(handler, "cambiar_cc", f"negocio {aviso['negocio_id']} -> {plan['nombre']} (desde avisos)")
     sincronizar_sitio_estatico()
     if ajax:

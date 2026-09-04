@@ -470,6 +470,26 @@ def guardar_orden_manual(ids_en_orden):
     batch.commit()
 
 
+def reposicionar_por_plan(aviso_id):
+    """Tras cambiar el plan de un negocio, mueve su aviso justo por encima del
+    primer aviso de un nivel de plan inferior -- para que el orden manual
+    mantenga siempre Premium, despues Destacado, despues Gratis."""
+    avisos = get_avisos(estado="activo", orden="destacados")
+    aviso_id = str(aviso_id)
+    cambiado = next((a for a in avisos if str(a["id"]) == aviso_id), None)
+    if not cambiado:
+        return
+    resto = [a for a in avisos if str(a["id"]) != aviso_id]
+    nueva_prioridad = cambiado["plan_prioridad"]
+    idx = len(resto)
+    for i, a in enumerate(resto):
+        if a["plan_prioridad"] < nueva_prioridad:
+            idx = i
+            break
+    resto.insert(idx, cambiado)
+    guardar_orden_manual([a["id"] for a in resto])
+
+
 def get_aviso(aviso_id):
     doc = _fs().collection("avisos").document(str(aviso_id)).get()
     if not doc.exists:
