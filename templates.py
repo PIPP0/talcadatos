@@ -272,6 +272,24 @@ def instagram_link_html(url):
             f'title="Instagram" aria-label="Instagram">{INSTAGRAM_ICON_SVG}</a>')
 
 
+FACEBOOK_ICON_SVG = (
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<rect x="3" y="3" width="18" height="18" rx="5"/>'
+    '<path d="M14.2 8h-1.1c-1 0-1.6.6-1.6 1.7V11"/>'
+    '<path d="M9.6 11.6h3.4"/>'
+    '<path d="M11.5 11.6v6.9"/>'
+    '</svg>'
+)
+
+
+def facebook_link_html(url):
+    if not url:
+        return ""
+    return (f'<a class="btn btn-ghost instagram-btn" href="{esc(url)}" target="_blank" rel="noopener nofollow" '
+            f'title="Facebook" aria-label="Facebook">{FACEBOOK_ICON_SVG}</a>')
+
+
 def aviso_card(aviso, termino_busqueda=None, badge_mode=None):
     badge_html = ""
     if badge_mode == "plan" and aviso["plan_nombre"] in ("Destacado", "Premium"):

@@ -1054,6 +1054,7 @@ def detalle(handler, aviso_id, query="", contabilizar=True):
          💬 Escribir por WhatsApp
       </a>
       {t.instagram_link_html(aviso.get('instagram'))}
+      {t.facebook_link_html(aviso.get('facebook'))}
     </div>
     <div class="detalle-share">
       <button class="btn btn-ghost" type="button" data-share-btn>Compartir aviso</button>
@@ -1149,6 +1150,10 @@ def _publicar_body(categorias, sitio, form=None, errores=None):
     </label>
     <label>Instagram (opcional)
       <input name="instagram" maxlength="200" placeholder="@tunegocio" value="{v('instagram')}">
+    </label>
+    <label>Facebook (opcional)
+      <input name="facebook" maxlength="200" placeholder="https://facebook.com/tunegocio" value="{v('facebook')}">
+      <span class="hint">Si no tienes página web ni Instagram, puedes dejar el link de tu Facebook.</span>
     </label>
     <label class="check-label">
       <input type="checkbox" name="acepto_terminos" required{' checked' if form.get('acepto_terminos') else ''}>
@@ -1251,6 +1256,21 @@ def _normalizar_instagram(valor):
     return f"https://www.instagram.com/{valor}/"[:200]
 
 
+def _normalizar_facebook(valor):
+    valor = (valor or "").strip()
+    if not valor:
+        return None
+    if re.match(r"^https?://", valor, re.I):
+        return valor[:200]
+    if valor.lower().startswith("facebook.com/") or valor.lower().startswith("www.facebook.com/"):
+        return f"https://{valor}"[:200]
+    valor = valor.lstrip("@")
+    valor = valor.split("facebook.com/")[-1].strip("/ ")
+    if not valor:
+        return None
+    return f"https://www.facebook.com/{valor}/"[:200]
+
+
 def _validar_publicar(form, categoria_ids):
     errores = []
     if not form.get("nombre_negocio", "").strip():
@@ -1318,11 +1338,12 @@ def publicar_submit(handler, form, foto=None):
     if web and not re.match(r"^https?://", web, re.I):
         web = f"https://{web}"
     instagram = _normalizar_instagram(form.get("instagram", ""))
+    facebook = _normalizar_facebook(form.get("facebook", ""))
     aviso_id = db.crear_aviso(
         negocio_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         slug, form.get("comuna", "Talca").strip(), form.get("horario", "").strip(), color, estado="pendiente",
         foto_url=foto_url, direccion=form.get("direccion", "").strip()[:150] or None, web=web or None,
-        instagram=instagram)
+        instagram=instagram, facebook=facebook)
     if sub_token:
         db.actualizar_suscripcion_pendiente(sub_token, negocio_id=negocio_id)
     negocio = db.get_negocio(negocio_id)
@@ -1970,6 +1991,7 @@ def admin_aviso_editar_form(handler, aviso_id, errores=None):
     <label>Dirección <input name="direccion" maxlength="150" value="{t.esc(aviso.get('direccion') or '')}"></label>
     <label>Página web <input name="web" type="url" maxlength="200" value="{t.esc(aviso.get('web') or '')}"></label>
     <label>Instagram <input name="instagram" maxlength="200" placeholder="@tunegocio" value="{t.esc(aviso.get('instagram') or '')}"></label>
+    <label>Facebook <input name="facebook" maxlength="200" placeholder="https://facebook.com/tunegocio" value="{t.esc(aviso.get('facebook') or '')}"></label>
     <label>Encuadre de la foto
       <select name="foto_posicion">
         <option value="">Centrado (normal)</option>
@@ -2032,12 +2054,13 @@ def admin_aviso_editar_submit(handler, aviso_id, form, archivos=None):
     if web and not re.match(r"^https?://", web, re.I):
         web = f"https://{web}"
     instagram = _normalizar_instagram(form.get("instagram", ""))
+    facebook = _normalizar_facebook(form.get("facebook", ""))
     foto_posicion = "arriba" if form.get("foto_posicion") == "arriba" else None
     ok = db.editar_aviso(
         aviso_id, form.get("titulo", "").strip()[:70], form.get("descripcion", "").strip()[:600],
         form.get("categoria_id"), form.get("comuna", ""), form.get("horario", ""), nuevo_estado, foto_url=foto_url,
         direccion=form.get("direccion", "").strip()[:150] or None, web=web or None, instagram=instagram,
-        foto_posicion=foto_posicion)
+        foto_posicion=foto_posicion, facebook=facebook)
     if not ok:
         if ajax:
             return _responder_error_ajax(handler, "Este aviso ya no existe.", 404)
