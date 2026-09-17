@@ -378,7 +378,7 @@ def get_plan(plan_id):
 # ---------------------------------------------------------------- avisos
 
 def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None):
-    negocios = negocios if negocios is not None else _all("negocios")
+    negocios = negocios if negocios is not None else _all_cacheado("negocios")
     categorias = categorias if categorias is not None else _all_cacheado("categorias")
     planes = planes if planes is not None else _all_cacheado("planes")
     filas = []
@@ -423,7 +423,7 @@ def _ordenar_avisos(filas, orden):
 
 def get_avisos(estado=None, estado_ne=None, categoria_slug=None, comuna=None,
                negocio_id=None, excluir_id=None, orden="creado", limit=None):
-    filas = _denormalizar_avisos(_all("avisos"))
+    filas = _denormalizar_avisos(_all_cacheado("avisos"))
 
     if estado is not None:
         filas = [a for a in filas if a["estado"] == estado]
@@ -510,7 +510,7 @@ def get_avisos_por_ids(ids):
     get_aviso() por cada uno, que hacia 4 lecturas separadas por aviso --
     esto era lo que hacia lenta la pagina de favoritos)."""
     ids = [str(i) for i in ids]
-    todos = _all("avisos")
+    todos = _all_cacheado("avisos")
     subset = {aid: todos[aid] for aid in ids if aid in todos}
     return _denormalizar_avisos(subset)
 
