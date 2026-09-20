@@ -1003,11 +1003,12 @@ def get_terminos_mas_buscados(limit=15, dias=14):
     ensucie el ranking una sola persona insistiendo con la misma palabra."""
     cache_key = (limit, dias)
     entrada = _cache_terminos_buscados.get(cache_key)
-    if entrada and (time.monotonic() - entrada[0]) < 60:
+    if entrada and (time.monotonic() - entrada[0]) < 6 * 3600:
         return entrada[1]
     cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=dias)).isoformat()
     sesiones_por_termino = {}
-    for e in _all("eventos").values():
+    recientes = _fs().collection("eventos").where("creado_en", ">=", cutoff).stream()
+    for e in (doc.to_dict() for doc in recientes):
         if (e.get("tipo") == "click_resultado_busqueda" and e.get("termino_busqueda")
                 and e.get("creado_en", "") >= cutoff):
             termino = e["termino_busqueda"]
