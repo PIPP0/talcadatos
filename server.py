@@ -3310,6 +3310,24 @@ def og_default(handler):
         render_png(handler, f.read())
 
 
+def foto_publica(handler, foto_id):
+    if not re.match(r"^[A-Za-z0-9_.-]{1,80}$", foto_id):
+        return not_found(handler)
+    try:
+        foto = db.get_foto(foto_id)
+    except Exception:
+        foto = None
+    if not foto:
+        return not_found(handler)
+    datos, tipo = foto
+    handler.send_response(200)
+    handler.send_header("Content-Type", tipo)
+    handler.send_header("Content-Length", str(len(datos)))
+    handler.send_header("Cache-Control", "public, max-age=31536000, immutable")
+    handler.end_headers()
+    handler.wfile.write(datos)
+
+
 def qr_aviso(handler, aviso_id):
     path = os.path.join(OG_CACHE_DIR, f"qr_{aviso_id}.png")
     if not os.path.isfile(path):
@@ -3437,6 +3455,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._static("/static/sw.js")
             if path == "/static" or path.startswith("/static/"):
                 return self._static(path)
+            if len(segs) == 2 and segs[0] == "foto":
+                return foto_publica(self, segs[1])
             if path == "/robots.txt":
                 return robots_txt(self)
             if path == "/sitemap.xml":

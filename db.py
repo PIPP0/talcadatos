@@ -118,13 +118,81 @@ def _storage():
     return _storage_client
 
 
+_FOTO_MAX_BYTES = 900_000
+_PREFIJO_GCS = f"https://storage.googleapis.com/{_FOTOS_BUCKET}/"
+_cache_fotos = {}
+_CACHE_FOTOS_MAX = 40 * 1024 * 1024
+
+
+def comprimir_imagen(datos, content_type):
+    """Reduce la imagen para que quepa en un documento de Firestore (<1 MiB)."""
+    from io import BytesIO
+    from PIL import Image, ImageOps
+    if len(datos) <= _FOTO_MAX_BYTES and max(Image.open(BytesIO(datos)).size) <= 1600:
+        return datos, content_type
+    im = ImageOps.exif_transpose(Image.open(BytesIO(datos)))
+    im.thumbnail((1600, 1600))
+    con_alpha = im.mode in ("RGBA", "LA", "P") and "transparency" in im.info or im.mode in ("RGBA", "LA")
+    for lado in (1600, 1300, 1000, 800, 600):
+        im.thumbnail((lado, lado))
+        buf = BytesIO()
+        if con_alpha:
+            im.convert("RGBA").save(buf, "PNG", optimize=True)
+            tipo = "image/png"
+        else:
+            for calidad in (85, 75, 65):
+                buf = BytesIO()
+                im.convert("RGB").save(buf, "JPEG", quality=calidad, optimize=True)
+                if buf.tell() <= _FOTO_MAX_BYTES:
+                    break
+            tipo = "image/jpeg"
+        if buf.tell() <= _FOTO_MAX_BYTES:
+            return buf.getvalue(), tipo
+    return buf.getvalue(), tipo
+
+
+def id_foto_desde_url(url):
+    """'https://storage.googleapis.com/<bucket>/avisos/x.jpg' o '/foto/avisos__x.jpg' -> 'avisos__x.jpg'."""
+    if url and url.startswith(_PREFIJO_GCS):
+        return url[len(_PREFIJO_GCS):].replace("/", "__")
+    if url and url.startswith("/foto/"):
+        return url[len("/foto/"):]
+    return None
+
+
+def url_foto(url):
+    """Las fotos viven en Firestore: traduce las URLs antiguas del bucket a /foto/<id>."""
+    if url and url.startswith(_PREFIJO_GCS):
+        return "/foto/" + id_foto_desde_url(url)
+    return url
+
+
+def guardar_foto(foto_id, datos, content_type):
+    _fs().collection("fotos").document(foto_id).set({"contenido": datos, "content_type": content_type})
+
+
+def get_foto(foto_id):
+    hit = _cache_fotos.get(foto_id)
+    if hit:
+        return hit
+    doc = _fs().collection("fotos").document(foto_id).get()
+    if not doc.exists:
+        return None
+    d = doc.to_dict()
+    res = (bytes(d["contenido"]), d.get("content_type", "image/jpeg"))
+    if sum(len(v[0]) for v in _cache_fotos.values()) + len(res[0]) <= _CACHE_FOTOS_MAX:
+        _cache_fotos[foto_id] = res
+    return res
+
+
 def subir_imagen(datos, content_type, extension, carpeta="avisos"):
-    """Sube una imagen al bucket publico y devuelve su URL. `carpeta` separa
-    fotos de avisos ("avisos") de imagenes del sitio ("sitio")."""
-    nombre = f"{carpeta}/{secrets.token_hex(12)}.{extension}"
-    blob = _storage().bucket(_FOTOS_BUCKET).blob(nombre)
-    blob.upload_from_string(datos, content_type=content_type)
-    return f"https://storage.googleapis.com/{_FOTOS_BUCKET}/{nombre}"
+    """Guarda la imagen en Firestore (gratis, sin facturacion) y devuelve su URL
+    /foto/<id>. `carpeta` separa fotos de avisos ("avisos") de imagenes del sitio ("sitio")."""
+    datos, content_type = comprimir_imagen(datos, content_type)
+    ext = "png" if content_type == "image/png" else ("webp" if content_type == "image/webp" else "jpg")
+    foto_id = f"{carpeta}__{secrets.token_hex(12)}.{ext}"
+    guardar_foto(foto_id, datos, content_type)
+    return f"/foto/{foto_id}"
 
 
 def subir_foto_aviso(datos, content_type, extension):
@@ -388,6 +456,10 @@ def _denormalizar_avisos(avisos_raw, negocios=None, categorias=None, planes=None
         plan = planes.get(neg.get("plan_id", "gratis"), {})
         row = dict(a)
         row["id"] = aid
+        if row.get("foto_url"):
+            row["foto_url"] = url_foto(row["foto_url"])
+        if row.get("fotos_extra"):
+            row["fotos_extra"] = [url_foto(u) for u in row["fotos_extra"]]
         row["negocio_nombre"] = neg.get("nombre", "")
         row["whatsapp"] = neg.get("whatsapp", "")
         row["email"] = neg.get("email", "")
@@ -577,7 +649,8 @@ def eliminar_foto_extra(aviso_id, url):
     doc = ref.get()
     if not doc.exists:
         return False
-    actuales = [u for u in (doc.to_dict().get("fotos_extra") or []) if u != url]
+    quitar = id_foto_desde_url(url) or url
+    actuales = [u for u in (doc.to_dict().get("fotos_extra") or []) if (id_foto_desde_url(u) or u) != quitar]
     ref.update({"fotos_extra": actuales})
     return True
 
